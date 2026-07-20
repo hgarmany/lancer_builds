@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta
+		name="viewport"
+		content="width=device-width, initial-scale=1.0"
+	>
+	<title>Lancer Roadmap</title>
+	<link rel="stylesheet" href="/src/styles/app.css">
+</head>
+<body>
+	<main id="app">
+		<header class="name-toolbar">
+			<input
+				id="roadmap-name"
+				class="namebar"
+				type="text"
+				aria-label="Lancer roadmap name">
+
+			<label class="max-ll-select">
+				Maximum LL
+				<input
+					id="roadmap-max-level"
+					type="number"
+					min="0"
+					max="12"
+					step="1">
+			</label>
+		</header>
+
+		<section class="roadmap-container">
+			<table id="roadmap-table" class="roadmap-table">
+				<thead>
+					<tr>
+						<th scope="col">LL</th>
+						<th scope="col">Skill Triggers</th>
+						<th scope="col">Talents</th>
+						<th scope="col">Mech Skills</th>
+						<th scope="col">Licenses</th>
+						<th scope="col">Active Frame</th>
+						<th scope="col">Core Bonus</th>
+						<th scope="col">H</th>
+						<th scope="col">A</th>
+						<th scope="col">S</th>
+						<th scope="col">E</th>
+					</tr>
+				</thead>
+
+				<tbody id="roadmap-body"></tbody>
+			</table>
+		</section>
+	</main>
+
+	<script type="module" src="/src/main.js"></script>
+</body>
+</html>

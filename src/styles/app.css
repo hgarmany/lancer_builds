@@ -1,0 +1,225 @@
+/* src/styles/app.css */
+:root {
+	--background: #eceff1;
+	--text: #202428;
+	--error: #ffc3c3;
+	--error-light: #ffe9e9;
+	--select-border: #6f7e8a;
+	--select-border-light: #b4c7d5;
+	--error-border: #8a6f6f;
+	--error-border-light: #d4a2a2;
+	--cb-accent: #b99b58;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	font-size: small;
+	font-family: system-ui, sans-serif;
+	background: var(--background);
+	color: var(--text);
+}
+
+button,
+input,
+select {
+	font: inherit;
+}
+
+main {
+	width: 100%;
+	padding: 1.5rem;
+}
+
+.name-toolbar {
+	display: flex;
+	align-items: end;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.namebar {
+	width: min(36rem, 100%);
+	border: 0;
+	border-bottom: 2px solid currentColor;
+	background: transparent;
+	font-size: 2rem;
+	font-weight: 700;
+}
+
+.max-ll-select {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.max-ll-select input {
+	width: 5rem;
+}
+
+.roadmap-container {
+	width: 100%;
+	overflow-x: auto;
+	background:
+		linear-gradient(
+			to bottom,
+			#f3f0ea,
+			#d7dce0
+		);
+	padding: 0.75rem;
+	border-radius: 0.75rem;
+}
+
+.roadmap-table {
+	border-collapse: separate;
+	border-spacing: 0 0.5rem;
+	table-layout: auto;
+}
+
+.roadmap-table thead th {
+	color: #58636c;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	padding: 0rem 1rem;
+	white-space: nowrap;
+}
+
+.roadmap-table tbody tr > :first-child {
+	position: sticky;
+	background: #263746 !important;
+	color: white;
+	font-size: 1rem;
+	text-align: center !important;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.roadmap-table tbody tr > :first-child,
+.roadmap-table tbody tr > :nth-child(8)
+ {
+	border-radius: 1rem 0 0 1rem;
+}
+
+.roadmap-table tbody tr > :last-child,
+.roadmap-table tbody tr > :nth-child(7) {
+	border-radius: 0 1rem 1rem 0;
+}
+
+.roadmap-table tbody tr .cb-level {
+	box-shadow: -0.35rem 0 var(--cb-accent);
+}
+
+.roadmap-table tbody td {
+	padding: 0.5rem;
+	border: 0;
+	background: rgba(255, 255, 255, 0.75);
+	vertical-align: middle;
+	text-align: center;
+	width: 10rem;
+}
+
+.roadmap-table tbody tr:hover td:not(.non-cell) {
+	background: white;
+}
+
+.roadmap-table tbody td.non-cell {
+    background: transparent;
+}
+
+/* Cell immediately to the left */
+.roadmap-table tbody td.before-non-cell {
+    border-radius: 0 1rem 1rem 0;
+}
+
+/* Cell immediately to the right */
+.roadmap-table tbody td.after-non-cell {
+    border-radius: 1rem 0 0 1rem;
+}
+
+.roadmap-table__ll {
+	width: 4rem;
+}
+
+.roadmap-table tbody td .select-group {
+	display: grid;
+	gap: 0.25rem;
+}
+
+.roadmap-table tbody select {
+	width: min-content;
+	padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+	border: 0.15rem solid var(--select-border-light);
+	border-radius: 0.65rem;
+	background-color: #f8fafb;
+}
+
+.roadmap-table tbody select.occupied {
+	border-color: transparent;
+	background-color: transparent;
+}
+
+.roadmap-table tbody select:hover {
+	border-color: var(--select-border);
+	background-color: white;
+}
+
+.roadmap-table tbody select:focus {
+	outline: 2px solid var(--select-border);
+	outline-offset: 1px;
+}
+
+.roadmap-table tbody select.error {
+	border-color: var(--error-border-light);
+	background-color: var(--error);
+}
+
+.roadmap-table tbody select.error:hover {
+	border-color: var(--error-border);
+	background-color: var(--error-light);
+}
+
+.roadmap-table tbody select:focus {
+	outline: 2px solid var(--error-border);
+}
+
+.frame-editor__summary {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	column-gap: 0.5rem;
+	row-gap: 0.15rem;
+}
+
+.frame-editor__name {
+	font-weight: 600;
+	overflow-wrap: anywhere;
+}
+
+.frame-editor__change,
+.frame-editor__reset {
+	border: 0;
+	background: transparent;
+	padding: 0.2rem 0.35rem;
+	color: #465a6d;
+	cursor: pointer;
+	font-size: 0.8rem;
+	text-decoration: underline;
+	text-underline-offset: 0.15rem;
+}
+
+.frame-editor__changed {
+	grid-column: 1 / -1;
+	font-size: 0.72rem;
+	color: #66727c;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.frame-editor__panel {
+	display: grid;
+	gap: 0.3rem;
+}
