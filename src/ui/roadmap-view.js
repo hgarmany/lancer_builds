@@ -35,9 +35,13 @@ import {
 	frameIsEligible
 } from '../rules/frames.js';
 import {
-	coreBonusIsEligible
+	coreBonusIsEligible,
+	coreBonusesUpdateCatalog
 } from '../rules/core-bonuses.js';
-import { workingCatalog } from '../data/roadmap-table.js';
+import {
+	workingCatalog,
+	coreBonusesResetCatalog
+} from '../data/roadmap-table.js';
 
 const MAX_LICENSE_LEVELS = 12;
 
@@ -115,20 +119,23 @@ function renderRoadmapRow(roadmap, level) {
 		levelCell.className = 'cb-level';
 	levelCell.textContent = `LL${level}`;
 
+	newRow.append(levelCell);
+
+	renderCharacterSelectCells(roadmap, level, newRow);
+	renderStats(level, newRow);
+
+	return newRow;
+}
+
+function renderCharacterSelectCells(roadmap, level, row) {
 	const skillTriggerCell = renderSkillTriggerCell(roadmap, level);
-
 	const talentCell = renderTalentCell(roadmap, level);
-
 	const mechSkillCell = renderMechSkillCell(roadmap, level)
-
 	const licenseCell = renderLicenseCell(roadmap, level);
-
 	const frameCell = renderFrameCell(roadmap, level);
-
 	const coreBonusCell = renderCoreBonusCell(roadmap, level);
 
-	newRow.append(
-		levelCell,
+	row.append(
 		skillTriggerCell,
 		talentCell,
 		mechSkillCell,
@@ -136,8 +143,6 @@ function renderRoadmapRow(roadmap, level) {
 		frameCell,
 		coreBonusCell
 	);
-
-	return newRow;
 }
 
 function renderSkillTriggerCell(roadmap, level) {
@@ -350,6 +355,27 @@ function renderMechSkillCell(roadmap, level) {
 						renderMechSkillCell(roadmap, targetLevel));
 				}
 			});
+			document.querySelectorAll('.hase').forEach(element => {
+				const targetLevel = parseInt(element.closest('tr').dataset.level);
+				if (targetLevel >= referenceLevel) {
+					if (element.dataset.h) {
+						element.replaceWith(
+							renderHullCell(targetLevel));
+					}
+					if (element.dataset.a) {
+						element.replaceWith(
+							renderAgilityCell(targetLevel));
+					}
+					if (element.dataset.s) {
+						element.replaceWith(
+							renderSystemsCell(targetLevel));
+					}
+					if (element.dataset.e) {
+						element.replaceWith(
+							renderEngineeringCell(targetLevel));
+					}
+				}
+			});
 		});
 		choiceWrapper.append(select);
 	});
@@ -435,10 +461,8 @@ function renderLicenseCell(roadmap, level) {
 				if (targetLevel >= referenceLevel) {
 					element.replaceWith(
 						renderCoreBonusCell(roadmap, targetLevel));
-					console.log('redraw core bonus');
 				}
 			});
-			console.log(workingCatalog);
 		});
 		
 		cell.append(select);
@@ -502,7 +526,6 @@ function renderFrameCell(roadmap, level) {
 					renderFrameCell(roadmap, targetLevel));
 			}
 		});
-		console.log(workingCatalog);
 	});
 	
 	cell.append(select);
@@ -540,6 +563,7 @@ function renderCoreBonusCell(roadmap, level) {
 			option.textContent = coreBonus.name;
 
 			if (option.selected === true) {
+				coreBonusesUpdateCatalog(level, coreBonus.id);
 				select.classList.add('occupied');
 			}
 
@@ -557,6 +581,7 @@ function renderCoreBonusCell(roadmap, level) {
 			const referenceLevel =
 				parseInt(event.currentTarget.closest('tr').dataset.level);
 			roadmap.levels[referenceLevel].coreBonusId = newCoreBonusId;
+			coreBonusesResetCatalog(referenceLevel);
 
 			document.querySelectorAll('.core-bonus').forEach(element => {
 				const targetLevel = parseInt(element.closest('tr').dataset.level);
@@ -565,11 +590,68 @@ function renderCoreBonusCell(roadmap, level) {
 						renderCoreBonusCell(roadmap, targetLevel));
 				}
 			});
-			console.log(workingCatalog);
 		});
 		
 		cell.append(select);
 	}
+
+	return cell;
+}
+
+function renderStats(level, row) {
+	// HASE
+	const blankCell = document.createElement('td');
+	blankCell.className = 'non-cell';
+	const hullCell = renderHullCell(level);
+	const agilityCell = renderAgilityCell(level);
+	const systemCell = renderSystemsCell(level);
+	const engineeringCell = renderEngineeringCell(level);
+
+	row.append(
+		blankCell,
+		hullCell,
+		agilityCell,
+		systemCell,
+		engineeringCell
+	);
+}
+
+function renderHullCell(level) {
+	const cell = document.createElement('td');
+	cell.className = 'hase';
+	const val = workingCatalog.mechSkills[level].h ?? 0;
+	cell.dataset.h = val;
+	cell.textContent = val;
+
+	return cell;
+}
+
+function renderAgilityCell(level) {
+	const cell = document.createElement('td');
+	cell.className = 'hase';
+	const val = workingCatalog.mechSkills[level].a ?? 0;
+	cell.dataset.a = val;
+	cell.textContent = val;
+
+	return cell;
+}
+
+function renderSystemsCell(level) {
+	const cell = document.createElement('td');
+	cell.className = 'hase';
+	const val = workingCatalog.mechSkills[level].s ?? 0;
+	cell.dataset.s = val;
+	cell.textContent = val;
+
+	return cell;
+}
+
+function renderEngineeringCell(level) {
+	const cell = document.createElement('td');
+	cell.className = 'hase';
+	const val = workingCatalog.mechSkills[level].e ?? 0;
+	cell.dataset.e = val;
+	cell.textContent = val;
 
 	return cell;
 }
@@ -581,6 +663,7 @@ function resizeViaHide(roadmap, maxLevel) {
 	talentsResetCatalog(maxLevel + 1);
 	mechSkillsResetCatalog(maxLevel + 1);
 	licensesResetCatalog(maxLevel + 1);
+	coreBonusesResetCatalog(maxLevel + 1);
 
 	for (const row of rows) {
 		const rowLevel = Number.parseInt(row.dataset.level, 10);

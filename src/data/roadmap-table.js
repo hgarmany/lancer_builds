@@ -7,3 +7,18 @@ export let workingCatalog = {
     licenses: [],
     coreBonuses: []
 };
+
+/**
+ * Clears all working data for licenses
+ * at or above the specified level
+ * 
+ * @param {number} level 
+ */
+export function coreBonusesResetCatalog(level) {
+	const catalog = workingCatalog.coreBonuses;
+	for (let idx = level; idx < catalog.length; idx++) {
+		catalog[idx] = [
+			...catalog[idx - 1]
+		];
+	}
+}

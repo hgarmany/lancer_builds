@@ -8,7 +8,9 @@
 	--select-border-light: #b4c7d5;
 	--error-border: #8a6f6f;
 	--error-border-light: #d4a2a2;
+	--ll-highlight: #263746;
 	--cb-accent: #b99b58;
+	--hase: #fcfcf4;
 }
 
 * {
@@ -19,7 +21,7 @@ body {
 	margin: 0;
 	font-size: small;
 	font-family: system-ui, sans-serif;
-	background: var(--background);
+	background-color: var(--background);
 	color: var(--text);
 }
 
@@ -75,7 +77,7 @@ main {
 
 .roadmap-table {
 	border-collapse: separate;
-	border-spacing: 0 0.5rem;
+	border-spacing: 0;
 	table-layout: auto;
 }
 
@@ -84,13 +86,13 @@ main {
 	font-weight: 700;
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
-	padding: 0rem 1rem;
+	padding: 0rem 1rem 0.5rem 1rem;
 	white-space: nowrap;
 }
 
 .roadmap-table tbody tr > :first-child {
 	position: sticky;
-	background: #263746 !important;
+	background-color: var(--ll-highlight) !important;
 	color: white;
 	font-size: 1rem;
 	text-align: center !important;
@@ -99,9 +101,14 @@ main {
 }
 
 .roadmap-table tbody tr > :first-child,
-.roadmap-table tbody tr > :nth-child(8)
+.roadmap-table tbody tr > :nth-child(9)
  {
 	border-radius: 1rem 0 0 1rem;
+}
+
+.roadmap-table tr > :nth-child(8) {
+	max-width: 1rem;
+	width: 1rem;
 }
 
 .roadmap-table tbody tr > :last-child,
@@ -110,34 +117,73 @@ main {
 }
 
 .roadmap-table tbody tr .cb-level {
-	box-shadow: -0.35rem 0 var(--cb-accent);
+	box-shadow: none;
+	filter: drop-shadow(-0.35rem 0 0 var(--cb-accent));
 }
 
 .roadmap-table tbody td {
 	padding: 0.5rem;
 	border: 0;
-	background: rgba(255, 255, 255, 0.75);
+	background-color: rgba(255, 255, 255, 0.75);
 	vertical-align: middle;
 	text-align: center;
 	width: 10rem;
 }
 
+/* Visual row spacing for LL through Core Bonus only */
+.roadmap-table tbody tr > :nth-child(-n + 7) {
+	border-top: 0.25rem solid transparent;
+	border-bottom: 0.25rem solid transparent;
+	background-clip: padding-box;
+}
+
 .roadmap-table tbody tr:hover td:not(.non-cell) {
-	background: white;
+	background-color: white;
 }
 
 .roadmap-table tbody td.non-cell {
-    background: transparent;
+	background: transparent;
 }
 
 /* Cell immediately to the left */
 .roadmap-table tbody td.before-non-cell {
-    border-radius: 0 1rem 1rem 0;
+	border-radius: 0 1rem 1rem 0;
 }
 
 /* Cell immediately to the right */
 .roadmap-table tbody td.after-non-cell {
-    border-radius: 1rem 0 0 1rem;
+	border-radius: 1rem 0 0 1rem;
+}
+
+.roadmap-table tbody td.before-non-cell.after-non-cell {
+	border-radius: 1rem;
+}
+
+.roadmap-table tbody td.hase {
+	max-width: 2rem;
+	font-size: large;
+	font-weight: 900;
+	background-color: var(--hase);
+}
+
+.roadmap-table tbody tr .hase {
+	border-radius: 0 0 0 0;
+}
+
+.roadmap-table tbody tr:first-child td.hase:nth-child(9) {
+	border-radius: 1rem 0 0 0;
+}
+
+.roadmap-table tbody tr:first-child td.hase:nth-child(12) {
+	border-radius: 0 1rem 0 0;
+}
+
+.roadmap-table tbody tr:last-child td.hase:nth-child(9) {
+	border-radius: 0 0 0 1rem;
+}
+
+.roadmap-table tbody tr:last-child td.hase:nth-child(12) {
+	border-radius: 0 0 1rem 0;
 }
 
 .roadmap-table__ll {
@@ -159,7 +205,7 @@ main {
 
 .roadmap-table tbody select.occupied {
 	border-color: transparent;
-	background-color: transparent;
+	background: transparent;
 }
 
 .roadmap-table tbody select:hover {
@@ -184,42 +230,4 @@ main {
 
 .roadmap-table tbody select:focus {
 	outline: 2px solid var(--error-border);
-}
-
-.frame-editor__summary {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	align-items: center;
-	column-gap: 0.5rem;
-	row-gap: 0.15rem;
-}
-
-.frame-editor__name {
-	font-weight: 600;
-	overflow-wrap: anywhere;
-}
-
-.frame-editor__change,
-.frame-editor__reset {
-	border: 0;
-	background: transparent;
-	padding: 0.2rem 0.35rem;
-	color: #465a6d;
-	cursor: pointer;
-	font-size: 0.8rem;
-	text-decoration: underline;
-	text-underline-offset: 0.15rem;
-}
-
-.frame-editor__changed {
-	grid-column: 1 / -1;
-	font-size: 0.72rem;
-	color: #66727c;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-}
-
-.frame-editor__panel {
-	display: grid;
-	gap: 0.3rem;
 }

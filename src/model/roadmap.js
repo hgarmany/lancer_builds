@@ -112,6 +112,9 @@ export function initializeRoadmapCatalog(roadmap) {
 			workingCatalog.licenses[level] = {
 				...workingCatalog.licenses[level - 1]
 			};
+			workingCatalog.coreBonuses[level] = [
+				...workingCatalog.coreBonuses[level - 1]
+			];
 		}
 		else {
 			workingCatalog.skillTriggers[level] = {
@@ -121,6 +124,7 @@ export function initializeRoadmapCatalog(roadmap) {
 			workingCatalog.talents[level] = {};
         	workingCatalog.mechSkills[level] = {};
 			workingCatalog.licenses[level] = {};
+			workingCatalog.coreBonuses[level] = [];
 		}
 
 		// load in skill triggers
@@ -169,7 +173,7 @@ export function initializeRoadmapCatalog(roadmap) {
 
 		const coreBonusId = roadmap.levels[level].coreBonusId;
 		if (coreBonusId)
-			workingCatalog.coreBonuses.push(coreBonusId);
+			workingCatalog.coreBonuses[level][level / 3 - 1] = coreBonusId;
 	}
 }
 
