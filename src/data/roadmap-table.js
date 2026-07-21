@@ -5,6 +5,7 @@ export let workingCatalog = {
     talents: [],
     mechSkills: [],
     licenses: [],
+	frames: [],
     coreBonuses: []
 };
 

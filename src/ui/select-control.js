@@ -14,6 +14,7 @@ export function createChoiceSelect({
 	getLabel,
 	getDescription,
 	isEligible,
+	showDisabledOptions = false,
 	onSelected,
 	onChange
 }) {
@@ -28,20 +29,21 @@ export function createChoiceSelect({
 	let selectedItem = null;
 
 	for (const item of items) {
-		const option = document.createElement('option');
-		option.value = item?.id;
-		option.textContent = getLabel(item);
-		option.selected = item.id === selectedId;
-		option.disabled = !isEligible(item);
+		const eligible = isEligible(item);
+		if (!isEligible || showDisabledOptions || eligible) {
+			const option = document.createElement('option');
+			option.value = item?.id;
+			option.textContent = getLabel(item);
+			option.selected = item.id === selectedId;
 
-		if (getDescription) {
-			option.title = getDescription(item);
-		}
-		if (option.selected) {
-			selectedItem = item;
-		}
+			if (getDescription)
+				option.title = getDescription(item);
+			if (option.selected)
+				selectedItem = item;
+			option.disabled = !eligible;
 
-		select.append(option);
+			select.append(option);
+		}
 	}
 
 	if (selectedItem && onSelected) {

@@ -59,6 +59,21 @@ const mechSkillOptions = mechSkillIds.map((id, index) => ({
 	id,
 	name: mechSkills[index]
 }));
+const frameStatIds = [
+	'size',
+	'hp',
+	'armor',
+	'heatcap',
+	'evasion',
+	'speed',
+	'edef',
+	'tech_attack',
+	'sensor_range',
+	'repcap',
+	'save',
+	'sp'
+];
+
 const romanNumerals = ['I', 'II', 'III', 'IV'];
 
 /**
@@ -131,7 +146,7 @@ function renderRoadmapRow(roadmap, level) {
 	newRow.append(levelCell);
 
 	renderCharacterSelectCells(roadmap, level, newRow);
-	renderStats(level, newRow);
+	renderStats(roadmap, level, newRow);
 
 	return newRow;
 }
@@ -291,7 +306,7 @@ function renderMechSkillCell(roadmap, level) {
 					...mechSkillOptions.map(({ id }) => [
 						`.hase[data-stat="${id}"]`,
 						(_, targetLevel) =>
-							renderStatCell(targetLevel, id)
+							renderHASECell(targetLevel, id)
 					])
 				]);
 			}
@@ -377,12 +392,24 @@ function renderFrameCell(roadmap, level) {
 		onChange: event => {
 			const newFrameId = event.currentTarget.value || null;
 			const newIdx = Number(event.currentTarget.dataset.idx);
+			const thisRow = event.currentTarget.closest('tr');
 			const referenceLevel =
-				Number(event.currentTarget.closest('tr').dataset.level);
+				Number(thisRow.dataset.level);
 			roadmap.levels[referenceLevel].frameId = newFrameId;
 
 			rerenderFrom(roadmap, referenceLevel,
 				[['.frame', renderFrameCell]]);
+
+			if (newFrameId) {
+				console.log('test');
+				const activeFrameStats = frames.find(frame => frame.id == newFrameId)?.stats;
+				for (const id of frameStatIds) {
+					const val = activeFrameStats[id];
+					const cell = thisRow.querySelector('.' + id);
+					cell.value = val;
+					cell.textContent = (id == 'size' && val < 1) ? '½' : val;
+				}
+			}
 		}
 	});
 	
@@ -434,23 +461,25 @@ function renderCoreBonusCell(roadmap, level) {
 	return cell;
 }
 
-function renderStats(level, row) {
+function renderStats(roadmap, level, row) {
 	const spacer = document.createElement('td');
 	spacer.className = 'non-cell';
 
-	const statCells = mechSkillOptions.map(({ id }) =>
-		renderStatCell(level, id)
+	const haseCells = mechSkillOptions.map(({ id }) =>
+		renderHASECell(level, id)
 	);
 
-	row.append(spacer, ...statCells);
+	const frameStatCells = renderFrameStatCells(roadmap, level);
+
+	row.append(spacer, ...haseCells, spacer.cloneNode(), ...frameStatCells);
 }
 
-function renderStatCell(level, statId) {
+function renderHASECell(level, haseId) {
 	const cell = document.createElement('td');
-	cell.className = 'hase';
-	cell.dataset.stat = statId;
+	cell.className = 'stat hase';
+	cell.dataset.stat = haseId;
 
-	const value = workingCatalog.mechSkills[level]?.[statId] ?? 0;
+	const value = workingCatalog.mechSkills[level]?.[haseId] ?? 0;
 
 	cell.textContent = String(value);
 
@@ -458,6 +487,38 @@ function renderStatCell(level, statId) {
 		cell.classList.add('error');
 
 	return cell;
+}
+
+function renderFrameStatCells(roadmap, level) {
+	const activeFrameId = roadmap.levels[level]?.frameId ?? null;
+
+	function renderStatCell(id, val) {
+		const cell = document.createElement('td');
+		cell.className = `stat ${id}`;
+		cell.value = val;
+		cell.textContent =
+			(id == 'size' && val !== null && val < 1)
+			? '½' : val;
+		
+		return cell;
+	}
+
+	const statCells = [];
+
+	if (activeFrameId) {
+		const activeFrameStats = frames.find(frame => frame.id == activeFrameId)?.stats;
+		
+		for (const id of frameStatIds) {
+			statCells.push(renderStatCell(id, activeFrameStats[id]));
+		}
+	}
+	else {
+		for (const id of frameStatIds) {
+			statCells.push(renderStatCell(id, null));
+		}
+	}
+
+	return statCells;
 }
 
 function rerenderFrom(roadmap, referenceLevel, renderers) {

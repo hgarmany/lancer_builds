@@ -88,6 +88,7 @@ main {
 	text-transform: uppercase;
 	padding: 0rem 1rem 0.5rem 1rem;
 	white-space: nowrap;
+	vertical-align: bottom;
 }
 
 .roadmap-table tbody tr > :first-child {
@@ -101,7 +102,8 @@ main {
 }
 
 .roadmap-table tbody tr > :first-child,
-.roadmap-table tbody tr > :nth-child(9)
+.roadmap-table tbody tr > :nth-child(9),
+.roadmap-table tbody tr > :nth-child(14)
  {
 	border-radius: 1rem 0 0 1rem;
 }
@@ -112,7 +114,8 @@ main {
 }
 
 .roadmap-table tbody tr > :last-child,
-.roadmap-table tbody tr > :nth-child(7) {
+.roadmap-table tbody tr > :nth-child(7),
+.roadmap-table tbody tr > :nth-child(12) {
 	border-radius: 0 1rem 1rem 0;
 }
 
@@ -126,12 +129,10 @@ main {
 	border: 0;
 	background-color: rgba(255, 255, 255, 0.75);
 	vertical-align: middle;
-	text-align: center;
 	width: 10rem;
 }
 
-/* Visual row spacing for LL through Core Bonus only */
-.roadmap-table tbody tr > :nth-child(-n + 7) {
+.roadmap-table tbody tr > * {
 	border-top: 0.25rem solid transparent;
 	border-bottom: 0.25rem solid transparent;
 	background-clip: padding-box;
@@ -159,13 +160,25 @@ main {
 	border-radius: 1rem;
 }
 
+.roadmap-table tbody td.stat {
+	text-align: center;
+	font-size: large;
+}
+
+.roadmap-table tbody td.stat:nth-child(2n) {
+	background-color: rgba(255, 255, 255, 0.45);
+}
+
+.roadmap-table tbody tr:hover td.stat:nth-child(2n) {
+	background-color: rgba(255, 255, 255, 0.7);
+}
+
 .roadmap-table tbody td.hase {
 	max-width: 2rem;
-	font-size: large;
 	font-weight: 900;
 	background-color: var(--hase);
 }
-
+/* 
 .roadmap-table tbody tr .hase {
 	border-radius: 0 0 0 0;
 }
@@ -184,10 +197,25 @@ main {
 
 .roadmap-table tbody tr:last-child td.hase:nth-child(12) {
 	border-radius: 0 0 1rem 0;
+} */
+
+.roadmap-table thead th.stat-header {
+	position: relative;
+	width: 2.5rem;
+	min-width: 2.5rem;
+	height: 8rem;
+	padding: 0;
+	overflow: visible;
 }
 
-.roadmap-table__ll {
-	width: 4rem;
+.roadmap-table thead th.stat-header > span {
+	position: absolute;
+	left: 50%;
+	bottom: 0.5rem;
+	width: max-content;
+	transform: translateX(-0.25rem) rotate(-45deg);
+	transform-origin: left bottom;
+	white-space: nowrap;
 }
 
 .roadmap-table tbody td .select-group {
