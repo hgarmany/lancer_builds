@@ -218,11 +218,13 @@ main {
 	outline-offset: 1px;
 }
 
+.roadmap-table tbody td.error,
 .roadmap-table tbody select.error {
 	border-color: var(--error-border-light);
 	background-color: var(--error);
 }
 
+.roadmap-table tbody td.error:hover,
 .roadmap-table tbody select.error:hover {
 	border-color: var(--error-border);
 	background-color: var(--error-light);

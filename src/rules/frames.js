@@ -6,12 +6,12 @@ import {
 } from '../data/loader.js';
 
 import {
-	addLicenseLevelToCatalog
+	ensureLicenseSnapshot
 } from '../rules/licenses.js'
 
 export function frameIsEligible(level, frameId, roadmap) {
 	if (workingCatalog.licenses[level] === undefined)
-		addLicenseLevelToCatalog(level);
+		ensureLicenseSnapshot(level);
 	const licenseCatalog = workingCatalog.licenses[level];
 	
 	const frameIdx = frames.findIndex(m => m.id === frameId);

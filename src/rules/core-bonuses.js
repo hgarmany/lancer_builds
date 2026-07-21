@@ -6,7 +6,7 @@ import {
 } from '../data/loader.js';
 
 import {
-	addLicenseLevelToCatalog
+	ensureLicenseSnapshot
 } from '../rules/licenses.js'
 
 export function coreBonusesUpdateCatalog(level, coreBonusId) {
@@ -28,12 +28,15 @@ export function coreBonusesUpdateCatalog(level, coreBonusId) {
 
 export function coreBonusIsEligible(level, coreBonusId, roadmap) {
 	if (workingCatalog.licenses[level] === undefined)
-		addLicenseLevelToCatalog(level);
+		ensureLicenseSnapshot(level);
 	if (workingCatalog.coreBonuses[level] === undefined)
 		addCoreBonusLevelToCatalog(level);
 	const coreBonusCatalog = workingCatalog.coreBonuses[level];
 	const coreBonusIdx = coreBonuses.findIndex(m => m.id === coreBonusId);
 	const manufacturer = coreBonuses[coreBonusIdx].source;
+
+	if (manufacturer == 'GMS')
+		return true;
 
 	const licenses = workingCatalog.licenses[level];
 

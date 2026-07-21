@@ -11,6 +11,9 @@ import {
 	coreBonuses
 } from '../data/loader.js';
 import {
+	createChoiceSelect
+} from '../ui/select-control.js';
+import {
 	skillTriggerIsEligible,
 	skillTriggersUpdateCatalog,
 	skillTriggersResetCatalog
@@ -18,18 +21,20 @@ import {
 import {
 	talentIsEligible,
 	talentsUpdateCatalog,
-	talentsResetCatalog
+	talentsResetCatalog,
+	getTalentRankIfSelected
 } from '../rules/talents.js';
 import {
+	MAX_MECH_SKILL_RANK,
 	mechSkillIsEligible,
 	mechSkillsUpdateCatalog,
 	mechSkillsResetCatalog
 } from '../rules/mech-skills.js';
 import {
-	addLicenseLevelToCatalog,
 	licenseIsEligible,
 	licensesUpdateCatalog,
-	licensesResetCatalog
+	licensesResetCatalog,
+	getLicenseRankIfSelected
 } from '../rules/licenses.js';
 import {
 	frameIsEligible
@@ -50,6 +55,10 @@ const roadmapName = document.getElementById('roadmap-name');
 const tableBody = document.getElementById("roadmap-body");
 const maxLevelInput = document.getElementById('roadmap-max-level');
 
+const mechSkillOptions = mechSkillIds.map((id, index) => ({
+	id,
+	name: mechSkills[index]
+}));
 const romanNumerals = ['I', 'II', 'III', 'IV'];
 
 /**
@@ -156,58 +165,32 @@ function renderSkillTriggerCell(roadmap, level) {
 	const selectedIds = roadmap.levels[level]?.skillTriggerIds;
 	if (level != 0 && selectedIds)
 		selectedIds.length = 1;
-	
+
 	selectedIds?.forEach((selectedId, idx) => {
-		const select = document.createElement('select');
-		select.dataset.idx = idx;
+		const select = createChoiceSelect({
+			items: skillTriggers,
+			selectedId: selectedId,
+			index: idx,
+			placeholderText: "Select a skill trigger",
+			getLabel: skillTrigger => skillTrigger.name,
+			getDescription: skillTrigger => skillTrigger.description,
+			isEligible: skillTrigger =>
+				skillTriggerIsEligible(level, skillTrigger.id),
+			onSelected: skillTrigger =>
+				skillTriggersUpdateCatalog(level, skillTrigger.id),
+			onChange: event => {
+				const newSkillTriggerId = event.currentTarget.value || null;
+				const newIdx = Number(event.currentTarget.dataset.idx);
+				const referenceLevel =
+					Number(event.currentTarget.closest('tr').dataset.level);
+				roadmap.levels[referenceLevel].skillTriggerIds[newIdx] = newSkillTriggerId;
+				skillTriggersResetCatalog(referenceLevel);
 
-		// default dialog
-		const placeholder = document.createElement("option");
-		placeholder.textContent = "Select a skill trigger";
-		select.append(placeholder);
-
-		for (const skillTrigger of skillTriggers) {
-			const option = document.createElement('option');
-			option.value = skillTrigger.id;
-			option.title = skillTrigger.description
-				.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n');
-			option.selected = selectedIds[idx] == skillTrigger.id;
-			
-			option.textContent = skillTrigger.name;
-			
-			// disable invalid skills
-			option.disabled = !skillTriggerIsEligible(
-				level, skillTrigger.id, roadmap);
-			
-			if (option.selected === true) {
-				skillTriggersUpdateCatalog(level, skillTrigger.id);
-				select.classList.add('occupied');
+				rerenderFrom(roadmap, referenceLevel,
+					[['.skill-trigger', renderSkillTriggerCell]]);
 			}
-
-			// mark out skills that have been improperly obtained
-			if (option.disabled && option.selected)
-				select.classList.add('error');
-			select.append(option);
-		}
-		
-		// any change to a skill trigger selection requires
-		// a recheck on all later skill triggers
-		select.addEventListener("change", event => {
-			const newSkillTriggerId = event.currentTarget.value || null;
-			const newIdx = parseInt(event.currentTarget.dataset.idx);
-			const referenceLevel =
-				parseInt(event.currentTarget.closest('tr').dataset.level);
-			roadmap.levels[referenceLevel].skillTriggerIds[newIdx] = newSkillTriggerId;
-			skillTriggersResetCatalog(referenceLevel);
-
-			document.querySelectorAll('.skill-trigger').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					element.replaceWith(
-						renderSkillTriggerCell(roadmap, targetLevel));
-				}
-			});
 		});
+
 		choiceWrapper.append(select);
 	});
 	
@@ -229,64 +212,40 @@ function renderTalentCell(roadmap, level) {
 		selectedIds.length = 1;
 	
 	selectedIds?.forEach((selectedId, idx) => {
-		const select = document.createElement('select');
-		select.dataset.idx = idx;
+		const select = createChoiceSelect({
+			items: talents,
+			selectedId: selectedId,
+			index: idx,
+			placeholderText: "Select a talent",
+			getLabel: talent => {
+				const rank = getTalentRankIfSelected(
+					level, talent.id);
 
-		// default dialog
-		const placeholder = document.createElement("option");
-		placeholder.textContent = "Select a talent";
-		select.append(placeholder);
+				return rank > 3
+					? talent.name
+					: `${talent.name} ${romanNumerals[rank - 1]}`;
+			},
+			getDescription: talent => {
+				return talent.description
+					.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n');
+			},
+			isEligible: talent =>
+				talentIsEligible(level, talent.id),
+			onSelected: talent =>
+				talentsUpdateCatalog(level, talent.id),
+			onChange: event => {
+				const newTalentId = event.currentTarget.value || null;
+				const newIdx = Number(event.currentTarget.dataset.idx);
+				const referenceLevel =
+					Number(event.currentTarget.closest('tr').dataset.level);
+				roadmap.levels[referenceLevel].talentIds[newIdx] = newTalentId;
+				talentsResetCatalog(referenceLevel);
 
-		for (const talent of talents) {
-			const option = document.createElement('option');
-			option.value = talent.id;
-			option.title = talent.description
-				.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n');
-			option.selected = selectedIds[idx] == talent.id;
-			
-			// disable invalid skills
-			option.disabled = !talentIsEligible(
-				level, talent.id, roadmap);
-			
-			const catalogLevel = workingCatalog.talents[level];
-			if (catalogLevel) {
-				const rank = catalogLevel[talent.id] ?? 0;
-				option.textContent = rank >= 3 ?
-					talent.name : `${talent.name} ${romanNumerals[rank]}`;
+				rerenderFrom(roadmap, referenceLevel,
+					[['.talent', renderTalentCell]]);
 			}
-			else {
-				option.textContent = `${talent.name} I`;
-			}
-
-			if (option.selected === true) {
-				talentsUpdateCatalog(level, talent.id);
-				select.classList.add('occupied');
-			}
-
-			// mark out skills that have been improperly obtained
-			if (option.disabled && option.selected)
-				select.classList.add('error');
-			select.append(option);
-		}
-		
-		// any change to a skill trigger selection requires
-		// a recheck on all later skill triggers
-		select.addEventListener("change", event => {
-			const newTalentId = event.currentTarget.value || null;
-			const newIdx = parseInt(event.currentTarget.dataset.idx);
-			const referenceLevel =
-				parseInt(event.currentTarget.closest('tr').dataset.level);
-			roadmap.levels[referenceLevel].talentIds[newIdx] = newTalentId;
-			talentsResetCatalog(referenceLevel);
-
-			document.querySelectorAll('.talent').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					element.replaceWith(
-						renderTalentCell(roadmap, targetLevel));
-				}
-			});
 		});
+
 		choiceWrapper.append(select);
 	});
 	
@@ -306,77 +265,38 @@ function renderMechSkillCell(roadmap, level) {
 	const selectedIds = roadmap.levels[level]?.mechSkillIds;
 	if (level != 0 && selectedIds)
 		selectedIds.length = 1;
-	
+
 	selectedIds?.forEach((selectedId, idx) => {
-		const select = document.createElement('select');
-		select.dataset.idx = idx;
+		const select = createChoiceSelect({
+			items: mechSkillOptions,
+			selectedId: selectedId,
+			index: idx,
+			placeholderText: "HASE",
+			getLabel: mechSkill => mechSkill.name,
+			isEligible: mechSkill =>
+				mechSkillIsEligible(level, mechSkill.id),
+			onSelected: mechSkill =>
+				mechSkillsUpdateCatalog(level, mechSkill.id),
+			onChange: event => {
+				const newMechSkillId = event.currentTarget.value || null;
+				const newIdx = Number(event.currentTarget.dataset.idx);
+				const referenceLevel =
+					Number(event.currentTarget.closest('tr').dataset.level);
+				roadmap.levels[referenceLevel].mechSkillIds[newIdx] = newMechSkillId;
+				mechSkillsResetCatalog(referenceLevel);
 
-		// default dialog
-		const placeholder = document.createElement("option");
-		placeholder.textContent = "HASE";
-		select.append(placeholder);
+				rerenderFrom(roadmap, referenceLevel, [
+					['.mech-skill', renderMechSkillCell],
 
-		mechSkillIds.forEach((mechSkillId, idx) => {
-			const option = document.createElement('option');
-			option.value = mechSkillId;
-			option.selected = selectedId == mechSkillId;
-			
-			// disable invalid skills
-			option.disabled = !mechSkillIsEligible(
-				level, mechSkillId, roadmap);
-			
-			option.textContent = mechSkills[idx];
-
-			if (option.selected === true) {
-				mechSkillsUpdateCatalog(level, mechSkillId);
-				select.classList.add('occupied');
+					...mechSkillOptions.map(({ id }) => [
+						`.hase[data-stat="${id}"]`,
+						(_, targetLevel) =>
+							renderStatCell(targetLevel, id)
+					])
+				]);
 			}
-
-			// mark out skills that have been improperly obtained
-			if (option.disabled && option.selected)
-				select.classList.add('error');
-			select.append(option);
 		});
-		
-		// any change to a mech skill selection requires
-		// a recheck on all later mech skills
-		select.addEventListener("change", event => {
-			const newMechSkillId = event.currentTarget.value || null;
-			const newIdx = parseInt(event.currentTarget.dataset.idx);
-			const referenceLevel =
-				parseInt(event.currentTarget.closest('tr').dataset.level);
-			roadmap.levels[referenceLevel].mechSkillIds[newIdx] = newMechSkillId;
-			mechSkillsResetCatalog(referenceLevel);
 
-			document.querySelectorAll('.mech-skill').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					element.replaceWith(
-						renderMechSkillCell(roadmap, targetLevel));
-				}
-			});
-			document.querySelectorAll('.hase').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					if (element.dataset.h) {
-						element.replaceWith(
-							renderHullCell(targetLevel));
-					}
-					if (element.dataset.a) {
-						element.replaceWith(
-							renderAgilityCell(targetLevel));
-					}
-					if (element.dataset.s) {
-						element.replaceWith(
-							renderSystemsCell(targetLevel));
-					}
-					if (element.dataset.e) {
-						element.replaceWith(
-							renderEngineeringCell(targetLevel));
-					}
-				}
-			});
-		});
 		choiceWrapper.append(select);
 	});
 	
@@ -389,80 +309,41 @@ function renderLicenseCell(roadmap, level) {
 	const cell = document.createElement('td');
 	cell.className = level == 0 ? 'non-cell' : 'license';
 
-	//addLicenseLevelToCatalog(level);
-
 	if (level != 0) {
 		// isolate roadmap's current license
 		const selectedId = roadmap.levels[level]?.licenseId;
 
-		const select = document.createElement('select');
+		const select = createChoiceSelect({
+			items: licenses,
+			selectedId: selectedId,
+			placeholderText: "Select a license",
+			getLabel: license => {
+				const rank = getLicenseRankIfSelected(
+					level, license.id);
 
-		// default dialog
-		const placeholder = document.createElement("option");
-		placeholder.textContent = "Select a license";
-		select.append(placeholder);
+				return rank > 3
+					? license.name
+					: `${license.name} ${romanNumerals[rank - 1]}`;
+			},
+			isEligible: license =>
+				licenseIsEligible(level, license.id),
+			onSelected: license =>
+				licensesUpdateCatalog(level, license.id),
+			onChange: event => {
+				const newLicenseId = event.currentTarget.value || null;
+				const newIdx = Number(event.currentTarget.dataset.idx);
+				const referenceLevel =
+					Number(event.currentTarget.closest('tr').dataset.level);
+				roadmap.levels[referenceLevel].licenseId = newLicenseId;
+				licensesResetCatalog(referenceLevel);
 
-		for (const license of licenses) {
-			const option = document.createElement('option');
-			option.value = license.id;
-			option.selected = selectedId == license.id;
-			
-			// disable invalid licenses
-			option.disabled = !licenseIsEligible(
-				level, license.id, roadmap);
-			
-			const catalogLevel = workingCatalog.licenses[level];
-			if (catalogLevel) {
-				const rank = catalogLevel[license.id] ?? 0;
-				option.textContent = rank >= 3 ?
-					license.name : `${license.name} ${romanNumerals[rank]}`;
+				rerenderFrom(roadmap, referenceLevel,
+					[['.license', renderLicenseCell]]);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.frame', renderFrameCell]]);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.core-bonus', renderCoreBonusCell]]);
 			}
-			else {
-				option.textContent = `${talent.name} I`;
-			}
-
-			if (option.selected === true) {
-				licensesUpdateCatalog(level, license.id);
-				select.classList.add('occupied');
-			}
-
-			// mark out licenses that have been improperly obtained
-			if (option.disabled && option.selected)
-				select.classList.add('error');
-			select.append(option);
-		}
-		
-		// any change to a license selection requires
-		// a recheck on all later licenses and frames
-		select.addEventListener("change", event => {
-			const newLicenseId = event.currentTarget.value || null;
-			const newIdx = parseInt(event.currentTarget.dataset.idx);
-			const referenceLevel =
-				parseInt(event.currentTarget.closest('tr').dataset.level);
-			roadmap.levels[referenceLevel].licenseId = newLicenseId;
-			licensesResetCatalog(referenceLevel);
-
-			document.querySelectorAll('.license').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					element.replaceWith(
-						renderLicenseCell(roadmap, targetLevel));
-				}
-			});
-			document.querySelectorAll('.frame').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					element.replaceWith(
-						renderFrameCell(roadmap, targetLevel));
-				}
-			});
-			document.querySelectorAll('.core-bonus').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					element.replaceWith(
-						renderCoreBonusCell(roadmap, targetLevel));
-				}
-			});
 		});
 		
 		cell.append(select);
@@ -482,50 +363,27 @@ function renderFrameCell(roadmap, level) {
 	// isolate roadmap's current frame
 	const selectedId = roadmap.levels[level]?.frameId;
 
-	const select = document.createElement('select');
+	const select = createChoiceSelect({
+		items: frames,
+		selectedId: selectedId,
+		placeholderText: "Select a frame",
+		getLabel: frame => frame.name,
+		getDescription: frame => {
+			return frame.description
+				.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n');
+		},
+		isEligible: frame =>
+			frameIsEligible(level, frame.id),
+		onChange: event => {
+			const newFrameId = event.currentTarget.value || null;
+			const newIdx = Number(event.currentTarget.dataset.idx);
+			const referenceLevel =
+				Number(event.currentTarget.closest('tr').dataset.level);
+			roadmap.levels[referenceLevel].frameId = newFrameId;
 
-	// default dialog
-	const placeholder = document.createElement("option");
-	placeholder.textContent = "Select a frame";
-	select.append(placeholder);
-
-	for (const frame of frames) {
-		const option = document.createElement('option');
-		option.value = frame.id;
-		option.selected = selectedId == frame.id;
-		
-		// disable invalid frames
-		option.disabled = !frameIsEligible(
-			level, frame.id, roadmap);
-		
-		option.textContent = frame.name;
-
-		if (option.selected === true) {
-			select.classList.add('occupied');
+			rerenderFrom(roadmap, referenceLevel,
+				[['.frame', renderFrameCell]]);
 		}
-
-		// mark out frames that have been improperly obtained
-		if (option.disabled && option.selected)
-			select.classList.add('error');
-		select.append(option);
-	}
-
-	// any change to a frame selection requires
-	// a recheck on all later frames
-	select.addEventListener("change", event => {
-		const newFrameId = event.currentTarget.value || null;
-		const newIdx = parseInt(event.currentTarget.dataset.idx);
-		const referenceLevel =
-			parseInt(event.currentTarget.closest('tr').dataset.level);
-		roadmap.levels[referenceLevel].frameId = newFrameId;
-
-		document.querySelectorAll('.frame').forEach(element => {
-			const targetLevel = parseInt(element.closest('tr').dataset.level);
-			if (targetLevel >= referenceLevel) {
-				element.replaceWith(
-					renderFrameCell(roadmap, targetLevel));
-			}
-		});
 	});
 	
 	cell.append(select);
@@ -544,54 +402,32 @@ function renderCoreBonusCell(roadmap, level) {
 		// isolate roadmap's current core bonus
 		const selectedId = roadmap.levels[level]?.coreBonusId;
 
-		const select = document.createElement('select');
+		const select = createChoiceSelect({
+			items: coreBonuses,
+			selectedId: selectedId,
+			placeholderText: "Select a core bonus",
+			getLabel: coreBonus => coreBonus.name,
+			getDescription: coreBonus => {
+				return coreBonus.description
+					.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n');
+			},
+			isEligible: coreBonus =>
+				coreBonusIsEligible(level, coreBonus.id),
+			onSelected: coreBonus =>
+				coreBonusesUpdateCatalog(level, coreBonus.id),
+			onChange: event => {
+				const newCoreBonusId = event.currentTarget.value || null;
+				const newIdx = Number(event.currentTarget.dataset.idx);
+				const referenceLevel =
+					Number(event.currentTarget.closest('tr').dataset.level);
+				roadmap.levels[referenceLevel].coreBonusId = newCoreBonusId;
+				coreBonusesResetCatalog(referenceLevel);
 
-		// default dialog
-		const placeholder = document.createElement("option");
-		placeholder.textContent = "Select a core bonus";
-		select.append(placeholder);
-
-		for (const coreBonus of coreBonuses) {
-			const option = document.createElement('option');
-			option.value = coreBonus.id;
-			option.selected = selectedId == coreBonus.id;
-			
-			// disable invalid frames
-			option.disabled = !coreBonusIsEligible(
-				level, coreBonus.id, roadmap);
-			
-			option.textContent = coreBonus.name;
-
-			if (option.selected === true) {
-				coreBonusesUpdateCatalog(level, coreBonus.id);
-				select.classList.add('occupied');
+				rerenderFrom(roadmap, referenceLevel,
+					[['.core-bonus', renderCoreBonusCell]]);
 			}
-
-			// mark out frames that have been improperly obtained
-			if (option.disabled && option.selected)
-				select.classList.add('error');
-			select.append(option);
-		}
-
-		// any change to a frame selection requires
-		// a recheck on all later frames
-		select.addEventListener("change", event => {
-			const newCoreBonusId = event.currentTarget.value || null;
-			const newIdx = parseInt(event.currentTarget.dataset.idx);
-			const referenceLevel =
-				parseInt(event.currentTarget.closest('tr').dataset.level);
-			roadmap.levels[referenceLevel].coreBonusId = newCoreBonusId;
-			coreBonusesResetCatalog(referenceLevel);
-
-			document.querySelectorAll('.core-bonus').forEach(element => {
-				const targetLevel = parseInt(element.closest('tr').dataset.level);
-				if (targetLevel >= referenceLevel) {
-					element.replaceWith(
-						renderCoreBonusCell(roadmap, targetLevel));
-				}
-			});
 		});
-		
+
 		cell.append(select);
 	}
 
@@ -599,61 +435,43 @@ function renderCoreBonusCell(roadmap, level) {
 }
 
 function renderStats(level, row) {
-	// HASE
-	const blankCell = document.createElement('td');
-	blankCell.className = 'non-cell';
-	const hullCell = renderHullCell(level);
-	const agilityCell = renderAgilityCell(level);
-	const systemCell = renderSystemsCell(level);
-	const engineeringCell = renderEngineeringCell(level);
+	const spacer = document.createElement('td');
+	spacer.className = 'non-cell';
 
-	row.append(
-		blankCell,
-		hullCell,
-		agilityCell,
-		systemCell,
-		engineeringCell
+	const statCells = mechSkillOptions.map(({ id }) =>
+		renderStatCell(level, id)
 	);
+
+	row.append(spacer, ...statCells);
 }
 
-function renderHullCell(level) {
+function renderStatCell(level, statId) {
 	const cell = document.createElement('td');
 	cell.className = 'hase';
-	const val = workingCatalog.mechSkills[level].h ?? 0;
-	cell.dataset.h = val;
-	cell.textContent = val;
+	cell.dataset.stat = statId;
+
+	const value = workingCatalog.mechSkills[level]?.[statId] ?? 0;
+
+	cell.textContent = String(value);
+
+	if (value > MAX_MECH_SKILL_RANK)
+		cell.classList.add('error');
 
 	return cell;
 }
 
-function renderAgilityCell(level) {
-	const cell = document.createElement('td');
-	cell.className = 'hase';
-	const val = workingCatalog.mechSkills[level].a ?? 0;
-	cell.dataset.a = val;
-	cell.textContent = val;
+function rerenderFrom(roadmap, referenceLevel, renderers) {
+	for (const [selector, renderer] of renderers) {
+		document.querySelectorAll(selector).forEach(cell => {
+			const level = Number(cell.closest('tr').dataset.level);
 
-	return cell;
-}
-
-function renderSystemsCell(level) {
-	const cell = document.createElement('td');
-	cell.className = 'hase';
-	const val = workingCatalog.mechSkills[level].s ?? 0;
-	cell.dataset.s = val;
-	cell.textContent = val;
-
-	return cell;
-}
-
-function renderEngineeringCell(level) {
-	const cell = document.createElement('td');
-	cell.className = 'hase';
-	const val = workingCatalog.mechSkills[level].e ?? 0;
-	cell.dataset.e = val;
-	cell.textContent = val;
-
-	return cell;
+			if (level >= referenceLevel) {
+				cell.replaceWith(renderer(roadmap, level));
+			}
+		});
+	}
+	console.log(roadmap);
+	console.log(workingCatalog);
 }
 
 function resizeViaHide(roadmap, maxLevel) {

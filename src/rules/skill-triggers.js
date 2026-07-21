@@ -26,7 +26,7 @@ export function skillTriggersUpdateCatalog(level, skillTriggerId) {
 	}
 }
 
-export function skillTriggerIsEligible(level, skillTriggerId, roadmap) {
+export function skillTriggerIsEligible(level, skillTriggerId) {
 	if (workingCatalog.skillTriggers[level] === undefined)
 		addSkillTriggerLevelToCatalog(level);
 	const catalog = workingCatalog.skillTriggers[level];
