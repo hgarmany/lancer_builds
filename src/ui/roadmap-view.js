@@ -436,6 +436,8 @@ function renderCoreBonusCell(roadmap, level) {
 
 				rerenderFrom(roadmap, referenceLevel,
 					[['.core-bonus', renderCoreBonusCell]]);
+					
+				rerenderMechStats(roadmap, referenceLevel);
 			}
 		});
 
