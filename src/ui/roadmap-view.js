@@ -8,8 +8,7 @@ import {
 	mechSkills,
 	licenses,
 	frames,
-	coreBonuses,
-	weapons
+	coreBonuses
 } from '../data/loader.js';
 import {
 	createChoiceSelect
@@ -38,7 +37,9 @@ import {
 	getLicenseRankIfSelected
 } from '../rules/licenses.js';
 import {
-	frameIsEligible
+	frameIsEligible,
+	getActiveFrameId,
+	getNextExplicitFrameLevel
 } from '../rules/frames.js';
 import {
 	coreBonusIsEligible,
@@ -46,9 +47,14 @@ import {
 } from '../rules/core-bonuses.js';
 import {
 	calculateMechStats,
-	MECH_STAT_IDS,
 	DISPLAYED_MECH_STAT_IDS
 } from '../rules/stats.js';
+import {
+	deriveRoadmapWeaponLoadout,
+	reconcileWeaponSlots,
+	setLoadoutChoice,
+	setWeaponSelection
+} from '../model/loadout-state.js';
 import {
 	workingCatalog,
 	coreBonusesResetCatalog
@@ -105,6 +111,7 @@ export function wireRoadmapHeader(roadmap) {
  */
 export function initializeRoadmapView(roadmap) {
 	tableBody.replaceChildren();
+	reconcileWeaponSlots(roadmap, 0);
 	
 	for (let rowLevel = 0; rowLevel <= MAX_LICENSE_LEVELS; rowLevel++) {
 		if (roadmap.levels[rowLevel]?.level !== rowLevel) {
@@ -136,6 +143,7 @@ function renderRoadmapRow(roadmap, level) {
 
 	renderCharacterSelectCells(roadmap, level, newRow);
 	renderStats(roadmap, level, newRow);
+	newRow.append(renderWeaponMountCell(roadmap, level));
 
 	return newRow;
 }
@@ -351,6 +359,8 @@ function renderLicenseCell(roadmap, level) {
 					[['.frame', renderFrameCell]]);
 				rerenderFrom(roadmap, referenceLevel,
 					[['.core-bonus', renderCoreBonusCell]]);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.weapon-mounts', renderWeaponMountCell]]);
 			}
 		});
 		
@@ -387,6 +397,14 @@ function renderFrameCell(roadmap, level) {
 			const referenceLevel =
 				Number(event.currentTarget.closest('tr').dataset.level);
 			roadmap.levels[referenceLevel].frameId = newFrameId;
+			const stoppingLevel =
+				getNextExplicitFrameLevel(roadmap, referenceLevel);
+
+			reconcileWeaponSlots(
+				roadmap,
+				referenceLevel,
+				stoppingLevel
+			);
 
 			rerenderFrom(roadmap, referenceLevel,
 				[['.frame', renderFrameCell]]);
@@ -394,7 +412,13 @@ function renderFrameCell(roadmap, level) {
 			rerenderMechStats(
 				roadmap,
 				referenceLevel,
-				getNextExplicitFrameLevel(roadmap, referenceLevel)
+				stoppingLevel
+			);
+			rerenderFrom(
+				roadmap,
+				referenceLevel,
+				[['.weapon-mounts', renderWeaponMountCell]],
+				stoppingLevel
 			);
 		}
 	});
@@ -438,7 +462,10 @@ function renderCoreBonusCell(roadmap, level) {
 
 				rerenderFrom(roadmap, referenceLevel,
 					[['.core-bonus', renderCoreBonusCell]]);
-					
+				reconcileWeaponSlots(roadmap, referenceLevel);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.weapon-mounts', renderWeaponMountCell]]);
+
 				rerenderMechStats(roadmap, referenceLevel);
 			}
 		});
@@ -463,10 +490,177 @@ function renderStats(roadmap, level, row) {
 		spacer,
 		...haseCells,
 		spacer.cloneNode(),
-		...mechStatCells
+		...mechStatCells,
+		spacer.cloneNode()
 	);
 }
 
+function renderWeaponMountCell(roadmap, level) {
+	const cell = document.createElement('td');
+	cell.className = 'weapon-mounts';
+	const loadout = deriveRoadmapWeaponLoadout(roadmap, level);
+
+	if (loadout.mounts.length === 0) {
+		return cell;
+	}
+
+	const mountGrid = document.createElement('div');
+	mountGrid.className = 'weapon-mount-grid';
+	const controls = renderLoadoutChoices(
+		roadmap,
+		level,
+		loadout.choices
+	);
+
+	loadout.mounts.forEach(mount => {
+		const mountGroup = document.createElement('section');
+		mountGroup.className = 'weapon-mount';
+		mountGroup.classList.add(...mount.traits);
+
+		const mountHeader = document.createElement('header');
+		mountHeader.className = 'weapon-mount-header';
+
+		const mountName = document.createElement('strong');
+		mountName.textContent = mount.type;
+
+		const badges = renderMountBadges(mount);
+		mountHeader.append(mountName, badges);
+
+		const slotWrapper = document.createElement('div');
+		slotWrapper.className = 'weapon-mount-slots';
+
+		mount.slots.forEach((slot, slotIndex) => {
+			const select = createChoiceSelect({
+				showDisabledOptions: true,
+				items: slot.options,
+				selectedId: slot.selectedId,
+				index: slotIndex,
+				placeholderText: slot.label,
+				getLabel: weapon => weapon.name,
+				getDescription: weapon =>
+					(weapon.description ?? weapon.effect ?? '')
+						.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
+				isEligible: weapon =>
+					slot.eligibleIds.has(weapon.id),
+				onChange: event => {
+					const referenceLevel = Number(
+						event.currentTarget.closest('tr').dataset.level
+					);
+					setWeaponSelection({
+						roadmap,
+						level: referenceLevel,
+						mountId: mount.id,
+						slotIndex,
+						weaponId: event.currentTarget.value || null
+					});
+
+					rerenderFrom(roadmap, referenceLevel,
+						[['.weapon-mounts', renderWeaponMountCell]]);
+				}
+			});
+			select.classList.add(...slot.traits);
+			select.setAttribute(
+				'aria-label',
+				`${mount.type} weapon ${slotIndex + 1}`
+			);
+
+			slotWrapper.append(createWeaponSelectDisplay(
+				select,
+				slot
+			));
+		});
+
+		mountGroup.append(mountHeader, slotWrapper);
+		mountGrid.append(mountGroup);
+	});
+
+	if (controls.childElementCount > 0)
+		cell.append(controls);
+
+	cell.append(mountGrid);
+	return cell;
+}
+
+function createWeaponSelectDisplay(select, slot) {
+	const wrapper = document.createElement('div');
+	wrapper.className = 'weapon-select-control';
+	const label = document.createElement('span');
+	label.className = 'weapon-select-label';
+	const selectedWeapon = slot.options.find(
+		weapon => weapon.id === slot.selectedId
+	);
+
+	label.textContent = selectedWeapon?.name ?? slot.label;
+	label.classList.toggle('placeholder', !selectedWeapon);
+	label.setAttribute('aria-hidden', 'true');
+	wrapper.append(select, label);
+
+	return wrapper;
+}
+
+function renderMountBadges(mount) {
+	const badges = document.createElement('span');
+	badges.className = 'weapon-mount-badges';
+
+	for (const label of mount.badges)
+		badges.append(createMountBadge(label));
+
+	return badges;
+}
+
+function createMountBadge(text) {
+	const badge = document.createElement('span');
+	badge.className = 'weapon-mount-badge';
+	badge.textContent = text;
+	return badge;
+}
+
+function renderLoadoutChoices(
+	roadmap,
+	level,
+	choices
+) {
+	const controls = document.createElement('div');
+	controls.className = 'loadout-choice-controls';
+
+	for (const choice of choices) {
+		controls.append(
+			createLoadoutChoiceControl(
+				choice,
+				value => {
+					setLoadoutChoice({
+						roadmap,
+						level,
+						choiceId: choice.id,
+						value
+					});
+					rerenderFrom(roadmap, level,
+						[['.weapon-mounts', renderWeaponMountCell]]);
+				}
+			)
+		);
+	}
+
+	return controls;
+}
+
+function createLoadoutChoiceControl(choice, onChange) {
+	const control = document.createElement('label');
+	control.className = 'loadout-choice-control';
+	const caption = document.createElement('span');
+	caption.textContent = choice.label;
+	const select = createChoiceSelect({
+		items: choice.options,
+		selectedId: choice.selectedId,
+		placeholderText: choice.placeholder,
+		getLabel: option => option.name,
+		isEligible: () => true,
+		onChange: event => onChange(event.currentTarget.value || null)
+	});
+
+	control.append(caption, select);
+	return control;
+}
 function renderHASECell(level, haseId) {
 	const cell = document.createElement('td');
 	cell.className = 'stat hase';
@@ -551,16 +745,25 @@ function renderMechStatCell(statId, value) {
 	return cell;
 }
 
-function rerenderFrom(roadmap, referenceLevel, renderers) {
+function rerenderFrom(
+	roadmap,
+	referenceLevel,
+	renderers,
+	stoppingLevel = Infinity
+) {
 	for (const [selector, renderer] of renderers) {
 		document.querySelectorAll(selector).forEach(cell => {
 			const level = Number(cell.closest('tr').dataset.level);
 
-			if (level >= referenceLevel) {
+			if (
+				level >= referenceLevel &&
+				level < stoppingLevel
+			) {
 				cell.replaceWith(renderer(roadmap, level));
 			}
 		});
 	}
+	console.log(roadmap);
 }
 
 function resizeViaHide(roadmap, maxLevel) {
@@ -588,28 +791,4 @@ function resizeViaHide(roadmap, maxLevel) {
 			row.replaceWith(renderRoadmapRow(roadmap, rowLevel));
 		}
 	}
-}
-
-function getActiveFrameId(roadmap, level) {
-	for (let targetLevel = level; targetLevel >= 0; targetLevel--) {
-		const frameId = roadmap.levels[targetLevel]?.frameId;
-
-		if (frameId)
-			return frameId;
-	}
-
-	return null;
-}
-
-function getNextExplicitFrameLevel(roadmap, level) {
-	for (
-		let targetLevel = level + 1;
-		targetLevel < roadmap.levels.length;
-		targetLevel++
-	) {
-		if (roadmap.levels[targetLevel]?.frameId)
-			return targetLevel;
-	}
-
-	return Infinity;
 }

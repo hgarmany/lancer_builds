@@ -27,3 +27,27 @@ export function frameIsEligible(level, frameId, roadmap) {
 	}
 	return false;
 }
+
+export function getActiveFrameId(roadmap, level) {
+	for (let targetLevel = level; targetLevel >= 0; targetLevel--) {
+		const frameId = roadmap.levels[targetLevel]?.frameId;
+
+		if (frameId)
+			return frameId;
+	}
+
+	return null;
+}
+
+export function getNextExplicitFrameLevel(roadmap, level) {
+	for (
+		let targetLevel = level + 1;
+		targetLevel < roadmap.levels.length;
+		targetLevel++
+	) {
+		if (roadmap.levels[targetLevel]?.frameId)
+			return targetLevel;
+	}
+
+	return Infinity;
+}

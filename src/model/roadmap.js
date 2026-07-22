@@ -59,9 +59,11 @@ function createRoadmapLevel(level) {
 		mechSkillIds: createEmptySlots(limits.mechSkills),
 		licenseId: null,
 		coreBonusId: null,
+		weaponIds: {},
+		loadoutSelections: {},
 
 		// null means "continue using the previously active frame."
-		frameId: null
+		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null
 	};
 }
 
@@ -216,6 +218,10 @@ function validateLevel(level) {
  * @property {string|null} licenseId
  * @property {string|null} coreBonusId
  * @property {string|null} frameId
+ * @property {Object<string, (string|null)[]>} weaponIds Sparse weapon
+ *   overrides keyed by stable mount ID; missing/empty slots inherit.
+ * @property {Object<string, string|null>} loadoutSelections Sparse mount
+ *   choice overrides; missing/empty choices inherit.
  */
 
 /**

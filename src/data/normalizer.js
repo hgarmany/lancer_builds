@@ -67,6 +67,7 @@ function slugify(value) {
 	return value
 		.toLowerCase()
 		.normalize("NFKD")
+		.replace(/['’‘]/g, "")
 		.replace(/[^a-z0-9]+/g, "_")
 		.replace(/^_+|_+$/g, "");
 }

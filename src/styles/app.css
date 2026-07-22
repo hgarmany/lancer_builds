@@ -6,6 +6,7 @@
 	--error-light: #ffe9e9;
 	--select-border: #6f7e8a;
 	--select-border-light: #b4c7d5;
+	--select-fill: #f8fafb;
 	--error-border: #8a6f6f;
 	--error-border-light: #d4a2a2;
 	--ll-highlight: #263746;
@@ -116,7 +117,8 @@ main {
 
 .roadmap-table tbody tr > :last-child,
 .roadmap-table tbody tr > :nth-child(7),
-.roadmap-table tbody tr > :nth-child(12) {
+.roadmap-table tbody tr > :nth-child(12),
+.roadmap-table tbody tr > :nth-child(25) {
 	border-radius: 0 1rem 1rem 0;
 }
 
@@ -126,7 +128,7 @@ main {
 }
 
 .roadmap-table tbody td {
-	padding: 0.5rem;
+	padding: 0.25rem;
 	border: 0;
 	background-color: rgba(255, 255, 255, 0.75);
 	vertical-align: middle;
@@ -209,7 +211,7 @@ main {
 	padding: 0.25rem 0.4rem 0.25rem 0.75rem;
 	border: 0.15rem solid var(--select-border-light);
 	border-radius: 0.65rem;
-	background-color: #f8fafb;
+	background-color: var(--select-fill);
 }
 
 .roadmap-table tbody select.occupied {
@@ -241,4 +243,152 @@ main {
 
 .roadmap-table tbody select:focus {
 	outline: 2px solid var(--error-border);
+}
+
+.roadmap-table tbody td.weapon-mounts {
+	padding: 0.5rem;
+	border-radius: 1rem;
+}
+
+.loadout-choice-controls {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin-bottom: 0.3rem;
+	white-space: nowrap;
+}
+
+.loadout-choice-control {
+	display: flex;
+	align-items: center;
+	gap: 0.2rem;
+	color: #58636c;
+	font-size: 0.62rem;
+	font-weight: 700;
+}
+
+.roadmap-table tbody .loadout-choice-control select {
+	width: min-content;
+	padding: 0.12rem 0.25rem;
+	font-size: 0.68rem;
+}
+
+.roadmap-table tbody .loadout-choice-control select.occupied {
+	width: max-content;
+}
+
+.weapon-mount-grid {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: max-content;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.weapon-mount {
+	display: grid;
+	gap: 0.2rem;
+	padding: 0.25rem;
+	border: 1px solid transparent;
+	border-radius: 0.55rem;
+	background-color: var(--background);
+}
+
+.weapon-mount.auto-stabilized {
+	border-color: var(--cb-accent);
+}
+
+.weapon-mount.retrofitted {
+	box-shadow: inset 0 0 0 1px var(--select-border-light);
+}
+
+.weapon-mount.integrated {
+	border-style: dashed;
+	border-color: var(--select-border);
+}
+
+.weapon-mount.consumed {
+	border-style: dashed;
+	border-color: var(--select-border);
+	background-color: var(--select-border-light);
+}
+
+.weapon-mount-header {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	padding-inline: 0.2rem;
+	color: #58636c;
+	font-size: 0.7rem;
+}
+
+.weapon-mount-header small {
+	font-size: 0.58rem;
+	font-weight: 600;
+	opacity: 0.75;
+}
+
+.weapon-mount-badges {
+	display: flex;
+	gap: 0.15rem;
+}
+
+.weapon-mount-badge {
+	padding: 0.05rem 0.2rem;
+	border-radius: 0.2rem;
+	background-color: var(--select-border-light);
+	color: var(--text);
+	font-size: 0.5rem;
+	font-weight: 800;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.weapon-mount-slots {
+	display: grid;
+	gap: 0.2rem;
+}
+
+.weapon-select-control {
+	display: grid;
+	width: 10rem;
+	min-width: 0;
+}
+
+.weapon-select-control > select,
+.weapon-select-label {
+	grid-area: 1 / 1;
+}
+
+.roadmap-table tbody .weapon-select-control select {
+	width: 100%;
+	max-width: none;
+	min-height: 1.8rem;
+	padding-right: 1.5rem;
+	padding-block: 0.18rem;
+	color: transparent;
+}
+
+.roadmap-table tbody .weapon-select-control select option:not(:disabled) {
+	color: var(--text);
+}
+
+.weapon-select-label {
+	z-index: 1;
+	align-self: center;
+	padding: 0.2rem 1.5rem 0.2rem 0.75rem;
+	font-size: 0.72rem;
+	line-height: 1.2;
+	overflow-wrap: anywhere;
+	pointer-events: none;
+	white-space: normal;
+}
+
+.weapon-select-label.placeholder {
+	opacity: 0.7;
+}
+
+.roadmap-table tbody .weapon-mount-slots select.overpower-caliber {
+	outline: 2px solid var(--cb-accent);
+	outline-offset: -2px;
 }
