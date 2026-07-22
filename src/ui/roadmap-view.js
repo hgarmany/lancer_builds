@@ -44,6 +44,10 @@ import {
 	coreBonusesUpdateCatalog
 } from '../rules/core-bonuses.js';
 import {
+	calculateMechStats,
+	MECH_STAT_IDS
+} from '../rules/stats.js';
+import {
 	workingCatalog,
 	coreBonusesResetCatalog
 } from '../data/roadmap-table.js';
@@ -59,21 +63,6 @@ const mechSkillOptions = mechSkillIds.map((id, index) => ({
 	id,
 	name: mechSkills[index]
 }));
-const frameStatIds = [
-	'size',
-	'hp',
-	'armor',
-	'heatcap',
-	'evasion',
-	'speed',
-	'edef',
-	'tech_attack',
-	'sensor_range',
-	'repcap',
-	'save',
-	'sp'
-];
-
 const romanNumerals = ['I', 'II', 'III', 'IV'];
 
 /**
@@ -129,8 +118,6 @@ export function initializeRoadmapView(roadmap) {
 		newRow.hidden = rowLevel > roadmap.maxLevel;
 		tableBody.append(newRow);
 	}
-	console.log(roadmap);
-	console.log(workingCatalog);
 };
 
 function renderRoadmapRow(roadmap, level) {
@@ -293,10 +280,12 @@ function renderMechSkillCell(roadmap, level) {
 			onSelected: mechSkill =>
 				mechSkillsUpdateCatalog(level, mechSkill.id),
 			onChange: event => {
+				const thisRow = event.currentTarget.closest('tr');
+
 				const newMechSkillId = event.currentTarget.value || null;
 				const newIdx = Number(event.currentTarget.dataset.idx);
 				const referenceLevel =
-					Number(event.currentTarget.closest('tr').dataset.level);
+					Number(thisRow.dataset.level);
 				roadmap.levels[referenceLevel].mechSkillIds[newIdx] = newMechSkillId;
 				mechSkillsResetCatalog(referenceLevel);
 
@@ -309,6 +298,8 @@ function renderMechSkillCell(roadmap, level) {
 							renderHASECell(targetLevel, id)
 					])
 				]);
+
+				rerenderMechStats(roadmap, referenceLevel);
 			}
 		});
 
@@ -391,25 +382,18 @@ function renderFrameCell(roadmap, level) {
 			frameIsEligible(level, frame.id),
 		onChange: event => {
 			const newFrameId = event.currentTarget.value || null;
-			const newIdx = Number(event.currentTarget.dataset.idx);
-			const thisRow = event.currentTarget.closest('tr');
 			const referenceLevel =
-				Number(thisRow.dataset.level);
+				Number(event.currentTarget.closest('tr').dataset.level);
 			roadmap.levels[referenceLevel].frameId = newFrameId;
 
 			rerenderFrom(roadmap, referenceLevel,
 				[['.frame', renderFrameCell]]);
 
-			if (newFrameId) {
-				console.log('test');
-				const activeFrameStats = frames.find(frame => frame.id == newFrameId)?.stats;
-				for (const id of frameStatIds) {
-					const val = activeFrameStats[id];
-					const cell = thisRow.querySelector('.' + id);
-					cell.value = val;
-					cell.textContent = (id == 'size' && val < 1) ? '½' : val;
-				}
-			}
+			rerenderMechStats(
+				roadmap,
+				referenceLevel,
+				getNextExplicitFrameLevel(roadmap, referenceLevel)
+			);
 		}
 	});
 	
@@ -469,9 +453,14 @@ function renderStats(roadmap, level, row) {
 		renderHASECell(level, id)
 	);
 
-	const frameStatCells = renderFrameStatCells(roadmap, level);
+	const mechStatCells = renderMechStatCells(roadmap, level);
 
-	row.append(spacer, ...haseCells, spacer.cloneNode(), ...frameStatCells);
+	row.append(
+		spacer,
+		...haseCells,
+		spacer.cloneNode(),
+		...mechStatCells
+	);
 }
 
 function renderHASECell(level, haseId) {
@@ -489,36 +478,74 @@ function renderHASECell(level, haseId) {
 	return cell;
 }
 
-function renderFrameStatCells(roadmap, level) {
-	const activeFrameId = roadmap.levels[level]?.frameId ?? null;
+function renderMechStatCells(roadmap, level) {
+	const activeFrameId = getActiveFrameId(roadmap, level);
+	const frame = frames.find(
+		candidate => candidate.id === activeFrameId
+	);
 
-	function renderStatCell(id, val) {
-		const cell = document.createElement('td');
-		cell.className = `stat ${id}`;
-		cell.value = val;
+	const stats = calculateMechStats({
+		frame,
+		level,
+		catalogSnapshot: {
+			talents:
+				workingCatalog.talents[level] ?? {},
+			mechSkills:
+				workingCatalog.mechSkills[level] ?? {},
+			licenses:
+				workingCatalog.licenses[level] ?? {},
+			coreBonuses:
+				workingCatalog.coreBonuses[level] ?? []
+		},
+		roadmapLevel: roadmap.levels[level]
+	});
+
+	return MECH_STAT_IDS.map(statId =>
+		renderMechStatCell(statId, stats[statId])
+	);
+}
+
+function rerenderMechStats(
+	roadmap,
+	startingLevel,
+	stoppingLevel = Infinity
+) {
+	for (const row of tableBody.querySelectorAll('tr')) {
+		const level = Number(row.dataset.level);
+		if (
+			level < startingLevel ||
+			level >= stoppingLevel
+		) {
+			continue;
+		}
+
+		const replacementCells = renderMechStatCells(roadmap, level);
+
+		MECH_STAT_IDS.forEach((statId, index) => {
+			row.querySelector(
+				`.mech-stat[data-stat="${statId}"]`
+			)
+				?.replaceWith(replacementCells[index]);
+		});
+	}
+}
+
+function renderMechStatCell(statId, value) {
+	const cell = document.createElement('td');
+	cell.className = 'stat mech-stat';
+	cell.dataset.stat = statId;
+
+	if (statId === 'limited_bonus')
+		cell.classList.add('limited-bonus');
+
+	if (value !== null) {
 		cell.textContent =
-			(id == 'size' && val !== null && val < 1)
-			? '½' : val;
-		
-		return cell;
+			statId === 'size' && value < 1
+			? '\u00BD'
+			: String(value);
 	}
 
-	const statCells = [];
-
-	if (activeFrameId) {
-		const activeFrameStats = frames.find(frame => frame.id == activeFrameId)?.stats;
-		
-		for (const id of frameStatIds) {
-			statCells.push(renderStatCell(id, activeFrameStats[id]));
-		}
-	}
-	else {
-		for (const id of frameStatIds) {
-			statCells.push(renderStatCell(id, null));
-		}
-	}
-
-	return statCells;
+	return cell;
 }
 
 function rerenderFrom(roadmap, referenceLevel, renderers) {
@@ -531,8 +558,6 @@ function rerenderFrom(roadmap, referenceLevel, renderers) {
 			}
 		});
 	}
-	console.log(roadmap);
-	console.log(workingCatalog);
 }
 
 function resizeViaHide(roadmap, maxLevel) {
@@ -560,4 +585,28 @@ function resizeViaHide(roadmap, maxLevel) {
 			row.replaceWith(renderRoadmapRow(roadmap, rowLevel));
 		}
 	}
+}
+
+function getActiveFrameId(roadmap, level) {
+	for (let targetLevel = level; targetLevel >= 0; targetLevel--) {
+		const frameId = roadmap.levels[targetLevel]?.frameId;
+
+		if (frameId)
+			return frameId;
+	}
+
+	return null;
+}
+
+function getNextExplicitFrameLevel(roadmap, level) {
+	for (
+		let targetLevel = level + 1;
+		targetLevel < roadmap.levels.length;
+		targetLevel++
+	) {
+		if (roadmap.levels[targetLevel]?.frameId)
+			return targetLevel;
+	}
+
+	return Infinity;
 }
