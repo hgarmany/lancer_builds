@@ -8,7 +8,8 @@ import {
 	mechSkills,
 	licenses,
 	frames,
-	coreBonuses
+	coreBonuses,
+	weapons
 } from '../data/loader.js';
 import {
 	createChoiceSelect
@@ -45,7 +46,8 @@ import {
 } from '../rules/core-bonuses.js';
 import {
 	calculateMechStats,
-	MECH_STAT_IDS
+	MECH_STAT_IDS,
+	DISPLAYED_MECH_STAT_IDS
 } from '../rules/stats.js';
 import {
 	workingCatalog,
@@ -502,7 +504,7 @@ function renderMechStatCells(roadmap, level) {
 		roadmapLevel: roadmap.levels[level]
 	});
 
-	return MECH_STAT_IDS.map(statId =>
+	return DISPLAYED_MECH_STAT_IDS.map(statId =>
 		renderMechStatCell(statId, stats[statId])
 	);
 }
@@ -523,11 +525,10 @@ function rerenderMechStats(
 
 		const replacementCells = renderMechStatCells(roadmap, level);
 
-		MECH_STAT_IDS.forEach((statId, index) => {
+		DISPLAYED_MECH_STAT_IDS.forEach((statId, index) => {
 			row.querySelector(
 				`.mech-stat[data-stat="${statId}"]`
-			)
-				?.replaceWith(replacementCells[index]);
+			)?.replaceWith(replacementCells[index]);
 		});
 	}
 }

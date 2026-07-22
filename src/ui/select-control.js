@@ -29,12 +29,13 @@ export function createChoiceSelect({
 	let selectedItem = null;
 
 	for (const item of items) {
+		const isSelected = item.id === selectedId;
 		const eligible = isEligible(item);
-		if (!isEligible || showDisabledOptions || eligible) {
+		if (!isEligible || showDisabledOptions || eligible || isSelected) {
 			const option = document.createElement('option');
 			option.value = item?.id;
 			option.textContent = getLabel(item);
-			option.selected = item.id === selectedId;
+			option.selected = isSelected;
 
 			if (getDescription)
 				option.title = getDescription(item);

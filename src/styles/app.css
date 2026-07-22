@@ -103,12 +103,13 @@ main {
 
 .roadmap-table tbody tr > :first-child,
 .roadmap-table tbody tr > :nth-child(9),
-.roadmap-table tbody tr > :nth-child(14)
- {
+.roadmap-table tbody tr > :nth-child(14) {
 	border-radius: 1rem 0 0 1rem;
 }
 
-.roadmap-table tr > :nth-child(8) {
+.roadmap-table tr > :nth-child(8),
+.roadmap-table tr > :nth-child(13),
+.roadmap-table tr > :nth-child(26) {
 	max-width: 1rem;
 	width: 1rem;
 }
@@ -178,32 +179,12 @@ main {
 	font-weight: 900;
 	background-color: var(--hase);
 }
-/* 
-.roadmap-table tbody tr .hase {
-	border-radius: 0 0 0 0;
-}
-
-.roadmap-table tbody tr:first-child td.hase:nth-child(9) {
-	border-radius: 1rem 0 0 0;
-}
-
-.roadmap-table tbody tr:first-child td.hase:nth-child(12) {
-	border-radius: 0 1rem 0 0;
-}
-
-.roadmap-table tbody tr:last-child td.hase:nth-child(9) {
-	border-radius: 0 0 0 1rem;
-}
-
-.roadmap-table tbody tr:last-child td.hase:nth-child(12) {
-	border-radius: 0 0 1rem 0;
-} */
 
 .roadmap-table thead th.stat-header {
 	position: relative;
 	width: 2.5rem;
 	min-width: 2.5rem;
-	height: 9rem;
+	height: 6.5rem;
 	padding: 0;
 	overflow: visible;
 }

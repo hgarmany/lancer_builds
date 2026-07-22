@@ -1,2 +1,3 @@
-npm.cmd ci
-npm.cmd run dev
+@echo off
+call npm.cmd ci
+call npm.cmd run dev

@@ -39,15 +39,25 @@ const STAT_DEFINITIONS = {
 		frameProperty: 'sp'
 	},
 	limited_bonus: {
-		defaultValue: 0
+		defaultValue: 0,
+		display: false
 	},
 	ai_cap: {
-		defaultValue: 1
+		defaultValue: 1,
+		display: false
 	}
 };
 
 export const MECH_STAT_IDS = Object.freeze(
 	Object.keys(STAT_DEFINITIONS)
+);
+
+export const DISPLAYED_MECH_STAT_IDS = Object.freeze(
+	Object.entries(STAT_DEFINITIONS)
+		.filter(([, definition]) =>
+			definition.display !== false
+		)
+		.map(([statId]) => statId)
 );
 
 const modifierProviders = [
@@ -126,151 +136,172 @@ function getMechSkillModifiers({ catalogSnapshot }) {
 			id: 'hull-hp',
 			stat: 'hp',
 			operation: 'bonus',
-			value: 2 * hull,
-			source: 'Hull'
+			value: 2 * hull
 		},
 		{
 			id: 'hull-repcap',
 			stat: 'repcap',
 			operation: 'bonus',
-			value: Math.floor(hull / 2),
-			source: 'Hull'
+			value: Math.floor(hull / 2)
 		},
 		{
 			id: 'agility-evasion',
 			stat: 'evasion',
 			operation: 'bonus',
-			value: evasion,
-			source: 'Agility'
+			value: evasion
 		},
 		{
 			id: 'agility-speed',
 			stat: 'speed',
 			operation: 'bonus',
-			value: Math.floor(evasion / 2),
-			source: 'Agility'
+			value: Math.floor(evasion / 2)
 		},
 		{
 			id: 'systems-tattk',
 			stat: 'tech_attack',
 			operation: 'bonus',
-			value: systems,
-			source: 'Systems'
+			value: systems
 		},
 		{
 			id: 'systems-edef',
 			stat: 'edef',
 			operation: 'bonus',
-			value: systems,
-			source: 'Systems'
+			value: systems
 		},
 		{
 			id: 'systems-sp',
 			stat: 'sp',
 			operation: 'bonus',
-			value: Math.floor(systems / 2),
-			source: 'Systems'
+			value: Math.floor(systems / 2)
 		},
 		{
 			id: 'engineering-heatcap',
 			stat: 'heatcap',
 			operation: 'bonus',
-			value: engineering,
-			source: 'Engineering'
+			value: engineering
 		},
 		{
 			id: 'engineering-limited-bonus',
 			stat: 'limited_bonus',
 			operation: 'bonus',
-			value: Math.floor(engineering / 2),
-			source: 'Engineering'
+			value: Math.floor(engineering / 2)
 		}
 	];
 }
 
 function getCoreBonusModifiers({ catalogSnapshot }) {
 	const cb = catalogSnapshot.coreBonuses;
-	
-	return [
-		{
+	let modifiers = [];
+
+	if (cb.includes('cb_fomorian_frame')) {
+		modifiers.push({
 			id: 'fomorian-frame',
 			stat: 'size',
-			operation: 'size-up',
-			value: cb.includes('cb_fomorian_frame'),
-			source: 'Core Bonus'
-		},
-		{
+			operation: 'increaseSize',
+			value: 1,
+			maximum: 3
+		});
+	}
+	if (cb.includes('cb_reinforced_frame')) {
+		modifiers.push({
 			id: 'reinforced-frame',
 			stat: 'hp',
 			operation: 'bonus',
-			value: 5 * cb.includes('cb_reinforced_frame'),
-			source: 'Core Bonus'
-		},
-		{
+			value: 5
+		});
+	}
+	if (cb.includes('cb_sloped_plating')) {
+		modifiers.push({
 			id: 'sloped-plating',
 			stat: 'armor',
-			operation: 'bonus-capped',
-			value: 1 * cb.includes('cb_sloped_plating'),
-			maxValue: 4,
-			source: 'Core Bonus'
-		},
-		{
+			operation: 'bonus',
+			value: 1,
+			maximum: 4
+		});
+	}
+	if (cb.includes('cb_full_subjectivity_sync')) {
+		modifiers.push({
 			id: 'full-subjectivity-sync',
 			stat: 'evasion',
 			operation: 'bonus',
-			value: 2 * cb.includes('cb_full_subjectivity_sync'),
-			source: 'Core Bonus'
-		},
-		{
+			value: 2
+		});
+	}
+	if (cb.includes('cb_the_lesson_of_disbelief')) {
+		modifiers.push({
 			id: 'lesson-of-disbelief',
 			stat: 'edef',
 			operation: 'bonus',
-			value: 2 * cb.includes('cb_the_lesson_of_disbelief'),
-			source: 'Core Bonus'
-		},
-		{
+			value: 2
+		});
+	}
+	if (cb.includes('cb_the_lesson_of_the_open_door')) {
+		modifiers.push({
 			id: 'lesson-of-the-open-door',
 			stat: 'save',
 			operation: 'bonus',
-			value: 2 * cb.includes('cb_the_lesson_of_the_open_door'),
-			source: 'Core Bonus'
-		},
-		{
+			value: 2
+		});
+	}
+	if (cb.includes('cb_the_lesson_of_shaping')) {
+		modifiers.push({
 			id: 'lesson-of-shaping',
 			stat: 'ai_cap',
 			operation: 'bonus',
-			value: 1 * cb.includes('cb_the_lesson_of_shaping'),
-			source: 'Core Bonus'
-		},
-		{
+			value: 1
+		});
+	}
+	if (cb.includes('cb_integrated_ammo_feeds')) {
+		modifiers.push({
 			id: 'integrated-ammo-feeds',
 			stat: 'limited_bonus',
 			operation: 'bonus',
-			value: 2 * cb.includes('cb_integrated_ammo_feeds'),
-			source: 'Core Bonus'
-		},
-		{
+			value: 2
+		});
+	}
+	if (cb.includes('cb_superior_by_design')) {
+		modifiers.push({
 			id: 'superior-by-design',
 			stat: 'heatcap',
 			operation: 'bonus',
-			value: 2 * cb.includes('cb_superior_by_design'),
-			source: 'Core Bonus'
-		}
-	];
+			value: 2
+		});
+	}
+
+	return modifiers;
 }
 
-function applyModifier(currentValue, modifier) {
-	switch (modifier.operation) {
-		case 'size-up':
-			return modifier.value ? Math.floor(currentValue) + 1 : currentValue;
-		case 'bonus':
-			return currentValue + modifier.value;
-		case 'bonus-capped':
-			return Math.min(currentValue + modifier.value, modifier.maxValue);
+const MODIFIER_OPERATIONS = {
+	bonus(currentValue, modifier) {
+		return currentValue + modifier.value;
+	},
 
-		default:
-			throw new Error(
-				`Unknown modifier operation: ${modifier.operation}`
-			);
+	replace(currentValue, modifier) {
+		return modifier.value;
+	},
+
+	increaseSize(currentValue) {
+		return Math.floor(currentValue) + 1;
 	}
+};
+
+function applyModifier(currentValue, modifier) {
+	const operation =
+		MODIFIER_OPERATIONS[modifier.operation];
+
+	if (!operation) {
+		throw new Error(
+			`Unknown modifier operation: ${modifier.operation}`
+		);
+	}
+
+	let result = operation(currentValue, modifier);
+
+	if (modifier.minimum !== undefined)
+		result = Math.max(result, modifier.minimum);
+
+	if (modifier.maximum !== undefined)
+		result = Math.min(result, modifier.maximum);
+
+	return result;
 }
