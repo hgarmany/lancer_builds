@@ -60,6 +60,19 @@ export const DISPLAYED_MECH_STAT_IDS = Object.freeze(
 		.map(([statId]) => statId)
 );
 
+export function mechStatDecreased(
+	statId,
+	value,
+	previousValue
+) {
+	return (
+		statId !== 'size' &&
+		Number.isFinite(value) &&
+		Number.isFinite(previousValue) &&
+		value < previousValue
+	);
+}
+
 const modifierProviders = [
 	getMechSkillModifiers,
 	getCoreBonusModifiers
@@ -103,8 +116,7 @@ export function calculateMechStats({
 			modifier
 		);
 	}
-console.log(catalogSnapshot);
-console.log(context);
+
 	return stats;
 }
 

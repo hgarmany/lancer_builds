@@ -55,12 +55,14 @@ export function setWeaponSelection({
 	weaponId
 }) {
 	const loadout = deriveRoadmapWeaponLoadout(roadmap, level);
-	const mountExists = loadout.mounts.some(
+	const mount = loadout.mounts.find(
 		mount => mount.id === mountId
 	);
 
-	if (!mountExists)
+	if (!mount)
 		throw new Error(`Unknown mount: ${mountId}`);
+	if (mount.slots[slotIndex]?.locked)
+		throw new Error(`Cannot change fixed integrated weapon: ${mountId}`);
 
 	const weaponIds = compactExplicitWeaponIds(
 		roadmap.levels[level].weaponIds,

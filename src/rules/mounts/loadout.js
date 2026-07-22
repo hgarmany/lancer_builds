@@ -1,6 +1,8 @@
 import {
 	deriveMountSlots,
 	getCompatibleWeapons,
+	getGrantedIntegratedWeapons,
+	getWeaponById,
 	weaponIsAccessible
 } from './weapons.js';
 import {
@@ -94,6 +96,21 @@ function deriveMountContext({ frame, catalogSnapshot, selections }) {
 		selectedWeaponSlots: [],
 		slotTraits: new Map()
 	};
+
+	for (const grant of getGrantedIntegratedWeapons(
+		frame,
+		catalogSnapshot.talents ?? {}
+	)) {
+		context.mounts.push(createMount({
+			id: grant.mountId,
+			type: 'Integrated',
+			source: grant.source,
+			traits: ['integrated', 'unmodifiable', 'fixed-weapon'],
+			badges: ['INT'],
+			fixedWeaponId: grant.weapon.id
+		}));
+	}
+
 	const activeSourceEffects = SOURCE_LOADOUT_EFFECTS.filter(
 		effect => sourceIsActive(effect.source, context)
 	);
@@ -109,7 +126,7 @@ function applyWeaponLoadoutEffects(context) {
 		context.selectedWeaponSlots.map(selection => [
 			selection.slotId,
 			WEAPON_LOADOUT_EFFECTS.filter(effect =>
-				effect.matches(selection.weapon)
+				effect.matches(selection.weapon, selection.mount)
 			)
 		])
 	);
@@ -153,14 +170,16 @@ function createMount({
 	type,
 	source,
 	traits = [],
-	badges = []
+	badges = [],
+	fixedWeaponId = null
 }) {
 	return {
 		id,
 		type,
 		source,
 		traits: [...new Set(traits)],
-		badges: [...new Set(badges)]
+		badges: [...new Set(badges)],
+		fixedWeaponId
 	};
 }
 
@@ -241,6 +260,11 @@ function normalizeWeaponIds(mounts, existingIds) {
 		: { ...existingIds };
 
 	for (const [mountIndex, mount] of mounts.entries()) {
+		if (mount.fixedWeaponId) {
+			normalizedIds[mount.id] = [mount.fixedWeaponId];
+			continue;
+		}
+
 		const savedMount = Array.isArray(existingIds)
 			? existingIds[mountIndex]
 			: existingIds[mount.id];
@@ -258,8 +282,18 @@ function normalizeWeaponIds(mounts, existingIds) {
 }
 
 function collectSelectedWeaponSlots(mounts, weaponIds) {
-	return mounts.flatMap(mount =>
-		deriveMountSlots(
+	return mounts.flatMap(mount => {
+		if (mount.fixedWeaponId) {
+			const weapon = getWeaponById(mount.fixedWeaponId);
+			return weapon ? [{
+				mount,
+				slotIndex: 0,
+				slotId: `${mount.id}:0`,
+				weapon
+			}] : [];
+		}
+
+		return deriveMountSlots(
 			mount.type,
 			weaponIds[mount.id] ?? []
 		).flatMap((slot, slotIndex) =>
@@ -271,8 +305,8 @@ function collectSelectedWeaponSlots(mounts, weaponIds) {
 					weapon: slot.selectedWeapon
 				}]
 				: []
-		)
-	);
+		);
+	});
 }
 
 function createRenderedSlots({
@@ -284,6 +318,23 @@ function createRenderedSlots({
 }) {
 	if (mount.traits.includes('consumed'))
 		return [];
+
+	if (mount.fixedWeaponId) {
+		const weapon = getWeaponById(mount.fixedWeaponId);
+		if (!weapon)
+			return [];
+
+		const id = `${mount.id}:0`;
+		return [{
+			id,
+			label: `Integrated ${weapon.mount}`,
+			selectedId: weapon.id,
+			options: [weapon],
+			eligibleIds: new Set([weapon.id]),
+			traits: [...(slotTraits.get(id) ?? [])],
+			locked: true
+		}];
+	}
 
 	return deriveMountSlots(
 		mount.type,

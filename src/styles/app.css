@@ -201,6 +201,11 @@ main {
 	white-space: nowrap;
 }
 
+.roadmap-table tbody td.mech-stat.hazard {
+	font-weight: 700;
+	color: darkred;
+}
+
 .roadmap-table tbody td .select-group {
 	display: grid;
 	gap: 0.25rem;
@@ -386,6 +391,15 @@ main {
 
 .weapon-select-label.placeholder {
 	opacity: 0.7;
+}
+
+.weapon-select-control.locked .weapon-select-label {
+	font-weight: 700;
+}
+
+.weapon-select-control.locked {
+	min-height: 1.8rem;
+	align-items: center;
 }
 
 .roadmap-table tbody .weapon-mount-slots select.overpower-caliber {

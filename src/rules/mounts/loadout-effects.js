@@ -114,7 +114,9 @@ export const SOURCE_LOADOUT_EFFECTS = Object.freeze([
 export const WEAPON_LOADOUT_EFFECTS = Object.freeze([
 	{
 		id: 'superheavy-mount-consumption',
-		matches: weapon => weapon.mount === 'Superheavy',
+		matches: (weapon, mount) =>
+			weapon.mount === 'Superheavy' &&
+			!mount.traits.includes('integrated'),
 		apply: applySuperheavyMountConsumption
 	}
 ]);

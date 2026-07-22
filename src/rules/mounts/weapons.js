@@ -75,6 +75,54 @@ export function getWeaponById(weaponId) {
 	return weaponsById.get(weaponId) ?? null;
 }
 
+export function getGrantedIntegratedWeapons(frame, talentRanks = {}) {
+	const grants = [];
+	const frameWeaponId = frame
+		? `mw_${frame.id.replace(/^mf_/, '')}_integrated`
+		: null;
+	const frameWeapon = getWeaponById(frameWeaponId);
+
+	if (frameWeapon) {
+		grants.push({
+			mountId: `integrated-frame:${frame.id}`,
+			source: frame.id,
+			weapon: frameWeapon
+		});
+	}
+
+	const talentWeapons = new Map();
+
+	for (const weapon of getWeaponCatalog()) {
+		if (!weapon.talent_id)
+			continue;
+
+		const talentRank = talentRanks[weapon.talent_id] ?? 0;
+		const requiredRank = Number(weapon.talent_rank ?? 1);
+
+		if (talentRank < requiredRank)
+			continue;
+
+		const current = talentWeapons.get(weapon.talent_id);
+
+		if (!current || requiredRank > current.rank) {
+			talentWeapons.set(weapon.talent_id, {
+				rank: requiredRank,
+				weapon
+			});
+		}
+	}
+
+	for (const [talentId, { weapon }] of [...talentWeapons].sort()) {
+		grants.push({
+			mountId: `integrated-talent:${talentId}`,
+			source: talentId,
+			weapon
+		});
+	}
+
+	return grants;
+}
+
 export function weaponIsAccessible(licenseRanks, weapon) {
 	if (weapon.talent_item || weapon.talent_id)
 		return false;

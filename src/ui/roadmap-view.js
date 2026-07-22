@@ -47,7 +47,8 @@ import {
 } from '../rules/core-bonuses.js';
 import {
 	calculateMechStats,
-	DISPLAYED_MECH_STAT_IDS
+	DISPLAYED_MECH_STAT_IDS,
+	mechStatDecreased
 } from '../rules/stats.js';
 import {
 	deriveRoadmapWeaponLoadout,
@@ -251,10 +252,16 @@ function renderTalentCell(roadmap, level) {
 				const referenceLevel =
 					Number(event.currentTarget.closest('tr').dataset.level);
 				roadmap.levels[referenceLevel].talentIds[newIdx] = newTalentId;
+
 				talentsResetCatalog(referenceLevel);
 
 				rerenderFrom(roadmap, referenceLevel,
 					[['.talent', renderTalentCell]]);
+				rerenderFrom(
+					roadmap,
+					referenceLevel,
+					[['.weapon-mounts', renderWeaponMountCell]]
+				);
 			}
 		});
 
@@ -530,8 +537,12 @@ function renderWeaponMountCell(roadmap, level) {
 		slotWrapper.className = 'weapon-mount-slots';
 
 		mount.slots.forEach((slot, slotIndex) => {
+			if (slot.locked) {
+				slotWrapper.append(createWeaponDisplay(null, slot));
+				return;
+			}
+
 			const select = createChoiceSelect({
-				showDisabledOptions: true,
 				items: slot.options,
 				selectedId: slot.selectedId,
 				index: slotIndex,
@@ -564,7 +575,7 @@ function renderWeaponMountCell(roadmap, level) {
 				`${mount.type} weapon ${slotIndex + 1}`
 			);
 
-			slotWrapper.append(createWeaponSelectDisplay(
+			slotWrapper.append(createWeaponDisplay(
 				select,
 				slot
 			));
@@ -581,9 +592,10 @@ function renderWeaponMountCell(roadmap, level) {
 	return cell;
 }
 
-function createWeaponSelectDisplay(select, slot) {
+function createWeaponDisplay(select, slot) {
 	const wrapper = document.createElement('div');
 	wrapper.className = 'weapon-select-control';
+	wrapper.classList.toggle('locked', slot.locked === true);
 	const label = document.createElement('span');
 	label.className = 'weapon-select-label';
 	const selectedWeapon = slot.options.find(
@@ -592,8 +604,13 @@ function createWeaponSelectDisplay(select, slot) {
 
 	label.textContent = selectedWeapon?.name ?? slot.label;
 	label.classList.toggle('placeholder', !selectedWeapon);
-	label.setAttribute('aria-hidden', 'true');
-	wrapper.append(select, label);
+
+	if (select) {
+		label.setAttribute('aria-hidden', 'true');
+		wrapper.append(select);
+	}
+
+	wrapper.append(label);
 
 	return wrapper;
 }
@@ -677,6 +694,21 @@ function renderHASECell(level, haseId) {
 }
 
 function renderMechStatCells(roadmap, level) {
+	const stats = calculateRoadmapMechStats(roadmap, level);
+	const previousStats = level > 0
+		? calculateRoadmapMechStats(roadmap, level - 1)
+		: null;
+
+	return DISPLAYED_MECH_STAT_IDS.map(statId =>
+		renderMechStatCell(
+			statId,
+			stats[statId],
+			previousStats?.[statId] ?? null
+		)
+	);
+}
+
+function calculateRoadmapMechStats(roadmap, level) {
 	const activeFrameId = getActiveFrameId(roadmap, level);
 	const frame = frames.find(
 		candidate => candidate.id === activeFrameId
@@ -698,9 +730,7 @@ function renderMechStatCells(roadmap, level) {
 		roadmapLevel: roadmap.levels[level]
 	});
 
-	return DISPLAYED_MECH_STAT_IDS.map(statId =>
-		renderMechStatCell(statId, stats[statId])
-	);
+	return stats;
 }
 
 function rerenderMechStats(
@@ -708,11 +738,17 @@ function rerenderMechStats(
 	startingLevel,
 	stoppingLevel = Infinity
 ) {
+	// Include one unaffected row because its hazard state depends on
+	// the preceding, potentially changed row.
+	const hazardLookaheadEnd = Number.isFinite(stoppingLevel)
+		? stoppingLevel + 1
+		: Infinity;
+
 	for (const row of tableBody.querySelectorAll('tr')) {
 		const level = Number(row.dataset.level);
 		if (
 			level < startingLevel ||
-			level >= stoppingLevel
+			level >= hazardLookaheadEnd
 		) {
 			continue;
 		}
@@ -727,13 +763,15 @@ function rerenderMechStats(
 	}
 }
 
-function renderMechStatCell(statId, value) {
+function renderMechStatCell(statId, value, previousValue) {
 	const cell = document.createElement('td');
 	cell.className = 'stat mech-stat';
 	cell.dataset.stat = statId;
 
 	if (statId === 'limited_bonus')
 		cell.classList.add('limited-bonus');
+	if (mechStatDecreased(statId, value, previousValue))
+		cell.classList.add('hazard');
 
 	if (value !== null) {
 		cell.textContent =
