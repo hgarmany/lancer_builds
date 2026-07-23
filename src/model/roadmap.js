@@ -62,6 +62,7 @@ function createRoadmapLevel(level) {
 		weaponIds: {},
 		loadoutSelections: {},
 		systems: [],
+		systemsSet: false,
 
 		// null means "continue using the previously active frame."
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null
@@ -223,6 +224,9 @@ function validateLevel(level) {
  *   overrides keyed by stable mount ID; missing/empty slots inherit.
  * @property {Object<string, string|null>} loadoutSelections Sparse mount
  *   choice overrides; missing/empty choices inherit.
+ * @property {string[]} systems Systems explicitly selected at this level.
+ * @property {boolean} systemsSet Whether this level overrides inherited
+ *   systems, including with an intentionally empty list.
  */
 
 /**

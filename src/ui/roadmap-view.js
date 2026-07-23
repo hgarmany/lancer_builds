@@ -58,6 +58,11 @@ import {
 	setWeaponSelection
 } from '../model/loadout-state.js';
 import {
+	getEffectiveSystemIds,
+	getNextExplicitSystemLevel,
+	setSystemSelection
+} from '../model/system-state.js';
+import {
 	systemIsEligible,
 	hasEligibleSystem,
 	getLimitedSystemUses,
@@ -754,12 +759,7 @@ function renderSystemsCell(roadmap, level) {
 	const cell = document.createElement('td');
 	cell.className = 'systems';
 
-	const wrapper = document.createElement('div');
-	wrapper.className = 'select-group';
-
-	const selectedIds = (
-		roadmap.levels[level]?.systems ?? []
-	).filter(Boolean);
+	const selectedIds = getEffectiveSystemIds(roadmap, level);
 	workingCatalog.systems[level] = [...selectedIds];
 	const stats = workingCatalog.stats[level];
 	const budget = getSystemsBudget(level, selectedIds);
@@ -767,6 +767,24 @@ function renderSystemsCell(roadmap, level) {
 	stats.free_ai = budget.AI;
 	const limitedBonus = stats.limited_bonus ?? 0;
 
+	if (budget.SP) {
+		const counter = document.createElement('div');
+		counter.className = 'sp-counter';
+		counter.textContent = `${budget.SP} SP`;
+		counter.classList.toggle('error', budget.SP < 0);
+		counter.setAttribute(
+			'aria-label',
+			budget.SP < 0
+				? `System point budget exceeded by ${Math.abs(budget.SP)}`
+				: `${budget.SP} system points remaining`
+		);
+		cell.append(counter);
+	}
+
+	const wrapper = document.createElement('div');
+	wrapper.className = 'system-select-grid';
+
+	// add an empty selector only if another system can be added
 	const selectorIds = hasEligibleSystem(level)
 		? [...selectedIds, null]
 		: selectedIds;
@@ -778,8 +796,13 @@ function renderSystemsCell(roadmap, level) {
 			index: idx,
 			placeholderText: "Select a system",
 			getLabel: system => system.name,
+			getDescription: system =>
+				(system.description ?? system.effect ?? '')
+					.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
 			isEligible: system =>
-				systemIsEligible(level, system) || system.id == selectedId,
+				systemIsEligible(level, system, {
+					replacingSystemId: selectedId
+				}) || system.id == selectedId,
 			onChange: event => {
 				const thisRow = event.currentTarget.closest('tr');
 
@@ -787,20 +810,29 @@ function renderSystemsCell(roadmap, level) {
 				const newIdx = Number(event.currentTarget.dataset.idx);
 				const referenceLevel =
 					Number(thisRow.dataset.level);
-				const levelSystems =
-					roadmap.levels[referenceLevel].systems;
-				levelSystems[newIdx] = newSystemId;
-				roadmap.levels[referenceLevel].systems =
-					levelSystems.filter(Boolean);
+				setSystemSelection({
+					roadmap,
+					level: referenceLevel,
+					index: newIdx,
+					systemId: newSystemId
+				});
+				const stoppingLevel =
+					getNextExplicitSystemLevel(
+						roadmap,
+						referenceLevel
+					);
 
 				rerenderMechStats(
 					roadmap,
 					referenceLevel,
-					referenceLevel + 1
+					stoppingLevel
 				);
-				rerenderFrom(roadmap, referenceLevel, [
-					['.systems', renderSystemsCell]
-				]);
+				rerenderFrom(
+					roadmap,
+					referenceLevel,
+					[['.systems', renderSystemsCell]],
+					stoppingLevel
+				);
 			}
 		});
 
@@ -848,8 +880,9 @@ function calculateRoadmapMechStats(roadmap, level) {
 				workingCatalog.licenses[level] ?? {},
 			coreBonuses:
 				workingCatalog.coreBonuses[level] ?? [],
-			systems: (
-				roadmap.levels[level]?.systems ?? []
+			systems: getEffectiveSystemIds(
+				roadmap,
+				level
 			).flatMap(systemId => {
 				const system = systems.find(
 					candidate => candidate.id === systemId

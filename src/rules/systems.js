@@ -3,7 +3,16 @@
 import { workingCatalog } from '../data/roadmap-table.js';
 import { systems } from '../data/loader.js';
 
-export function systemIsEligible(level, system) {
+export function systemIsEligible(
+	level,
+	system,
+	{ replacingSystemId = null } = {}
+) {
+	const replacingSystem = replacingSystemId
+		? systems.find(candidate =>
+			candidate.id === replacingSystemId
+		)
+		: null;
 	const meetsLicenseRequirements =
 		!system.license_id ||
 		workingCatalog.licenses[level][system.license_id.substring(3)]
@@ -12,19 +21,29 @@ export function systemIsEligible(level, system) {
 		!system.talent_id ||
 		workingCatalog.talents[level][system.talent_id]
 			== system.talent_rank;
+	const availableSP =
+		workingCatalog.stats[level].free_sp +
+		(replacingSystem?.sp ?? 0);
 	const isWithinBudget =
-		workingCatalog.stats[level].free_sp >= system.sp;
+		availableSP >= system.sp;
 
-	const aiBudget = workingCatalog.stats[level].free_ai;
+	const aiBudget =
+		workingCatalog.stats[level].free_ai +
+		(replacingSystem?.type === 'AI' ? 1 : 0);
 	const honorsAICap =
 		system.type !== 'AI' ||
 		aiBudget > 0 ||
 		aiBudget == 0 &&
 			system.bonuses?.findIndex(bonus => bonus.id == 'ai_cap') >= 0;
 
+	const selectedInstances = (
+		workingCatalog.systems[level] ?? []
+	).filter(systemId => systemId === system.id).length;
+	const remainingInstances = selectedInstances -
+		(replacingSystemId === system.id ? 1 : 0);
 	const duplicatesUnique =
-		system.tags?.findIndex(tag => tag.id == 'tg_unique') >= 0 &&
-			workingCatalog.systems[level]?.findIndex(systemId => systemId === system.id) >= 0;
+		system.tags?.some(tag => tag.id === 'tg_unique') &&
+		remainingInstances > 0;
 
 	return meetsLicenseRequirements
 		&& meetsTalentRequirements

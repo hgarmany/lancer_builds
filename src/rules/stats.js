@@ -76,6 +76,7 @@ export function mechStatDecreased(
 }
 
 const modifierProviders = [
+	getLevelModifiers,
 	getMechSkillModifiers,
 	getCoreBonusModifiers,
 	getSystemModifiers
@@ -120,7 +121,10 @@ export function calculateMechStats({
 		);
 	}
 
-	workingCatalog.stats[level] = { ...stats };
+	workingCatalog.stats[level] = {
+		...(workingCatalog.stats[level] ?? {}),
+		...stats
+	};
 	return stats;
 }
 
@@ -139,6 +143,31 @@ function createBaseStats(frame) {
 			}
 		)
 	);
+}
+
+function getLevelModifiers({ level }) {
+	const bonus = Math.ceil(level / 2);
+
+	return [
+		{
+			id: 'level-hp',
+			stat: 'hp',
+			operation: 'bonus',
+			value: bonus
+		},
+		{
+			id: 'level-save',
+			stat: 'save',
+			operation: 'bonus',
+			value: bonus
+		},
+		{
+			id: 'level-sp',
+			stat: 'sp',
+			operation: 'bonus',
+			value: bonus
+		}
+	];
 }
 
 function getMechSkillModifiers({ catalogSnapshot }) {

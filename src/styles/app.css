@@ -2,6 +2,10 @@
 :root {
 	--background: #eceff1;
 	--text: #202428;
+	--valid: #216438;
+	--valid-light: #e5f3e9;
+	--hazard: #7d2020;
+	--hazard-light: #b52b2b;
 	--error: #ffc3c3;
 	--error-light: #ffe9e9;
 	--select-border: #6f7e8a;
@@ -256,7 +260,7 @@ main {
 
 .roadmap-table tbody td.mech-stat.hazard {
 	font-weight: 700;
-	color: darkred;
+	color: var(--hazard);
 }
 
 .roadmap-table tbody td .select-group {
@@ -314,10 +318,41 @@ main {
 	border-radius: 1rem;
 }
 
+.roadmap-table tbody td.systems {
+	vertical-align: top;
+}
+
+.sp-counter {
+	width: max-content;
+	min-width: 3.25rem;
+	margin: 0 auto 0.35rem;
+	border: 1px solid var(--valid);
+	border-radius: 999px;
+	background-color: var(--valid-light);
+	color: var(--valid);
+	font-weight: 700;
+	text-align: center;
+}
+
+.sp-counter.error {
+	border-color: var(--hazard);
+	background-color: var(--hazard-light);
+	color: white;
+}
+
 .system-select-control {
 	display: flex;
 	align-items: center;
 	gap: 0.3rem;
+}
+
+.system-select-grid {
+	display: grid;
+	grid-template-rows: repeat(3, max-content);
+	grid-auto-flow: column;
+	grid-auto-columns: max-content;
+	align-items: center;
+	gap: 0.25rem 0.5rem;
 }
 
 .system-tag {
