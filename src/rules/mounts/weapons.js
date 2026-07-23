@@ -9,17 +9,17 @@ const WEAPON_MOUNT_ORDER = Object.freeze({
 });
 
 const AUXILIARY_SLOT = Object.freeze({
-	label: 'Auxiliary',
+	label: 'Aux',
 	allowedMounts: Object.freeze(['Auxiliary'])
 });
 
 const MAIN_SLOT = Object.freeze({
-	label: 'Main / Auxiliary',
+	label: 'Main / Aux',
 	allowedMounts: Object.freeze(['Auxiliary', 'Main'])
 });
 
 const HEAVY_SLOT = Object.freeze({
-	label: 'Heavy / Main / Auxiliary',
+	label: 'Heavy / Main / Aux',
 	allowedMounts: Object.freeze([
 		'Auxiliary',
 		'Main',

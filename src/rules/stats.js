@@ -1,6 +1,6 @@
 // rules/stats.js
 
-import { workingCatalog } from "../data/roadmap-table";
+import { workingCatalog } from "../data/roadmap-table.js";
 
 const STAT_DEFINITIONS = {
 	size: {
@@ -77,7 +77,8 @@ export function mechStatDecreased(
 
 const modifierProviders = [
 	getMechSkillModifiers,
-	getCoreBonusModifiers
+	getCoreBonusModifiers,
+	getSystemModifiers
 ];
 
 export function calculateMechStats({
@@ -284,6 +285,27 @@ function getCoreBonusModifiers({ catalogSnapshot }) {
 	}
 
 	return modifiers;
+}
+
+function getSystemModifiers({ catalogSnapshot }) {
+	return (catalogSnapshot.systems ?? []).flatMap(
+		(system, systemIndex) =>
+			(system.bonuses ?? []).flatMap((bonus, bonusIndex) => {
+				if (!STAT_DEFINITIONS[bonus.id])
+					return [];
+
+				const value = Number(bonus.val);
+				if (!Number.isFinite(value))
+					return [];
+
+				return [{
+					id: `${system.id}-${systemIndex}-${bonusIndex}`,
+					stat: bonus.id,
+					operation: 'bonus',
+					value
+				}];
+			})
+	);
 }
 
 const MODIFIER_OPERATIONS = {

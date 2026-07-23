@@ -61,7 +61,7 @@ function createRoadmapLevel(level) {
 		coreBonusId: null,
 		weaponIds: {},
 		loadoutSelections: {},
-		systems: ['ms_custom_paint_job'],
+		systems: [],
 
 		// null means "continue using the previously active frame."
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null

@@ -11,24 +11,64 @@ export function systemIsEligible(level, system) {
 	const meetsTalentRequirements =
 		!system.talent_id ||
 		workingCatalog.talents[level][system.talent_id]
-		== system.talent_rank;
-	const isWithinBudget = 
+			== system.talent_rank;
+	const isWithinBudget =
 		workingCatalog.stats[level].free_sp >= system.sp;
+
+	const aiBudget = workingCatalog.stats[level].free_ai;
+	const honorsAICap =
+		system.type !== 'AI' ||
+		aiBudget > 0 ||
+		aiBudget == 0 &&
+			system.bonuses?.findIndex(bonus => bonus.id == 'ai_cap') >= 0;
+
 	const duplicatesUnique =
 		system.tags?.findIndex(tag => tag.id == 'tg_unique') >= 0 &&
-		workingCatalog.systems[level]?.findIndex(systemId => systemId === system.id) >= 0;
+			workingCatalog.systems[level]?.findIndex(systemId => systemId === system.id) >= 0;
 
 	return meetsLicenseRequirements
 		&& meetsTalentRequirements
 		&& isWithinBudget
+		&& honorsAICap
 		&& !duplicatesUnique;
 }
 
-export function getSPBudget(level, selectedSystems) {
-	let budget = workingCatalog.stats[level]?.sp ?? 0;
+export function hasEligibleSystem(level) {
+	return systems.some(system =>
+		systemIsEligible(level, system)
+	);
+}
+
+export function getLimitedSystemUses(
+	system,
+	limitedBonus = 0
+) {
+	const limitedTag = system.tags?.find(
+		tag => tag.id === 'tg_limited'
+	);
+
+	if (!limitedTag)
+		return null;
+
+	const baseUses = Number(limitedTag.val);
+	const bonusUses = Number(limitedBonus);
+
+	return (
+		Number.isFinite(baseUses) ? baseUses : 0
+	) + (
+		Number.isFinite(bonusUses) ? bonusUses : 0
+	);
+}
+
+export function getSystemsBudget(level, selectedSystems) {
+	let SP = workingCatalog.stats[level]?.sp ?? 0;
+	let AI = workingCatalog.stats[level]?.ai_cap ?? 0;
 	selectedSystems.forEach(selectedId => {
-		budget -= systems.find(system => system.id == selectedId)?.sp ?? 0;
+		SP -= systems.find(system => system.id == selectedId)?.sp ?? 0;
+		console.log(systems.find(system => system.id == selectedId));
+		if (systems.find(system => system.id == selectedId).type == 'AI')
+			AI--;
 	});
 
-	return budget;
+	return { SP, AI };
 }

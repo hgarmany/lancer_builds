@@ -59,7 +59,9 @@ import {
 } from '../model/loadout-state.js';
 import {
 	systemIsEligible,
-	getSPBudget
+	hasEligibleSystem,
+	getLimitedSystemUses,
+	getSystemsBudget
 } from '../rules/systems.js';
 import {
 	workingCatalog,
@@ -331,6 +333,8 @@ function renderMechSkillCell(roadmap, level) {
 				]);
 
 				rerenderMechStats(roadmap, referenceLevel);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.systems', renderSystemsCell]]);
 			}
 		});
 
@@ -440,6 +444,12 @@ function renderFrameCell(roadmap, level) {
 			rerenderFrom(
 				roadmap,
 				referenceLevel,
+				[['.systems', renderSystemsCell]],
+				stoppingLevel
+			);
+			rerenderFrom(
+				roadmap,
+				referenceLevel,
 				[['.weapon-mounts', renderWeaponMountCell]],
 				stoppingLevel
 			);
@@ -490,6 +500,8 @@ function renderCoreBonusCell(roadmap, level) {
 					[['.weapon-mounts', renderWeaponMountCell]]);
 
 				rerenderMechStats(roadmap, referenceLevel);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.systems', renderSystemsCell]]);
 			}
 		});
 
@@ -745,12 +757,21 @@ function renderSystemsCell(roadmap, level) {
 	const wrapper = document.createElement('div');
 	wrapper.className = 'select-group';
 
-	let limited_bonus = workingCatalog.limited_bonus;
-	const selectedIds = roadmap.levels[level]?.systems.filter(x => x);
+	const selectedIds = (
+		roadmap.levels[level]?.systems ?? []
+	).filter(Boolean);
 	workingCatalog.systems[level] = [...selectedIds];
-	workingCatalog.stats[level].free_sp = getSPBudget(level, selectedIds);
+	const stats = workingCatalog.stats[level];
+	const budget = getSystemsBudget(level, selectedIds);
+	stats.free_sp = budget.SP;
+	stats.free_ai = budget.AI;
+	const limitedBonus = stats.limited_bonus ?? 0;
 
-	selectedIds?.forEach((selectedId, idx) => {
+	const selectorIds = hasEligibleSystem(level)
+		? [...selectedIds, null]
+		: selectedIds;
+
+	selectorIds.forEach((selectedId, idx) => {
 		const select = createChoiceSelect({
 			items: systems,
 			selectedId: selectedId,
@@ -766,16 +787,43 @@ function renderSystemsCell(roadmap, level) {
 				const newIdx = Number(event.currentTarget.dataset.idx);
 				const referenceLevel =
 					Number(thisRow.dataset.level);
-				const systems = roadmap.levels[referenceLevel].systems;
-				systems[newIdx] = newSystemId;
+				const levelSystems =
+					roadmap.levels[referenceLevel].systems;
+				levelSystems[newIdx] = newSystemId;
+				roadmap.levels[referenceLevel].systems =
+					levelSystems.filter(Boolean);
 
+				rerenderMechStats(
+					roadmap,
+					referenceLevel,
+					referenceLevel + 1
+				);
 				rerenderFrom(roadmap, referenceLevel, [
 					['.systems', renderSystemsCell]
 				]);
 			}
 		});
 
-		wrapper.append(select);
+		const systemControl = document.createElement('div');
+		systemControl.className = 'system-select-control';
+		systemControl.append(select);
+
+		const selectedSystem = systems.find(
+			system => system.id === selectedId
+		);
+		const limitedUses = selectedSystem
+			? getLimitedSystemUses(selectedSystem, limitedBonus)
+			: null;
+
+		if (limitedUses !== null) {
+			const limitedTag = document.createElement('span');
+			limitedTag.className = 'system-tag limited';
+			limitedTag.textContent = `Limited ${limitedUses}`;
+			limitedTag.title = `${limitedUses} uses`;
+			systemControl.append(limitedTag);
+		}
+
+		wrapper.append(systemControl);
 	});
 
 	cell.append(wrapper);
@@ -799,7 +847,15 @@ function calculateRoadmapMechStats(roadmap, level) {
 			licenses:
 				workingCatalog.licenses[level] ?? {},
 			coreBonuses:
-				workingCatalog.coreBonuses[level] ?? []
+				workingCatalog.coreBonuses[level] ?? [],
+			systems: (
+				roadmap.levels[level]?.systems ?? []
+			).flatMap(systemId => {
+				const system = systems.find(
+					candidate => candidate.id === systemId
+				);
+				return system ? [system] : [];
+			})
 		},
 		roadmapLevel: roadmap.levels[level]
 	});
