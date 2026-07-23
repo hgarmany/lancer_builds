@@ -5,7 +5,8 @@ export let workingCatalog = {
     licenses: [],
 	frames: [],
     coreBonuses: [],
-	stats: []
+	stats: [],
+	systems: []
 };
 
 /**

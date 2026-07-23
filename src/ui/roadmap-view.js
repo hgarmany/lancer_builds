@@ -58,6 +58,10 @@ import {
 	setWeaponSelection
 } from '../model/loadout-state.js';
 import {
+	systemIsEligible,
+	getSPBudget
+} from '../rules/systems.js';
+import {
 	workingCatalog,
 	coreBonusesResetCatalog
 } from '../data/roadmap-table.js';
@@ -270,6 +274,8 @@ function renderTalentCell(roadmap, level) {
 					referenceLevel,
 					[['.weapon-mounts', renderWeaponMountCell]]
 				);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.systems', renderSystemsCell]]);
 			}
 		});
 
@@ -376,6 +382,8 @@ function renderLicenseCell(roadmap, level) {
 					[['.core-bonus', renderCoreBonusCell]]);
 				rerenderFrom(roadmap, referenceLevel,
 					[['.weapon-mounts', renderWeaponMountCell]]);
+				rerenderFrom(roadmap, referenceLevel,
+					[['.systems', renderSystemsCell]]);
 			}
 		});
 		
@@ -733,11 +741,14 @@ function createLoadoutChoiceControl(choice, onChange) {
 function renderSystemsCell(roadmap, level) {
 	const cell = document.createElement('td');
 	cell.className = 'systems';
-	
-	let sp = workingCatalog.stats[level].sp;
+
+	const wrapper = document.createElement('div');
+	wrapper.className = 'select-group';
+
 	let limited_bonus = workingCatalog.limited_bonus;
-	const selectedIds = roadmap.levels[level]?.systems;
-	selectedIds.push(null);
+	const selectedIds = roadmap.levels[level]?.systems.filter(x => x);
+	workingCatalog.systems[level] = [...selectedIds];
+	workingCatalog.stats[level].free_sp = getSPBudget(level, selectedIds);
 
 	selectedIds?.forEach((selectedId, idx) => {
 		const select = createChoiceSelect({
@@ -747,7 +758,7 @@ function renderSystemsCell(roadmap, level) {
 			placeholderText: "Select a system",
 			getLabel: system => system.name,
 			isEligible: system =>
-				sp >= system.sp,
+				systemIsEligible(level, system) || system.id == selectedId,
 			onChange: event => {
 				const thisRow = event.currentTarget.closest('tr');
 
@@ -755,7 +766,8 @@ function renderSystemsCell(roadmap, level) {
 				const newIdx = Number(event.currentTarget.dataset.idx);
 				const referenceLevel =
 					Number(thisRow.dataset.level);
-				roadmap.levels[referenceLevel].systems[newIdx] = newSystemId;
+				const systems = roadmap.levels[referenceLevel].systems;
+				systems[newIdx] = newSystemId;
 
 				rerenderFrom(roadmap, referenceLevel, [
 					['.systems', renderSystemsCell]
@@ -763,9 +775,10 @@ function renderSystemsCell(roadmap, level) {
 			}
 		});
 
-		cell.append(select);
+		wrapper.append(select);
 	});
-	
+
+	cell.append(wrapper);
 	return cell;
 }
 
@@ -862,7 +875,10 @@ function rerenderFrom(
 			}
 		});
 	}
+	console.log('roadmap');
 	console.log(roadmap);
+	console.log('workingCatalog');
+	console.log(workingCatalog);
 }
 
 function resizeViaHide(roadmap, maxLevel) {
