@@ -29,6 +29,33 @@ export function deriveRoadmapWeaponLoadout(roadmap, level) {
 	});
 }
 
+export function getRoadmapWeaponSPCost(roadmap, level) {
+	return getWeaponLoadoutSPCost(
+		deriveRoadmapWeaponLoadout(roadmap, level)
+	);
+}
+
+export function getWeaponLoadoutSPCost(loadout) {
+	return loadout.mounts.reduce(
+		(total, mount) =>
+			total + getWeaponMountSPCost(mount),
+		0
+	);
+}
+
+export function getWeaponMountSPCost(mount) {
+	return mount.slots.reduce((total, slot) => {
+		const selectedWeapon = slot.options.find(
+			weapon => weapon.id === slot.selectedId
+		);
+		const cost = Number(selectedWeapon?.sp ?? 0);
+
+		return total + (
+			Number.isFinite(cost) ? cost : 0
+		);
+	}, 0);
+}
+
 export function reconcileWeaponSlots(
 	roadmap,
 	startingLevel,

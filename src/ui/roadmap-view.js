@@ -53,6 +53,8 @@ import {
 } from '../rules/stats.js';
 import {
 	deriveRoadmapWeaponLoadout,
+	getWeaponMountSPCost,
+	getRoadmapWeaponSPCost,
 	reconcileWeaponSlots,
 	setLoadoutChoice,
 	setWeaponSelection
@@ -99,6 +101,27 @@ const mechSkillOptions = mechSkillIds.map((id, index) => ({
 	id,
 	name: mechSkills[index]
 }));
+const haseLayout = ['h', 's', 'a', 'e'];
+const haseShortLabels = {
+	h: 'Hull',
+	a: 'Agi',
+	s: 'Sys',
+	e: 'Eng'
+};
+const frameImageModules = import.meta.glob(
+	'../assets/frame_images/*.png',
+	{
+		eager: true,
+		import: 'default',
+		query: '?url'
+	}
+);
+const frameImageUrls = new Map(
+	Object.entries(frameImageModules).map(([path, url]) => {
+		const filename = path.split('/').at(-1);
+		return [filename.replace(/\.png$/i, ''), url];
+	})
+);
 const romanNumerals = ['I', 'II', 'III', 'IV'];
 
 const spacer = document.createElement('td');
@@ -195,7 +218,7 @@ function renderRoadmapRow(roadmap, level) {
 	newRow.dataset.level = level;
 	newRow.setAttribute('aria-labelledby', `level-tab-${level}`);
 
-	renderCharacterSelectCells(roadmap, level, newRow);
+	newRow.append(renderLevelUpCell(roadmap, level));
 	renderStats(roadmap, level, newRow);
 	newRow.append(renderWeaponMountCell(roadmap, level));
 	newRow.append(spacer.cloneNode());
@@ -250,16 +273,6 @@ function refreshLevelRailSizing() {
 		syncLevelRailItem(row);
 		rowSizeObserver?.observe(row);
 	}
-}
-
-function renderCharacterSelectCells(roadmap, level, row) {
-	const levelUpCell = renderLevelUpCell(roadmap, level);
-	const frameCell = renderFrameCell(roadmap, level);
-
-	row.append(
-		levelUpCell,
-		frameCell
-	);
 }
 
 function renderLevelUpCell(roadmap, level) {
@@ -405,55 +418,150 @@ function renderTalentCell(roadmap, level) {
 function renderMechSkillCell(roadmap, level) {
 	const { group, controls } = createLevelUpGroup(
 		'mech-skill',
-		'Mech Skill'
+		'HASE'
 	);
-	
-	// isolate roadmap's current mech skills
-	const selectedIds = roadmap.levels[level]?.mechSkillIds;
-	if (level != 0 && selectedIds)
-		selectedIds.length = 1;
+	const selectedIds =
+		roadmap.levels[level]?.mechSkillIds ?? [];
 
-	selectedIds?.forEach((selectedId, idx) => {
-		const select = createChoiceSelect({
-			items: mechSkillOptions,
-			selectedId: selectedId,
-			index: idx,
-			placeholderText: "HASE",
-			getLabel: mechSkill => mechSkill.name,
-			isEligible: mechSkill =>
-				mechSkillIsEligible(level, mechSkill.id),
-			onSelected: mechSkill =>
-				mechSkillsUpdateCatalog(level, mechSkill.id),
-			onChange: event => {
-				const thisRow = event.currentTarget.closest('tr');
+	for (const selectedId of selectedIds) {
+		if (selectedId)
+			mechSkillsUpdateCatalog(level, selectedId);
+	}
 
-				const newMechSkillId = event.currentTarget.value || null;
-				const newIdx = Number(event.currentTarget.dataset.idx);
-				const referenceLevel =
-					Number(thisRow.dataset.level);
-				roadmap.levels[referenceLevel].mechSkillIds[newIdx] = newMechSkillId;
-				mechSkillsResetCatalog(referenceLevel);
+	const assignedPoints =
+		selectedIds.filter(Boolean).length;
+	const pointLimit = selectedIds.length;
+	const remainingPoints = pointLimit - assignedPoints;
+	const widget = document.createElement('div');
+	widget.className = 'hase-control';
 
-				rerenderFrom(roadmap, referenceLevel, [
-					['.mech-skill', renderMechSkillCell],
+	for (const haseId of haseLayout) {
+		const mechSkill = mechSkillOptions.find(
+			option => option.id === haseId
+		);
+		if (!mechSkill) continue;
 
-					...mechSkillOptions.map(({ id }) => [
-						`.hase[data-stat="${id}"]`,
-						(_, targetLevel) =>
-							renderHASECell(targetLevel, id)
-					])
-				]);
+		const assignedHere = selectedIds.filter(
+			selectedId => selectedId === haseId
+		).length;
+		const canIncreaseRank =
+			mechSkillIsEligible(level, haseId);
+		const value =
+			workingCatalog.mechSkills[level]?.[haseId] ?? 0;
+		const stat = document.createElement('div');
+		stat.className = 'hase-control-stat';
+		stat.dataset.hase = haseId;
 
-				rerenderMechStats(roadmap, referenceLevel);
-				rerenderFrom(roadmap, referenceLevel,
-					[['.systems', renderSystemsCell]]);
-			}
+		const name = document.createElement('span');
+		name.className = 'hase-control-name';
+		name.textContent = haseShortLabels[haseId];
+
+		const hex = document.createElement('div');
+		hex.className = 'hase-hex';
+		hex.classList.toggle(
+			'error',
+			value > MAX_MECH_SKILL_RANK
+		);
+
+		const increase = createHASEButton({
+			symbol: '+',
+			action: 'increase',
+			label: `Add ${mechSkill.name} at LL${level}`,
+			disabled:
+				remainingPoints <= 0 ||
+				!canIncreaseRank,
+			onClick: () =>
+				adjustMechSkill(roadmap, level, haseId, 1)
+		});
+		const rank = document.createElement('strong');
+		rank.className = 'hase-rank';
+		rank.textContent = String(value);
+		const decrease = createHASEButton({
+			symbol: '\u2212',
+			action: 'decrease',
+			label:
+				`Remove ${mechSkill.name} point assigned at LL${level}`,
+			disabled: assignedHere === 0,
+			onClick: () =>
+				adjustMechSkill(roadmap, level, haseId, -1)
 		});
 
-		controls.append(select);
-	});
-	
+		hex.append(increase, rank, decrease);
+		stat.append(name, hex);
+		widget.append(stat);
+	}
+
+	const pointCounter = document.createElement('span');
+	pointCounter.className = 'hase-point-counter';
+	pointCounter.textContent =
+		`${assignedPoints}/${pointLimit} assigned`;
+	widget.append(pointCounter);
+	controls.append(widget);
+
 	return group;
+}
+
+function createHASEButton({
+	symbol,
+	action,
+	label,
+	disabled,
+	onClick
+}) {
+	const button = document.createElement('button');
+	button.type = 'button';
+	button.className = `hase-adjust ${action}`;
+	button.textContent = symbol;
+	button.disabled = disabled;
+	button.setAttribute('aria-label', label);
+	button.title = label;
+	button.addEventListener('click', onClick);
+	return button;
+}
+
+function adjustMechSkill(
+	roadmap,
+	level,
+	haseId,
+	direction
+) {
+	const selectedIds = roadmap.levels[level]?.mechSkillIds;
+	if (!selectedIds) return;
+
+	if (direction > 0) {
+		const emptyIndex = selectedIds.findIndex(
+			selectedId => !selectedId
+		);
+		if (
+			emptyIndex < 0 ||
+			!mechSkillIsEligible(level, haseId)
+		) {
+			return;
+		}
+
+		selectedIds[emptyIndex] = haseId;
+	}
+	else {
+		let assignedIndex = -1;
+		for (let index = selectedIds.length - 1; index >= 0; index--) {
+			if (selectedIds[index] === haseId) {
+				assignedIndex = index;
+				break;
+			}
+		}
+
+		if (assignedIndex < 0)
+			return;
+
+		selectedIds[assignedIndex] = null;
+	}
+
+	mechSkillsResetCatalog(level);
+	rerenderFrom(roadmap, level,
+		[['.mech-skill', renderMechSkillCell]]);
+	rerenderMechStats(roadmap, level);
+	rerenderFrom(roadmap, level,
+		[['.systems', renderSystemsCell]]);
 }
 
 function renderLicenseCell(roadmap, level) {
@@ -507,13 +615,32 @@ function renderFrameCell(roadmap, level) {
 	const cell = document.createElement('td');
 	cell.className = 'frame before-non-cell';
 
-	// isolate roadmap's current frame
-	const selectedId = roadmap.levels[level]?.frameId;
+	const selectedId = roadmap.levels[level]?.frameId ?? null;
+	const activeFrameId = getActiveFrameId(roadmap, level);
+	const activeFrame = frames.find(
+		frame => frame.id === activeFrameId
+	);
+	const content = document.createElement('div');
+	content.className = 'frame-cell-content';
+	const imageUrl = frameImageUrls.get(activeFrameId);
+
+	if (imageUrl) {
+		const image = document.createElement('img');
+		image.className = 'frame-image';
+		image.src = imageUrl;
+		image.alt = `${activeFrame?.name ?? 'Active'} frame`;
+		image.loading = 'lazy';
+		image.decoding = 'async';
+		image.draggable = false;
+		content.append(image);
+	}
 
 	const select = createChoiceSelect({
 		items: frames,
 		selectedId: selectedId,
-		placeholderText: "Select a frame",
+		placeholderText: activeFrame
+			? activeFrame.name
+			: "Select a frame",
 		getLabel: frame => frame.name,
 		getDescription: frame => {
 			return frame.description
@@ -557,9 +684,28 @@ function renderFrameCell(roadmap, level) {
 			);
 		}
 	});
-	
-	cell.append(select);
 
+	const control = document.createElement('div');
+	control.className = 'frame-select-control';
+	const isInherited = !selectedId && activeFrame;
+	select.classList.toggle('inherited', Boolean(isInherited));
+	select.setAttribute(
+		'aria-label',
+		isInherited
+			? `Active frame inherited as ${activeFrame.name}. Select a frame at LL${level} to override it.`
+			: `Select active frame at LL${level}`
+	);
+	control.append(select);
+
+	if (isInherited) {
+		const note = document.createElement('span');
+		note.className = 'frame-inheritance-note';
+		note.textContent = 'Select to override';
+		control.append(note);
+	}
+
+	content.append(control);
+	cell.append(content);
 	return cell;
 }
 
@@ -626,34 +772,15 @@ function renderCoreBonusCell(roadmap, level) {
 }
 
 function renderStats(roadmap, level, row) {
-	const haseCells = mechSkillOptions.map(({ id }) =>
-		renderHASECell(level, id)
-	);
-
+	const frameCell = renderFrameCell(roadmap, level);
 	const mechStatCells = renderMechStatCells(roadmap, level);
 
 	row.append(
 		spacer.cloneNode(),
-		...haseCells,
-		spacer.cloneNode(),
+		frameCell,
 		...mechStatCells,
 		spacer.cloneNode()
 	);
-}
-
-function renderHASECell(level, haseId) {
-	const cell = document.createElement('td');
-	cell.className = 'stat hase';
-	cell.dataset.stat = haseId;
-
-	const value = workingCatalog.mechSkills[level]?.[haseId] ?? 0;
-
-	cell.textContent = String(value);
-
-	if (value > MAX_MECH_SKILL_RANK)
-		cell.classList.add('error');
-
-	return cell;
 }
 
 function renderMechStatCells(roadmap, level) {
@@ -735,6 +862,8 @@ function renderWeaponMountCell(roadmap, level) {
 
 					rerenderFrom(roadmap, referenceLevel,
 						[['.weapon-mounts', renderWeaponMountCell]]);
+					rerenderFrom(roadmap, referenceLevel,
+						[['.systems', renderSystemsCell]]);
 				}
 			});
 			select.classList.add(...slot.traits);
@@ -790,12 +919,18 @@ function renderMountBadges(mount) {
 	for (const label of mount.badges)
 		badges.append(createMountBadge(label));
 
+	const spCost = getWeaponMountSPCost(mount);
+	if (spCost > 0)
+		badges.append(createMountBadge(`${spCost} SP`, 'sp-cost'));
+
 	return badges;
 }
 
-function createMountBadge(text) {
+function createMountBadge(text, className = null) {
 	const badge = document.createElement('span');
 	badge.className = 'weapon-mount-badge';
+	if (className)
+		badge.classList.add(className);
 	badge.textContent = text;
 	return badge;
 }
@@ -821,6 +956,8 @@ function renderLoadoutChoices(
 					});
 					rerenderFrom(roadmap, level,
 						[['.weapon-mounts', renderWeaponMountCell]]);
+					rerenderFrom(roadmap, level,
+						[['.systems', renderSystemsCell]]);
 				}
 			)
 		);
@@ -854,7 +991,10 @@ function renderSystemsCell(roadmap, level) {
 	const selectedIds = getEffectiveSystemIds(roadmap, level);
 	workingCatalog.systems[level] = [...selectedIds];
 	const stats = workingCatalog.stats[level];
-	const budget = getSystemsBudget(level, selectedIds);
+	const budget = getSystemsBudget(level, selectedIds, {
+		additionalSPCost:
+			getRoadmapWeaponSPCost(roadmap, level)
+	});
 	stats.free_sp = budget.SP;
 	stats.free_ai = budget.AI;
 	const limitedBonus = stats.limited_bonus ?? 0;

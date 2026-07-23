@@ -79,8 +79,14 @@ export function getLimitedSystemUses(
 	);
 }
 
-export function getSystemsBudget(level, selectedSystems) {
-	let SP = workingCatalog.stats[level]?.sp ?? 0;
+export function getSystemsBudget(
+	level,
+	selectedSystems,
+	{ additionalSPCost = 0 } = {}
+) {
+	let SP =
+		(workingCatalog.stats[level]?.sp ?? 0) -
+		additionalSPCost;
 	let AI = workingCatalog.stats[level]?.ai_cap ?? 0;
 	selectedSystems.forEach(selectedId => {
 		SP -= systems.find(system => system.id == selectedId)?.sp ?? 0;
