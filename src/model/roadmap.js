@@ -61,6 +61,7 @@ function createRoadmapLevel(level) {
 		coreBonusId: null,
 		weaponIds: {},
 		loadoutSelections: {},
+		systems: [],
 
 		// null means "continue using the previously active frame."
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null

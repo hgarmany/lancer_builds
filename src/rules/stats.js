@@ -1,5 +1,7 @@
 // rules/stats.js
 
+import { workingCatalog } from "../data/roadmap-table";
+
 const STAT_DEFINITIONS = {
 	size: {
 		frameProperty: 'size'
@@ -117,6 +119,7 @@ export function calculateMechStats({
 		);
 	}
 
+	workingCatalog.stats[level] = { ...stats };
 	return stats;
 }
 

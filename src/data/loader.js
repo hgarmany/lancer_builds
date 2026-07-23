@@ -9,6 +9,7 @@ export let licenses = null;
 export let frames = null;
 export let coreBonuses = null;
 export let weapons = null;
+export let systems = null;
 
 /**
  * expandability w.r.t. expansions and 3rd party LCPs
@@ -29,4 +30,5 @@ export function importCoreData() {
 	frames = gameData.frames;
 	coreBonuses = gameData.core_bonuses;
 	weapons = gameData.weapons;
+	systems = gameData.systems;
 }

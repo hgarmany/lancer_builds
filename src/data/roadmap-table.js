@@ -4,7 +4,8 @@ export let workingCatalog = {
     mechSkills: [],
     licenses: [],
 	frames: [],
-    coreBonuses: []
+    coreBonuses: [],
+	stats: []
 };
 
 /**

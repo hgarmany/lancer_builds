@@ -8,7 +8,8 @@ import {
 	mechSkills,
 	licenses,
 	frames,
-	coreBonuses
+	coreBonuses,
+	systems
 } from '../data/loader.js';
 import {
 	createChoiceSelect
@@ -74,6 +75,9 @@ const mechSkillOptions = mechSkillIds.map((id, index) => ({
 }));
 const romanNumerals = ['I', 'II', 'III', 'IV'];
 
+const spacer = document.createElement('td');
+spacer.className = 'non-cell';
+
 /**
  * Connect the roadmap name and max LL fields to table + roadmap data
  * 
@@ -111,6 +115,8 @@ export function wireRoadmapHeader(roadmap) {
  * @param {import('../model/roadmap.js').Roadmap} roadmap
  */
 export function initializeRoadmapView(roadmap) {
+	console.log(roadmap);
+
 	tableBody.replaceChildren();
 	reconcileWeaponSlots(roadmap, 0);
 	
@@ -145,6 +151,8 @@ function renderRoadmapRow(roadmap, level) {
 	renderCharacterSelectCells(roadmap, level, newRow);
 	renderStats(roadmap, level, newRow);
 	newRow.append(renderWeaponMountCell(roadmap, level));
+	newRow.append(spacer.cloneNode());
+	newRow.append(renderSystemsCell(roadmap, level));
 
 	return newRow;
 }
@@ -477,16 +485,30 @@ function renderCoreBonusCell(roadmap, level) {
 			}
 		});
 
-		cell.append(select);
+		const wrapper = document.createElement('div');
+		wrapper.className = 'cb-select-control';
+		const label = document.createElement('span');
+		label.className = 'cb-select-label';
+		const selectedCoreBonus = coreBonuses.find(
+			coreBonus => coreBonus.id === selectedId
+		);
+		
+		label.textContent = selectedCoreBonus?.name ?? 'Select a core bonus';
+		label.classList.toggle('placeholder', !selectedCoreBonus);
+
+		if (select) {
+			label.setAttribute('aria-hidden', 'true');
+			wrapper.append(select);
+		}
+
+		wrapper.append(label);
+		cell.append(wrapper);
 	}
 
 	return cell;
 }
 
 function renderStats(roadmap, level, row) {
-	const spacer = document.createElement('td');
-	spacer.className = 'non-cell';
-
 	const haseCells = mechSkillOptions.map(({ id }) =>
 		renderHASECell(level, id)
 	);
@@ -494,11 +516,41 @@ function renderStats(roadmap, level, row) {
 	const mechStatCells = renderMechStatCells(roadmap, level);
 
 	row.append(
-		spacer,
+		spacer.cloneNode(),
 		...haseCells,
 		spacer.cloneNode(),
 		...mechStatCells,
 		spacer.cloneNode()
+	);
+}
+
+function renderHASECell(level, haseId) {
+	const cell = document.createElement('td');
+	cell.className = 'stat hase';
+	cell.dataset.stat = haseId;
+
+	const value = workingCatalog.mechSkills[level]?.[haseId] ?? 0;
+
+	cell.textContent = String(value);
+
+	if (value > MAX_MECH_SKILL_RANK)
+		cell.classList.add('error');
+
+	return cell;
+}
+
+function renderMechStatCells(roadmap, level) {
+	const stats = calculateRoadmapMechStats(roadmap, level);
+	const previousStats = level > 0
+		? calculateRoadmapMechStats(roadmap, level - 1)
+		: null;
+
+	return DISPLAYED_MECH_STAT_IDS.map(statId =>
+		renderMechStatCell(
+			statId,
+			stats[statId],
+			previousStats?.[statId] ?? null
+		)
 	);
 }
 
@@ -507,9 +559,8 @@ function renderWeaponMountCell(roadmap, level) {
 	cell.className = 'weapon-mounts';
 	const loadout = deriveRoadmapWeaponLoadout(roadmap, level);
 
-	if (loadout.mounts.length === 0) {
+	if (loadout.mounts.length === 0)
 		return cell;
-	}
 
 	const mountGrid = document.createElement('div');
 	mountGrid.className = 'weapon-mount-grid';
@@ -678,34 +729,44 @@ function createLoadoutChoiceControl(choice, onChange) {
 	control.append(caption, select);
 	return control;
 }
-function renderHASECell(level, haseId) {
+
+function renderSystemsCell(roadmap, level) {
 	const cell = document.createElement('td');
-	cell.className = 'stat hase';
-	cell.dataset.stat = haseId;
+	cell.className = 'systems';
+	
+	let sp = workingCatalog.stats[level].sp;
+	let limited_bonus = workingCatalog.limited_bonus;
+	const selectedIds = roadmap.levels[level]?.systems;
+	selectedIds.push(null);
 
-	const value = workingCatalog.mechSkills[level]?.[haseId] ?? 0;
+	selectedIds?.forEach((selectedId, idx) => {
+		const select = createChoiceSelect({
+			items: systems,
+			selectedId: selectedId,
+			index: idx,
+			placeholderText: "Select a system",
+			getLabel: system => system.name,
+			isEligible: system =>
+				sp >= system.sp,
+			onChange: event => {
+				const thisRow = event.currentTarget.closest('tr');
 
-	cell.textContent = String(value);
+				const newSystemId = event.currentTarget.value || null;
+				const newIdx = Number(event.currentTarget.dataset.idx);
+				const referenceLevel =
+					Number(thisRow.dataset.level);
+				roadmap.levels[referenceLevel].systems[newIdx] = newSystemId;
 
-	if (value > MAX_MECH_SKILL_RANK)
-		cell.classList.add('error');
+				rerenderFrom(roadmap, referenceLevel, [
+					['.systems', renderSystemsCell]
+				]);
+			}
+		});
 
+		cell.append(select);
+	});
+	
 	return cell;
-}
-
-function renderMechStatCells(roadmap, level) {
-	const stats = calculateRoadmapMechStats(roadmap, level);
-	const previousStats = level > 0
-		? calculateRoadmapMechStats(roadmap, level - 1)
-		: null;
-
-	return DISPLAYED_MECH_STAT_IDS.map(statId =>
-		renderMechStatCell(
-			statId,
-			stats[statId],
-			previousStats?.[statId] ?? null
-		)
-	);
 }
 
 function calculateRoadmapMechStats(roadmap, level) {
