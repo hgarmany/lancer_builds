@@ -77,8 +77,23 @@ const MAX_LICENSE_LEVELS = 12;
 
 // major elements for reference + modification
 const roadmapName = document.getElementById('roadmap-name');
+const roadmapShell = document.querySelector(".roadmap-shell");
+const roadmapContainer = document.querySelector(".roadmap-container");
 const tableBody = document.getElementById("roadmap-body");
+const tableHead = document.querySelector("#roadmap-table thead");
+const levelRail = document.querySelector(".level-rail");
+const levelTabs = document.getElementById("level-tabs");
 const maxLevelInput = document.getElementById('roadmap-max-level');
+const rowSizeObserver = typeof ResizeObserver === 'undefined'
+	? null
+	: new ResizeObserver(entries => {
+		for (const { target } of entries) {
+			if (target === tableHead)
+				syncLevelRailOffset();
+			else
+				syncLevelRailItem(target);
+		}
+	});
 
 const mechSkillOptions = mechSkillIds.map((id, index) => ({
 	id,
@@ -128,7 +143,9 @@ export function wireRoadmapHeader(roadmap) {
 export function initializeRoadmapView(roadmap) {
 	console.log(roadmap);
 
+	wireRoadmapScrollIndicator();
 	tableBody.replaceChildren();
+	levelTabs.replaceChildren();
 	reconcileWeaponSlots(roadmap, 0);
 	
 	for (let rowLevel = 0; rowLevel <= MAX_LICENSE_LEVELS; rowLevel++) {
@@ -141,23 +158,42 @@ export function initializeRoadmapView(roadmap) {
 				throw new Error('Roadmap data is corrupted.');
 		}
 		
+		const levelTab = renderLevelTab(rowLevel);
 		const newRow = renderRoadmapRow(roadmap, rowLevel);
 		newRow.hidden = rowLevel > roadmap.maxLevel;
+		levelTab.hidden = newRow.hidden;
+		levelTabs.append(levelTab);
 		tableBody.append(newRow);
 	}
+
+	refreshLevelRailSizing();
 };
+
+function wireRoadmapScrollIndicator() {
+	if (roadmapContainer.dataset.scrollIndicatorWired)
+		return;
+
+	const updateIndicator = () => {
+		roadmapShell.classList.toggle(
+			'is-scrolled-right',
+			roadmapContainer.scrollLeft > 1
+		);
+	};
+
+	roadmapContainer.dataset.scrollIndicatorWired = 'true';
+	roadmapContainer.addEventListener(
+		'scroll',
+		updateIndicator,
+		{ passive: true }
+	);
+	window.addEventListener('resize', updateIndicator);
+	updateIndicator();
+}
 
 function renderRoadmapRow(roadmap, level) {
 	const newRow = document.createElement('tr');
 	newRow.dataset.level = level;
-
-	const levelCell = document.createElement('th');
-	levelCell.scope = 'row';
-	if (level % 3 == 0 && level != 0)
-		levelCell.className = 'cb-level';
-	levelCell.textContent = `LL${level}`;
-
-	newRow.append(levelCell);
+	newRow.setAttribute('aria-labelledby', `level-tab-${level}`);
 
 	renderCharacterSelectCells(roadmap, level, newRow);
 	renderStats(roadmap, level, newRow);
@@ -166,6 +202,54 @@ function renderRoadmapRow(roadmap, level) {
 	newRow.append(renderSystemsCell(roadmap, level));
 
 	return newRow;
+}
+
+function renderLevelTab(level) {
+	const tab = document.createElement('div');
+	tab.id = `level-tab-${level}`;
+	tab.className = 'level-tab';
+	tab.dataset.level = level;
+	tab.setAttribute('role', 'rowheader');
+	tab.textContent = `LL${level}`;
+
+	if (level % 3 == 0 && level != 0)
+		tab.classList.add('cb-level');
+
+	return tab;
+}
+
+function syncLevelRailItem(tableSection) {
+	const railItem = levelTabs.querySelector(
+		`.level-tab[data-level="${tableSection.dataset.level}"]`);
+	if (!railItem) return;
+
+	if (tableSection !== tableHead)
+		railItem.hidden = tableSection.hidden;
+	if (!tableSection.hidden)
+		railItem.style.height =
+			`${tableSection.getBoundingClientRect().height}px`;
+}
+
+function syncLevelRailOffset() {
+	const firstRow = tableBody.rows[0];
+	if (!firstRow) return;
+
+	const offset =
+		firstRow.getBoundingClientRect().top -
+		levelRail.getBoundingClientRect().top;
+
+	levelRail.style.paddingTop = `${offset}px`;
+}
+
+function refreshLevelRailSizing() {
+	rowSizeObserver?.disconnect();
+	syncLevelRailOffset();
+	rowSizeObserver?.observe(tableHead);
+
+	for (const row of tableBody.rows) {
+		syncLevelRailItem(row);
+		rowSizeObserver?.observe(row);
+	}
 }
 
 function renderCharacterSelectCells(roadmap, level, row) {
@@ -995,4 +1079,6 @@ function resizeViaHide(roadmap, maxLevel) {
 			row.replaceWith(renderRoadmapRow(roadmap, rowLevel));
 		}
 	}
+
+	refreshLevelRailSizing();
 }

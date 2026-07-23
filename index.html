@@ -7,6 +7,18 @@
 		content="width=device-width, initial-scale=1.0"
 	>
 	<title>Lancer Roadmap</title>
+	<script>
+		(() => {
+			const storedTheme = localStorage.getItem("lancer-roadmap-theme");
+			const theme = ["gms-light", "gms-dark"].includes(storedTheme)
+				? storedTheme
+				: window.matchMedia("(prefers-color-scheme: dark)").matches
+					? "gms-dark"
+					: "gms-light";
+
+			document.documentElement.dataset.theme = theme;
+		})();
+	</script>
 	<link rel="stylesheet" href="/src/styles/app.css">
 </head>
 <body>
@@ -27,12 +39,27 @@
 					max="12"
 					step="1">
 			</label>
+
+			<button
+				id="theme-toggle"
+				class="theme-toggle"
+				type="button"
+				aria-pressed="false">
+				<span>Theme</span>
+				<strong>GMS Light</strong>
+			</button>
 		</header>
-		<section class="roadmap-container">
-			<table id="roadmap-table" class="roadmap-table">
-				<thead>
-					<tr>
-						<th scope="col">LL</th>
+		<section class="roadmap-shell">
+			<aside
+				class="level-rail"
+				aria-label="License levels">
+				<div id="level-tabs" class="level-tabs"></div>
+			</aside>
+
+			<div class="roadmap-container">
+				<table id="roadmap-table" class="roadmap-table">
+					<thead>
+						<tr>
 						<th scope="col">Skill Triggers</th>
 						<th scope="col">Talents</th>
 						<th scope="col">Mech Skills</th>
@@ -48,24 +75,25 @@
 						<th scope="col" class="stat-header"><span>Size</span></th>
 						<th scope="col" class="stat-header"><span>HP</span></th>
 						<th scope="col" class="stat-header"><span>Armor</span></th>
-						<th scope="col" class="stat-header"><span>Heat Capacity</span></th>
+						<th scope="col" class="stat-header"><span>Heat Cap</span></th>
 						<th scope="col" class="stat-header"><span>Evasion</span></th>
 						<th scope="col" class="stat-header"><span>Speed</span></th>
 						<th scope="col" class="stat-header"><span>E-Defense</span></th>
 						<th scope="col" class="stat-header"><span>Tech Attack</span></th>
 						<th scope="col" class="stat-header"><span>Sensors</span></th>
-						<th scope="col" class="stat-header"><span>Repair Capacity</span></th>
-						<th scope="col" class="stat-header"><span>Save Target</span></th>
-						<th scope="col" class="stat-header"><span>System Points</span></th>
+						<th scope="col" class="stat-header"><span>Repair Cap</span></th>
+						<th scope="col" class="stat-header"><span>Save</span></th>
+						<th scope="col" class="stat-header"><span>SP</span></th>
 						<th scope="col" class="non-cell"></th>
 						<th scope="col">Mounts</th>
 						<th scope="col" class="non-cell"></th>
 						<th scope="col">Systems</th>
-					</tr>
-				</thead>
+						</tr>
+					</thead>
 
-				<tbody id="roadmap-body"></tbody>
-			</table>
+					<tbody id="roadmap-body"></tbody>
+				</table>
+			</div>
 		</section>
 	</main>
 

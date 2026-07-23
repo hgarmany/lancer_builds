@@ -9,6 +9,9 @@ import {
 	wireRoadmapHeader,
 	initializeRoadmapView
 } from './ui/roadmap-view.js';
+import { initializeThemeControl } from './ui/theme-control.js';
+
+initializeThemeControl();
 
 // grab official massif press data
 importCoreData();
