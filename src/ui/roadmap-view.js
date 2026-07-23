@@ -253,29 +253,58 @@ function refreshLevelRailSizing() {
 }
 
 function renderCharacterSelectCells(roadmap, level, row) {
-	const skillTriggerCell = renderSkillTriggerCell(roadmap, level);
-	const talentCell = renderTalentCell(roadmap, level);
-	const mechSkillCell = renderMechSkillCell(roadmap, level)
-	const licenseCell = renderLicenseCell(roadmap, level);
+	const levelUpCell = renderLevelUpCell(roadmap, level);
 	const frameCell = renderFrameCell(roadmap, level);
-	const coreBonusCell = renderCoreBonusCell(roadmap, level);
 
 	row.append(
-		skillTriggerCell,
-		talentCell,
-		mechSkillCell,
-		licenseCell,
-		frameCell,
-		coreBonusCell
+		levelUpCell,
+		frameCell
 	);
 }
 
-function renderSkillTriggerCell(roadmap, level) {
+function renderLevelUpCell(roadmap, level) {
 	const cell = document.createElement('td');
-	cell.className = 'skill-trigger';
+	cell.className = 'level-up';
+	cell.classList.toggle('initial-build', level === 0);
 
-	const choiceWrapper = document.createElement('div');
-	choiceWrapper.className = 'select-group';
+	const grid = document.createElement('div');
+	grid.className = 'level-up-grid';
+	grid.append(
+		renderSkillTriggerCell(roadmap, level),
+		renderTalentCell(roadmap, level),
+		renderMechSkillCell(roadmap, level)
+	);
+
+	if (level > 0)
+		grid.append(renderLicenseCell(roadmap, level));
+
+	if (level > 0 && level % 3 === 0)
+		grid.append(renderCoreBonusCell(roadmap, level));
+
+	cell.append(grid);
+	return cell;
+}
+
+function createLevelUpGroup(className, labelText) {
+	const group = document.createElement('div');
+	group.className = `level-up-group ${className}`;
+
+	const label = document.createElement('span');
+	label.className = 'level-up-label';
+	label.textContent = labelText;
+
+	const controls = document.createElement('div');
+	controls.className = 'select-group';
+
+	group.append(label, controls);
+	return { group, controls };
+}
+
+function renderSkillTriggerCell(roadmap, level) {
+	const { group, controls } = createLevelUpGroup(
+		'skill-trigger',
+		level === 0 ? 'Skill Triggers' : 'Skill Trigger'
+	);
 	
 	// isolate roadmap's current skill triggers
 	const selectedIds = roadmap.levels[level]?.skillTriggerIds;
@@ -307,20 +336,17 @@ function renderSkillTriggerCell(roadmap, level) {
 			}
 		});
 
-		choiceWrapper.append(select);
+		controls.append(select);
 	});
 	
-	cell.append(choiceWrapper);
-
-	return cell;
+	return group;
 }
 
 function renderTalentCell(roadmap, level) {
-	const cell = document.createElement('td');
-	cell.className = 'talent';
-
-	const choiceWrapper = document.createElement('div');
-	choiceWrapper.className = 'select-group';
+	const { group, controls } = createLevelUpGroup(
+		'talent',
+		level === 0 ? 'Talents' : 'Talent'
+	);
 	
 	// isolate roadmap's current talents
 	const selectedIds = roadmap.levels[level]?.talentIds;
@@ -370,20 +396,17 @@ function renderTalentCell(roadmap, level) {
 			}
 		});
 
-		choiceWrapper.append(select);
+		controls.append(select);
 	});
 	
-	cell.append(choiceWrapper);
-
-	return cell;
+	return group;
 }
 
 function renderMechSkillCell(roadmap, level) {
-	const cell = document.createElement('td');
-	cell.className = level == 0 ? 'mech-skill before-non-cell' : 'mech-skill';
-
-	const choiceWrapper = document.createElement('div');
-	choiceWrapper.className = 'select-group';
+	const { group, controls } = createLevelUpGroup(
+		'mech-skill',
+		'Mech Skill'
+	);
 	
 	// isolate roadmap's current mech skills
 	const selectedIds = roadmap.levels[level]?.mechSkillIds;
@@ -427,72 +450,62 @@ function renderMechSkillCell(roadmap, level) {
 			}
 		});
 
-		choiceWrapper.append(select);
+		controls.append(select);
 	});
 	
-	cell.append(choiceWrapper);
-
-	return cell;
+	return group;
 }
 
 function renderLicenseCell(roadmap, level) {
-	const cell = document.createElement('td');
-	cell.className = level == 0 ? 'non-cell' : 'license';
+	const { group, controls } = createLevelUpGroup(
+		'license',
+		'License'
+	);
+	const selectedId = roadmap.levels[level]?.licenseId;
 
-	if (level != 0) {
-		// isolate roadmap's current license
-		const selectedId = roadmap.levels[level]?.licenseId;
+	const select = createChoiceSelect({
+		items: licenses,
+		selectedId: selectedId,
+		placeholderText: "Select a license",
+		getLabel: license => {
+			const rank = getLicenseRankIfSelected(
+				level, license.id);
 
-		const select = createChoiceSelect({
-			items: licenses,
-			selectedId: selectedId,
-			placeholderText: "Select a license",
-			getLabel: license => {
-				const rank = getLicenseRankIfSelected(
-					level, license.id);
+			return rank > 3
+				? license.name
+				: `${license.name} ${romanNumerals[rank - 1]}`;
+		},
+		isEligible: license =>
+			licenseIsEligible(level, license.id),
+		onSelected: license =>
+			licensesUpdateCatalog(level, license.id),
+		onChange: event => {
+			const newLicenseId = event.currentTarget.value || null;
+			const referenceLevel =
+				Number(event.currentTarget.closest('tr').dataset.level);
+			roadmap.levels[referenceLevel].licenseId = newLicenseId;
+			licensesResetCatalog(referenceLevel);
 
-				return rank > 3
-					? license.name
-					: `${license.name} ${romanNumerals[rank - 1]}`;
-			},
-			isEligible: license =>
-				licenseIsEligible(level, license.id),
-			onSelected: license =>
-				licensesUpdateCatalog(level, license.id),
-			onChange: event => {
-				const newLicenseId = event.currentTarget.value || null;
-				const newIdx = Number(event.currentTarget.dataset.idx);
-				const referenceLevel =
-					Number(event.currentTarget.closest('tr').dataset.level);
-				roadmap.levels[referenceLevel].licenseId = newLicenseId;
-				licensesResetCatalog(referenceLevel);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.license', renderLicenseCell]]);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.frame', renderFrameCell]]);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.core-bonus', renderCoreBonusCell]]);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.weapon-mounts', renderWeaponMountCell]]);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.systems', renderSystemsCell]]);
+		}
+	});
 
-				rerenderFrom(roadmap, referenceLevel,
-					[['.license', renderLicenseCell]]);
-				rerenderFrom(roadmap, referenceLevel,
-					[['.frame', renderFrameCell]]);
-				rerenderFrom(roadmap, referenceLevel,
-					[['.core-bonus', renderCoreBonusCell]]);
-				rerenderFrom(roadmap, referenceLevel,
-					[['.weapon-mounts', renderWeaponMountCell]]);
-				rerenderFrom(roadmap, referenceLevel,
-					[['.systems', renderSystemsCell]]);
-			}
-		});
-		
-		cell.append(select);
-	}
-
-	return cell;
+	controls.append(select);
+	return group;
 }
 
 function renderFrameCell(roadmap, level) {
 	const cell = document.createElement('td');
-	cell.className = 'frame';
-	if (level == 0)
-		cell.classList.add('before-non-cell', 'after-non-cell');
-	if (level % 3 != 0)
-		cell.classList.add('before-non-cell');
+	cell.className = 'frame before-non-cell';
 
 	// isolate roadmap's current frame
 	const selectedId = roadmap.levels[level]?.frameId;
@@ -551,70 +564,65 @@ function renderFrameCell(roadmap, level) {
 }
 
 function renderCoreBonusCell(roadmap, level) {
-	const cell = document.createElement('td');
-	if (level == 0 || level % 3 != 0)
-		cell.className = 'non-cell';
+	const { group, controls } = createLevelUpGroup(
+		'core-bonus',
+		'Core Bonus'
+	);
 
-	else {
-		cell.className = 'core-bonus';
+	// isolate roadmap's current core bonus
+	const selectedId = roadmap.levels[level]?.coreBonusId;
 
-		// isolate roadmap's current core bonus
-		const selectedId = roadmap.levels[level]?.coreBonusId;
+	const select = createChoiceSelect({
+		items: coreBonuses,
+		selectedId: selectedId,
+		placeholderText: "Select a core bonus",
+		getLabel: coreBonus => coreBonus.name,
+		getDescription: coreBonus => {
+			return coreBonus.description
+				.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n');
+		},
+		isEligible: coreBonus =>
+			coreBonusIsEligible(level, coreBonus.id),
+		onSelected: coreBonus =>
+			coreBonusesUpdateCatalog(level, coreBonus.id),
+		onChange: event => {
+			const newCoreBonusId = event.currentTarget.value || null;
+			const referenceLevel =
+				Number(event.currentTarget.closest('tr').dataset.level);
+			roadmap.levels[referenceLevel].coreBonusId = newCoreBonusId;
+			coreBonusesResetCatalog(referenceLevel);
 
-		const select = createChoiceSelect({
-			items: coreBonuses,
-			selectedId: selectedId,
-			placeholderText: "Select a core bonus",
-			getLabel: coreBonus => coreBonus.name,
-			getDescription: coreBonus => {
-				return coreBonus.description
-					.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n');
-			},
-			isEligible: coreBonus =>
-				coreBonusIsEligible(level, coreBonus.id),
-			onSelected: coreBonus =>
-				coreBonusesUpdateCatalog(level, coreBonus.id),
-			onChange: event => {
-				const newCoreBonusId = event.currentTarget.value || null;
-				const newIdx = Number(event.currentTarget.dataset.idx);
-				const referenceLevel =
-					Number(event.currentTarget.closest('tr').dataset.level);
-				roadmap.levels[referenceLevel].coreBonusId = newCoreBonusId;
-				coreBonusesResetCatalog(referenceLevel);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.core-bonus', renderCoreBonusCell]]);
+			reconcileWeaponSlots(roadmap, referenceLevel);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.weapon-mounts', renderWeaponMountCell]]);
 
-				rerenderFrom(roadmap, referenceLevel,
-					[['.core-bonus', renderCoreBonusCell]]);
-				reconcileWeaponSlots(roadmap, referenceLevel);
-				rerenderFrom(roadmap, referenceLevel,
-					[['.weapon-mounts', renderWeaponMountCell]]);
-
-				rerenderMechStats(roadmap, referenceLevel);
-				rerenderFrom(roadmap, referenceLevel,
-					[['.systems', renderSystemsCell]]);
-			}
-		});
-
-		const wrapper = document.createElement('div');
-		wrapper.className = 'cb-select-control';
-		const label = document.createElement('span');
-		label.className = 'cb-select-label';
-		const selectedCoreBonus = coreBonuses.find(
-			coreBonus => coreBonus.id === selectedId
-		);
-		
-		label.textContent = selectedCoreBonus?.name ?? 'Select a core bonus';
-		label.classList.toggle('placeholder', !selectedCoreBonus);
-
-		if (select) {
-			label.setAttribute('aria-hidden', 'true');
-			wrapper.append(select);
+			rerenderMechStats(roadmap, referenceLevel);
+			rerenderFrom(roadmap, referenceLevel,
+				[['.systems', renderSystemsCell]]);
 		}
+	});
 
-		wrapper.append(label);
-		cell.append(wrapper);
+	const wrapper = document.createElement('div');
+	wrapper.className = 'cb-select-control';
+	const label = document.createElement('span');
+	label.className = 'cb-select-label';
+	const selectedCoreBonus = coreBonuses.find(
+		coreBonus => coreBonus.id === selectedId
+	);
+
+	label.textContent = selectedCoreBonus?.name ?? 'Select a core bonus';
+	label.classList.toggle('placeholder', !selectedCoreBonus);
+
+	if (select) {
+		label.setAttribute('aria-hidden', 'true');
+		wrapper.append(select);
 	}
 
-	return cell;
+	wrapper.append(label);
+	controls.append(wrapper);
+	return group;
 }
 
 function renderStats(roadmap, level, row) {

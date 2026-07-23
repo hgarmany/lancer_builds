@@ -319,15 +319,15 @@ main {
 	background-color: var(--surface);
 }
 
-.roadmap-table tbody tr > :nth-child(8),
-.roadmap-table tbody tr > :nth-child(13) {
+.roadmap-table tbody tr > :nth-child(4),
+.roadmap-table tbody tr > :nth-child(9) {
 	border-radius: 1rem 0 0 1rem;
 }
 
 .roadmap-table tbody tr > :last-child,
-.roadmap-table tbody tr > :nth-child(6),
-.roadmap-table tbody tr > :nth-child(11),
-.roadmap-table tbody tr > :nth-child(24) {
+.roadmap-table tbody tr > :nth-child(2),
+.roadmap-table tbody tr > :nth-child(7),
+.roadmap-table tbody tr > :nth-child(20) {
 	border-radius: 0 1rem 1rem 0;
 }
 
@@ -369,6 +369,76 @@ main {
 	border-radius: 1rem;
 }
 
+.roadmap-table tbody td.level-up {
+	width: 23rem;
+	min-width: 23rem;
+	padding: 0.5rem;
+	vertical-align: top;
+}
+
+.level-up-grid {
+	display: grid;
+	gap: 0.3rem;
+}
+
+.level-up-group {
+	display: grid;
+	grid-template-columns: 4.5rem minmax(0, 13rem);
+	align-items: start;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.level-up-label {
+	align-self: center;
+	color: var(--text-muted);
+	font-size: 0.58rem;
+	font-weight: 900;
+	letter-spacing: 0.055em;
+	line-height: 1.15;
+	text-transform: uppercase;
+}
+
+.level-up-group .select-group,
+.level-up-group select {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+}
+
+.level-up.initial-build .level-up-grid {
+	grid-template-areas:
+		"triggers talents"
+		"triggers hase";
+	grid-template-columns:
+		minmax(0, 1.15fr)
+		minmax(0, 0.85fr);
+	align-items: start;
+	gap: 0.45rem 0.8rem;
+}
+
+.level-up.initial-build .level-up-group {
+	grid-template-columns: minmax(0, 1fr);
+	gap: 0.15rem;
+}
+
+.level-up.initial-build .level-up-label {
+	align-self: start;
+}
+
+.level-up.initial-build .skill-trigger {
+	grid-area: triggers;
+	min-width: 0;
+}
+
+.level-up.initial-build .talent {
+	grid-area: talents;
+}
+
+.level-up.initial-build .mech-skill {
+	grid-area: hase;
+}
+
 .roadmap-table tbody td.stat {
 	text-align: center;
 	font-family: Consolas, Monaco, monospace;
@@ -399,7 +469,7 @@ main {
 }
 
 .cb-select-control {
-	padding: 0.25rem 0.4rem 0.25rem 0.75rem;
+	padding: 0.25rem 0.4rem 0.25rem 0;
 	width: 13rem;
 }
 .weapon-select-control {
@@ -570,7 +640,7 @@ main {
 
 .system-select-grid {
 	display: grid;
-	grid-template-rows: repeat(3, max-content);
+	grid-template-rows: repeat(4, max-content);
 	grid-auto-flow: column;
 	grid-auto-columns: max-content;
 	align-items: center;
@@ -592,22 +662,20 @@ main {
 }
 
 .loadout-choice-controls {
-	display: flex;
 	align-items: center;
-	gap: 0.4rem;
-	margin-bottom: 0.3rem;
 	white-space: nowrap;
 }
 
 .loadout-choice-control {
 	display: flex;
 	align-items: center;
-	gap: 0.2rem;
+	gap: 0.25rem;
 	color: var(--text-muted);
 	font-size: 0.62rem;
 	font-weight: 700;
 	letter-spacing: 0.035em;
 	text-transform: uppercase;
+	margin-bottom: 0.25rem;
 }
 
 .roadmap-table tbody .loadout-choice-control select {
@@ -622,9 +690,10 @@ main {
 
 .weapon-mount-grid {
 	display: grid;
+	grid-template-rows: repeat(2, max-content);
 	grid-auto-flow: column;
 	grid-auto-columns: max-content;
-	align-items: center;
+	align-items: start;
 	gap: 0.35rem;
 }
 
