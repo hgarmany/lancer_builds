@@ -6,12 +6,16 @@ import {
 	exoticEquipmentIsUnlocked
 } from './equipment-access.js';
 
+const INTEGRATED_SYSTEM_ID_PATTERN =
+	/^ms_(.+)_integrated$/;
+
 export function systemIsEligible(
 	level,
 	system,
 	{
 		replacingSystemId = null,
-		unlockedEquipmentIds = []
+		unlockedEquipmentIds = [],
+		activeFrameId = null
 	} = {}
 ) {
 	const replacingSystem = replacingSystemId
@@ -48,14 +52,20 @@ export function systemIsEligible(
 	const remainingInstances = selectedInstances -
 		(replacingSystemId === system.id ? 1 : 0);
 	const duplicatesUnique =
-		system.tags?.some(tag => tag.id === 'tg_unique') &&
+		(
+			system.tags?.some(tag => tag.id === 'tg_unique') ||
+			isFrameIntegratedSystem(system)
+		) &&
 		remainingInstances > 0;
 	const isAccessible = exoticEquipmentIsUnlocked(
 		system,
 		unlockedEquipmentIds
 	);
+	const matchesActiveFrame =
+		systemMatchesActiveFrame(system, activeFrameId);
 
 	return isAccessible
+		&& matchesActiveFrame
 		&& meetsLicenseRequirements
 		&& meetsTalentRequirements
 		&& isWithinBudget
@@ -63,9 +73,24 @@ export function systemIsEligible(
 		&& !duplicatesUnique;
 }
 
-export function hasEligibleSystem(level) {
+export function hasEligibleSystem(level, options = {}) {
 	return systems.some(system =>
-		systemIsEligible(level, system)
+		systemIsEligible(level, system, options)
+	);
+}
+
+export function isFrameIntegratedSystem(system) {
+	return INTEGRATED_SYSTEM_ID_PATTERN.test(system?.id ?? '');
+}
+
+function systemMatchesActiveFrame(system, activeFrameId) {
+	const match = (system?.id ?? '').match(
+		INTEGRATED_SYSTEM_ID_PATTERN
+	);
+
+	return (
+		!match ||
+		activeFrameId === `mf_${match[1]}`
 	);
 }
 

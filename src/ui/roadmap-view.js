@@ -95,6 +95,7 @@ const rowSizeObserver = typeof ResizeObserver === 'undefined'
 			else
 				syncLevelRailItem(target);
 		}
+		syncLevelRailSpacing();
 	});
 let updateCatalogFromRenderedSelections = true;
 
@@ -124,6 +125,20 @@ const frameImageUrls = new Map(
 	})
 );
 const romanNumerals = ['I', 'II', 'III', 'IV'];
+const mechStatLabels = {
+	size: 'Size',
+	hp: 'HP',
+	armor: 'Armor',
+	heatcap: 'Heat Cap',
+	evasion: 'Evasion',
+	speed: 'Speed',
+	edef: 'E-Defense',
+	tech_attack: 'Tech Attack',
+	sensor_range: 'Sensors',
+	repcap: 'Repair Cap',
+	save: 'Save',
+	sp: 'SP'
+};
 
 const spacer = document.createElement('td');
 spacer.className = 'non-cell';
@@ -268,9 +283,17 @@ function syncLevelRailItem(tableSection) {
 
 	if (tableSection !== tableHead)
 		railItem.hidden = tableSection.hidden;
-	if (!tableSection.hidden)
+	if (!tableSection.hidden) {
+		const trailingGap = getRoadmapRowTrailingGap(
+			tableSection
+		);
 		railItem.style.height =
-			`${tableSection.getBoundingClientRect().height}px`;
+			`${Math.max(
+				0,
+				tableSection.getBoundingClientRect().height -
+					trailingGap
+			)}px`;
+	}
 }
 
 function syncLevelRailOffset() {
@@ -284,6 +307,43 @@ function syncLevelRailOffset() {
 	levelRail.style.paddingTop = `${offset}px`;
 }
 
+function syncLevelRailSpacing() {
+	const visibleRows = [...tableBody.children].filter(
+		row => !row.hidden
+	);
+
+	for (let index = 0; index < visibleRows.length; index++) {
+		const row = visibleRows[index];
+		const railItem = levelTabs.querySelector(
+			`.level-tab[data-level="${row.dataset.level}"]`
+		);
+		if (!railItem) continue;
+
+		const nextRow = visibleRows[index + 1];
+		const geometricGap = nextRow
+			? nextRow.getBoundingClientRect().top -
+				row.getBoundingClientRect().bottom
+			: 0;
+		const trailingGap = nextRow
+			? getRoadmapRowTrailingGap(row)
+			: 0;
+
+		railItem.style.marginBottom = `${Math.max(
+			0,
+			geometricGap + trailingGap
+		)}px`;
+	}
+}
+
+function getRoadmapRowTrailingGap(row) {
+	const firstCell = row.firstElementChild;
+	if (!firstCell) return 0;
+
+	return Number.parseFloat(
+		getComputedStyle(firstCell).borderBottomWidth
+	) || 0;
+}
+
 function refreshLevelRailSizing() {
 	rowSizeObserver?.disconnect();
 	syncLevelRailOffset();
@@ -293,6 +353,8 @@ function refreshLevelRailSizing() {
 		syncLevelRailItem(row);
 		rowSizeObserver?.observe(row);
 	}
+
+	syncLevelRailSpacing();
 }
 
 function renderLevelUpCell(roadmap, level) {
@@ -805,14 +867,35 @@ function renderCoreBonusCell(roadmap, level) {
 
 function renderStats(roadmap, level, row) {
 	const frameCell = renderFrameCell(roadmap, level);
-	const mechStatCells = renderMechStatCells(roadmap, level);
 
 	row.append(
 		spacer.cloneNode(),
 		frameCell,
-		...mechStatCells,
+		renderMechStatsCell(roadmap, level),
 		spacer.cloneNode()
 	);
+}
+
+function renderMechStatsCell(roadmap, level) {
+	const cell = document.createElement('td');
+	cell.className = 'stats';
+
+	const table = document.createElement('table');
+	table.className = 'mech-stats-table';
+	table.setAttribute('aria-label', `Mech stats at LL${level}`);
+
+	const body = document.createElement('tbody');
+	const statCells = renderMechStatCells(roadmap, level);
+
+	for (let index = 0; index < statCells.length; index += 6) {
+		const row = document.createElement('tr');
+		row.append(...statCells.slice(index, index + 6));
+		body.append(row);
+	}
+
+	table.append(body);
+	cell.append(table);
+	return cell;
 }
 
 function renderMechStatCells(roadmap, level) {
@@ -1047,9 +1130,12 @@ function renderSystemsCell(roadmap, level) {
 
 	const wrapper = document.createElement('div');
 	wrapper.className = 'system-select-grid';
+	const activeFrameId = getActiveFrameId(roadmap, level);
 
 	// add an empty selector only if another system can be added
-	const selectorIds = hasEligibleSystem(level)
+	const selectorIds = hasEligibleSystem(level, {
+		activeFrameId
+	})
 		? [...selectedIds, null]
 		: selectedIds;
 
@@ -1065,8 +1151,9 @@ function renderSystemsCell(roadmap, level) {
 					.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
 			isEligible: system =>
 				systemIsEligible(level, system, {
-					replacingSystemId: selectedId
-				}) || system.id == selectedId,
+					replacingSystemId: selectedId,
+					activeFrameId
+				}),
 			onChange: event => {
 				const thisRow = event.currentTarget.closest('tr');
 
@@ -1171,7 +1258,7 @@ function rerenderMechStats(
 		? stoppingLevel + 1
 		: Infinity;
 
-	for (const row of tableBody.querySelectorAll('tr')) {
+	for (const row of tableBody.children) {
 		const level = Number(row.dataset.level);
 		if (
 			level < startingLevel ||
@@ -1180,13 +1267,9 @@ function rerenderMechStats(
 			continue;
 		}
 
-		const replacementCells = renderMechStatCells(roadmap, level);
-
-		DISPLAYED_MECH_STAT_IDS.forEach((statId, index) => {
-			row.querySelector(
-				`.mech-stat[data-stat="${statId}"]`
-			)?.replaceWith(replacementCells[index]);
-		});
+		row.querySelector(':scope > .stats')?.replaceWith(
+			renderMechStatsCell(roadmap, level)
+		);
 	}
 }
 
@@ -1195,18 +1278,23 @@ function renderMechStatCell(statId, value, previousValue) {
 	cell.className = 'stat mech-stat';
 	cell.dataset.stat = statId;
 
-	if (statId === 'limited_bonus')
-		cell.classList.add('limited-bonus');
 	if (mechStatDecreased(statId, value, previousValue))
 		cell.classList.add('hazard');
 
+	const label = document.createElement('span');
+	label.className = 'mech-stat-label';
+	label.textContent = mechStatLabels[statId] ?? statId;
+
+	const output = document.createElement('strong');
+	output.className = 'mech-stat-value';
 	if (value !== null) {
-		cell.textContent =
+		output.textContent =
 			statId === 'size' && value < 1
 			? '\u00BD'
 			: String(value);
 	}
 
+	cell.append(label, output);
 	return cell;
 }
 

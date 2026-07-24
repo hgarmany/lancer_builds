@@ -399,6 +399,11 @@ main {
 	padding-top: 0;
 }
 
+.level-tabs {
+	display: flex;
+	flex-direction: column;
+}
+
 .level-tab {
 	display: flex;
 	width: 3.25rem;
@@ -410,11 +415,9 @@ main {
 }
 
 .level-tab {
-	border-top: 0.25rem solid transparent;
-	border-bottom: 0.25rem solid transparent;
+	border: 0;
 	border-radius: 1rem 0 0 1rem;
 	background-color: var(--ll-highlight);
-	background-clip: padding-box;
 	color: var(--on-primary);
 	font-size: 0.85rem;
 }
@@ -450,6 +453,7 @@ main {
 .roadmap-table thead th {
 	padding: 0.5rem 0.8rem;
 	border: 0;
+	border-bottom: 0.4rem solid var(--surface);
 	background-color: transparent;
 	color: var(--table-header-text);
 	font-family: "Helvetica Black", "Arial Black", sans-serif;
@@ -465,17 +469,17 @@ main {
 	background-color: var(--surface);
 }
 
-.roadmap-table tbody tr > :nth-child(3) {
+.roadmap-table > tbody > tr > :nth-child(3) {
 	border-radius: 1rem 0 0 1rem;
 }
 
-.roadmap-table tbody tr > :first-child,
-.roadmap-table tbody tr > :last-child,
-.roadmap-table tbody tr > :nth-child(15) {
+.roadmap-table > tbody > tr > :first-child,
+.roadmap-table > tbody > tr > :last-child,
+.roadmap-table > tbody > tr > :nth-child(4) {
 	border-radius: 0 1rem 1rem 0;
 }
 
-.roadmap-table tbody td {
+.roadmap-table > tbody > tr > td {
 	padding: 0.25rem;
 	border: 0;
 	background-color: var(--cell);
@@ -483,13 +487,20 @@ main {
 	width: 10rem;
 }
 
-.roadmap-table tbody tr > * {
-	border-top: 0.25rem solid transparent;
-	border-bottom: 0.25rem solid transparent;
+.roadmap-table > tbody > tr > * {
+	border-top: 0;
+	border-bottom: 0;
 	background-clip: padding-box;
 }
 
-.roadmap-table tbody tr:hover td:not(.non-cell) {
+.roadmap-table
+	> tbody
+	> tr:not([hidden]):has(~ tr:not([hidden]))
+	> * {
+	border-bottom: 0.5rem solid transparent;
+}
+
+.roadmap-table > tbody > tr:hover > td:not(.non-cell) {
 	background-color: var(--cell-hover);
 }
 
@@ -846,18 +857,58 @@ main {
 	text-transform: uppercase;
 }
 
+.roadmap-table tbody td.stats {
+	width: auto;
+	padding: 0.35rem;
+}
+
+.mech-stats-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0.2rem;
+	table-layout: fixed;
+}
+
 .roadmap-table tbody td.stat {
+	width: 3.75rem;
+	min-width: 3.75rem;
+	height: 3.25rem;
+	padding: 0.3rem 0.2rem;
+	border: 0;
+	border-radius: 0.45rem;
+	background-color: var(--cell-alternate);
 	text-align: center;
 	font-family: Consolas, Monaco, monospace;
-	font-size: 1rem;
 	font-weight: 800;
+	vertical-align: middle;
 }
 
-.roadmap-table tbody td.stat:nth-child(2n) {
-	background-color: var(--cell-alternate);
+.mech-stat-label,
+.mech-stat-value {
+	display: block;
 }
 
-.roadmap-table tbody tr:hover td.stat:nth-child(2n) {
+.mech-stat-label {
+	min-height: 1.1em;
+	color: var(--text-muted);
+	font-family:
+		Inter, "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 0.5rem;
+	font-weight: 900;
+	letter-spacing: 0.035em;
+	line-height: 1.1;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.mech-stat-value {
+	margin-top: 0.2rem;
+	color: var(--text);
+	font-size: 1rem;
+	line-height: 1;
+}
+
+.roadmap-table > tbody > tr:hover td.stat {
 	background-color: var(--cell-alternate-hover);
 }
 
@@ -919,31 +970,14 @@ main {
 	line-height: 1.2;
 }
 
-.roadmap-table thead th.stat-header {
-	position: relative;
-	z-index: 2;
-	width: 2.5rem;
-	min-width: 2.5rem;
-	height: 5.5rem;
-	padding: 0;
-	overflow: visible;
-}
-
-.roadmap-table thead th.stat-header > span {
-	position: absolute;
-	z-index: 1;
-	left: 50%;
-	bottom: 0.5rem;
-	width: max-content;
-	transform: translateX(-0.25rem) rotate(-45deg);
-	transform-origin: left bottom;
-	white-space: nowrap;
-}
-
 .roadmap-table tbody td.mech-stat.hazard {
 	font-weight: 700;
 	color: var(--hazard);
 	box-shadow: inset 0 -0.18rem var(--hazard-light);
+}
+
+.roadmap-table tbody td.mech-stat.hazard .mech-stat-value {
+	color: var(--hazard);
 }
 
 .roadmap-table tbody td .select-group {
