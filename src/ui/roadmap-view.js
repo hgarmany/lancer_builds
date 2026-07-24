@@ -96,6 +96,7 @@ const rowSizeObserver = typeof ResizeObserver === 'undefined'
 				syncLevelRailItem(target);
 		}
 	});
+let updateCatalogFromRenderedSelections = true;
 
 const mechSkillOptions = mechSkillIds.map((id, index) => ({
 	id,
@@ -162,31 +163,50 @@ export function wireRoadmapHeader(roadmap) {
  * Render the complete roadmap table.
  *
  * @param {import('../model/roadmap.js').Roadmap} roadmap
+ * @param {Object} [options]
+ * @param {boolean} [options.catalogIsInitialized=false]
  */
-export function initializeRoadmapView(roadmap) {
+export function initializeRoadmapView(
+	roadmap,
+	{ catalogIsInitialized = false } = {}
+) {
 	console.log(roadmap);
 
 	wireRoadmapScrollIndicator();
 	tableBody.replaceChildren();
 	levelTabs.replaceChildren();
 	reconcileWeaponSlots(roadmap, 0);
-	
-	for (let rowLevel = 0; rowLevel <= MAX_LICENSE_LEVELS; rowLevel++) {
-		if (roadmap.levels[rowLevel]?.level !== rowLevel) {
-			/*
-			 * Missing levels above maxLevel may be expected, depending
-			 * on how setMaxLevel initializes the model.
-			 */
-			if (rowLevel <= roadmap.maxLevel)
-				throw new Error('Roadmap data is corrupted.');
+
+	const previousCatalogUpdateMode =
+		updateCatalogFromRenderedSelections;
+	updateCatalogFromRenderedSelections = !catalogIsInitialized;
+
+	try {
+		for (
+			let rowLevel = 0;
+			rowLevel <= MAX_LICENSE_LEVELS;
+			rowLevel++
+		) {
+			if (roadmap.levels[rowLevel]?.level !== rowLevel) {
+				/*
+				 * Missing levels above maxLevel may be expected,
+				 * depending on how setMaxLevel initializes the model.
+				 */
+				if (rowLevel <= roadmap.maxLevel)
+					throw new Error('Roadmap data is corrupted.');
+			}
+
+			const levelTab = renderLevelTab(rowLevel);
+			const newRow = renderRoadmapRow(roadmap, rowLevel);
+			newRow.hidden = rowLevel > roadmap.maxLevel;
+			levelTab.hidden = newRow.hidden;
+			levelTabs.append(levelTab);
+			tableBody.append(newRow);
 		}
-		
-		const levelTab = renderLevelTab(rowLevel);
-		const newRow = renderRoadmapRow(roadmap, rowLevel);
-		newRow.hidden = rowLevel > roadmap.maxLevel;
-		levelTab.hidden = newRow.hidden;
-		levelTabs.append(levelTab);
-		tableBody.append(newRow);
+	}
+	finally {
+		updateCatalogFromRenderedSelections =
+			previousCatalogUpdateMode;
 	}
 
 	refreshLevelRailSizing();
@@ -334,8 +354,14 @@ function renderSkillTriggerCell(roadmap, level) {
 			getDescription: skillTrigger => skillTrigger.description,
 			isEligible: skillTrigger =>
 				skillTriggerIsEligible(level, skillTrigger.id),
-			onSelected: skillTrigger =>
-				skillTriggersUpdateCatalog(level, skillTrigger.id),
+			onSelected: skillTrigger => {
+				if (updateCatalogFromRenderedSelections) {
+					skillTriggersUpdateCatalog(
+						level,
+						skillTrigger.id
+					);
+				}
+			},
 			onChange: event => {
 				const newSkillTriggerId = event.currentTarget.value || null;
 				const newIdx = Number(event.currentTarget.dataset.idx);
@@ -386,8 +412,10 @@ function renderTalentCell(roadmap, level) {
 			},
 			isEligible: talent =>
 				talentIsEligible(level, talent.id),
-			onSelected: talent =>
-				talentsUpdateCatalog(level, talent.id),
+			onSelected: talent => {
+				if (updateCatalogFromRenderedSelections)
+					talentsUpdateCatalog(level, talent.id);
+			},
 			onChange: event => {
 				const newTalentId = event.currentTarget.value || null;
 				const newIdx = Number(event.currentTarget.dataset.idx);
@@ -424,7 +452,7 @@ function renderMechSkillCell(roadmap, level) {
 		roadmap.levels[level]?.mechSkillIds ?? [];
 
 	for (const selectedId of selectedIds) {
-		if (selectedId)
+		if (selectedId && updateCatalogFromRenderedSelections)
 			mechSkillsUpdateCatalog(level, selectedId);
 	}
 
@@ -585,8 +613,10 @@ function renderLicenseCell(roadmap, level) {
 		},
 		isEligible: license =>
 			licenseIsEligible(level, license.id),
-		onSelected: license =>
-			licensesUpdateCatalog(level, license.id),
+		onSelected: license => {
+			if (updateCatalogFromRenderedSelections)
+				licensesUpdateCatalog(level, license.id);
+		},
 		onChange: event => {
 			const newLicenseId = event.currentTarget.value || null;
 			const referenceLevel =
@@ -729,8 +759,10 @@ function renderCoreBonusCell(roadmap, level) {
 		},
 		isEligible: coreBonus =>
 			coreBonusIsEligible(level, coreBonus.id),
-		onSelected: coreBonus =>
-			coreBonusesUpdateCatalog(level, coreBonus.id),
+		onSelected: coreBonus => {
+			if (updateCatalogFromRenderedSelections)
+				coreBonusesUpdateCatalog(level, coreBonus.id);
+		},
 		onChange: event => {
 			const newCoreBonusId = event.currentTarget.value || null;
 			const referenceLevel =

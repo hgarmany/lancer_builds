@@ -1,4 +1,7 @@
 import { weapons } from '../../data/loader.js';
+import {
+	exoticEquipmentIsUnlocked
+} from '../equipment-access.js';
 
 const WEAPON_MOUNT_ORDER = Object.freeze({
 	Superheavy: 0,
@@ -123,8 +126,15 @@ export function getGrantedIntegratedWeapons(frame, talentRanks = {}) {
 	return grants;
 }
 
-export function weaponIsAccessible(licenseRanks, weapon) {
+export function weaponIsAccessible(
+	licenseRanks,
+	weapon,
+	{ unlockedEquipmentIds = [] } = {}
+) {
 	if (weapon.talent_item || weapon.talent_id)
+		return false;
+
+	if (!exoticEquipmentIsUnlocked(weapon, unlockedEquipmentIds))
 		return false;
 
 	if (isGmsLl0Weapon(weapon))

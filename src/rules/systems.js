@@ -2,11 +2,17 @@
 
 import { workingCatalog } from '../data/roadmap-table.js';
 import { systems } from '../data/loader.js';
+import {
+	exoticEquipmentIsUnlocked
+} from './equipment-access.js';
 
 export function systemIsEligible(
 	level,
 	system,
-	{ replacingSystemId = null } = {}
+	{
+		replacingSystemId = null,
+		unlockedEquipmentIds = []
+	} = {}
 ) {
 	const replacingSystem = replacingSystemId
 		? systems.find(candidate =>
@@ -44,8 +50,13 @@ export function systemIsEligible(
 	const duplicatesUnique =
 		system.tags?.some(tag => tag.id === 'tg_unique') &&
 		remainingInstances > 0;
+	const isAccessible = exoticEquipmentIsUnlocked(
+		system,
+		unlockedEquipmentIds
+	);
 
-	return meetsLicenseRequirements
+	return isAccessible
+		&& meetsLicenseRequirements
 		&& meetsTalentRequirements
 		&& isWithinBudget
 		&& honorsAICap

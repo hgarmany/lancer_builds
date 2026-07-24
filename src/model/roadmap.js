@@ -1,6 +1,7 @@
 // src/model/roadmap.js
 
 import {
+	resetWorkingCatalog,
 	workingCatalog
 } from "../data/roadmap-table.js"
 
@@ -101,6 +102,8 @@ export function createRoadmap({
 }
 
 export function initializeRoadmapCatalog(roadmap) {
+	resetWorkingCatalog();
+
 	for (let level = 0; level <= roadmap.maxLevel; level++) {
 		// base state for new level
 		if (level > 0) {
@@ -134,6 +137,9 @@ export function initializeRoadmapCatalog(roadmap) {
 		// load in skill triggers
 		const catalogSkillTriggers = workingCatalog.skillTriggers[level];
 		for (const skillTriggerId of roadmap.levels[level].skillTriggerIds) {
+			if (!skillTriggerId)
+				continue;
+
 			if (catalogSkillTriggers[skillTriggerId] === undefined) {
 				catalogSkillTriggers[skillTriggerId] = 1;
 			} else {
@@ -151,6 +157,9 @@ export function initializeRoadmapCatalog(roadmap) {
 		// load in talents
 		const catalogTalents = workingCatalog.talents[level];
 		for (const talentId of roadmap.levels[level].talentIds) {
+			if (!talentId)
+				continue;
+
 			if (catalogTalents[talentId] === undefined)
 				catalogTalents[talentId] = 1;
 			else
@@ -160,6 +169,9 @@ export function initializeRoadmapCatalog(roadmap) {
 		// load in mech skills
 		const catalogMechSkills = workingCatalog.mechSkills[level];
 		for (const mechSkillId of roadmap.levels[level].mechSkillIds) {
+			if (!mechSkillId)
+				continue;
+
 			if (catalogMechSkills[mechSkillId] === undefined)
 				catalogMechSkills[mechSkillId] = 1;
 			else

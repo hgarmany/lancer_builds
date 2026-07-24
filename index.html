@@ -40,6 +40,29 @@
 					step="1">
 			</label>
 
+			<details id="lcp-manager" class="lcp-manager">
+				<summary>
+					LCPs
+					<span id="lcp-count">0</span>
+				</summary>
+				<div class="lcp-panel">
+					<button
+						id="lcp-install"
+						type="button">
+						Install .lcp
+					</button>
+					<input
+						id="lcp-file"
+						class="visually-hidden"
+						type="file"
+						accept=".lcp,application/zip">
+					<ul id="lcp-packages"></ul>
+					<output
+						id="lcp-status"
+						aria-live="polite"></output>
+				</div>
+			</details>
+
 			<button
 				id="theme-toggle"
 				class="theme-toggle"

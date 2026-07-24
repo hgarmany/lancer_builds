@@ -9,6 +9,11 @@ export let workingCatalog = {
 	systems: []
 };
 
+export function resetWorkingCatalog() {
+	for (const catalog of Object.values(workingCatalog))
+		catalog.length = 0;
+}
+
 /**
  * Clears all working data for licenses
  * at or above the specified level
