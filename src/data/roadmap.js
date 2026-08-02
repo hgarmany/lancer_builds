@@ -1,6 +1,6 @@
 // data/roadmap.js
 
-const MAX_LICENSE_LEVELS = 12;
+const MAX_LICENSE_LEVEL = 12;
 
 export let roadmap = {};
 
@@ -76,10 +76,10 @@ function createDefaultRoadmapLevel(level) {
 export function createDefaultRoadmap() {
     roadmap = {
         name: 'New Roadmap',
-        maxLevel: MAX_LICENSE_LEVELS,
+        maxLevel: MAX_LICENSE_LEVEL,
 		allowExotics: false,
         ll: Array.from(
-            { length: MAX_LICENSE_LEVELS + 1 },
+            { length: MAX_LICENSE_LEVEL + 1 },
             (_, level) => createDefaultRoadmapLevel(level)
         )
     };

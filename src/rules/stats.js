@@ -15,6 +15,15 @@ import {
 	MAX_FRAME_SIZE
 } from '../constants.js';
 
+/**
+ * Evaluates whether a non-size stat has
+ * decreased since the previous level
+ * 
+ * @param {Object} catalog 
+ * @param {number} level 
+ * @param {string} id 
+ * @returns {boolean}
+ */
 export function didStatWorsen(catalog, level, id) {
 	if (level == 0)
 		return false;
@@ -31,7 +40,7 @@ export function didStatWorsen(catalog, level, id) {
  * @param {Number} frameId 
  * @returns stats Object
  */
-function createBaseStats(frameId) {
+function getBaseFrameStats(frameId) {
 	const frame = srcData.frames[frameId];
 
 	return Object.fromEntries(
@@ -135,23 +144,23 @@ function getMechSkillModifiers({ catalog, level }) {
  * @returns stat modifier Array
  */
 function getCoreBonusModifiers({ catalog, level }) {
-	const activeCBs = catalog.coreBonuses[level];
 	let modifiers = [];
 
-	for (const id of activeCBs) {
-		const cbSrc = srcData.coreBonuses[id];
-		if (!cbSrc || !cbSrc.bonuses)
-			continue;
-
-		cbSrc.bonuses.forEach(bonus => {
-			if (bonus.val && MECH_STAT_IDS.includes(bonus.id)) {
-				modifiers.push({
-					stat: bonus.id,
-					value: bonus.val
-				});
-			}
-		});
-	}
+	catalog.coreBonuses[level]?.forEach(coreBonus => {
+		const cbSrc = srcData.coreBonuses[coreBonus];
+		
+		if (cbSrc && cbSrc.bonuses) {
+			cbSrc.bonuses.forEach(bonus => {
+				const value = Number(bonus.val) ?? 0;
+				if (value && STAT_DEFINITIONS[bonus.id]) {
+					modifiers.push({
+						stat: bonus.id,
+						value: bonus.val
+					});
+				}
+			});
+		}
+	});
 
 	return modifiers;
 }
@@ -164,23 +173,23 @@ function getCoreBonusModifiers({ catalog, level }) {
  * @returns stat modifier Array
  */
 function getSystemModifiers({ catalog, level }) {
-	const systems = roadmap.ll[level].systems;
 	let modifiers = [];
 
-	for (const system of systems) {
+	roadmap.ll[level].systems?.forEach(system => {
 		const sysSrc = srcData.systems[system.id];
-		if (!sysSrc || !sysSrc.bonuses)
-			continue;
-
-		sysSrc.bonuses.forEach(bonus => {
-			if (bonus.val && MECH_STAT_IDS.includes(bonus.id)) {
-				modifiers.push({
-					stat: bonus.id,
-					value: bonus.val
-				});
-			}
-		});
-	}
+		
+		if (sysSrc && sysSrc.bonuses) {
+			sysSrc.bonuses.forEach(bonus => {
+				const value = Number(bonus.val) ?? 0;
+				if (value && STAT_DEFINITIONS[bonus.id]) {
+					modifiers.push({
+						stat: bonus.id,
+						value: bonus.val
+					});
+				}
+			});
+		}
+	});
 
 	return modifiers;
 }
@@ -200,12 +209,12 @@ const modifierSets = [
  * @returns stats Object
  */
 export function calculateMechStats(catalog, level) {
-	const frameId = catalog.activeFrame[level] ?? null;
+	const frameId = catalog.activeFrame[level];
 	if (!frameId)
 		return null;
 
 	// initialize stats from frame data
-	const stats = createBaseStats(frameId);
+	const stats = getBaseFrameStats(frameId);
 
 	// build a list of bonuses on top of base stats
 	const modifiers = modifierSets.flatMap(

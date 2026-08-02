@@ -1,44 +1,61 @@
 // constants.js
 
+export const MAX_SKILL_RANK = 3;
+export const MAX_TALENT_RANK = 3;
+export const MAX_LICENSE_RANK = 3;
+export const MAX_HASE_RANK = 6;
+
 export const MAX_FRAME_SIZE = 3;
 
 export const STAT_DEFINITIONS = {
-	size: {
-		frameProperty: 'size'
-	},
 	hp: {
-		frameProperty: 'hp'
-	},
-	armor: {
-		frameProperty: 'armor'
-	},
-	heatcap: {
-		frameProperty: 'heatcap'
+		frameProperty: 'hp',
+		label: 'HP'
 	},
 	evasion: {
-		frameProperty: 'evasion'
-	},
-	speed: {
-		frameProperty: 'speed'
-	},
-	edef: {
-		frameProperty: 'edef'
+		frameProperty: 'evasion',
+		label: 'Evasion'
 	},
 	tech_attack: {
-		frameProperty: 'tech_attack'
+		frameProperty: 'tech_attack',
+		label: 'Tech Attack'
+	},
+	edef: {
+		frameProperty: 'edef',
+		label: 'E\u2011Defense'
+	},
+	heatcap: {
+		frameProperty: 'heatcap',
+		label: 'Heat Capacity'
+	},
+	save: {
+		frameProperty: 'save',
+		label: 'Save Target'
+	},
+	repcap: {
+		frameProperty: 'repcap',
+		label: 'Repair Capacity'
+	},
+	speed: {
+		frameProperty: 'speed',
+		label: 'Speed'
+	},
+	sp: {
+		frameProperty: 'sp',
+		label: 'System Points'
+	},
+	armor: {
+		frameProperty: 'armor',
+		label: 'Armor'
+	},
+	size: {
+		frameProperty: 'size',
+		label: 'Size'
 	},
 	sensor_range: {
 		frameProperty: 'sensor_range',
+		label: 'Sensors',
 		allowModifiers: false
-	},
-	repcap: {
-		frameProperty: 'repcap'
-	},
-	save: {
-		frameProperty: 'save'
-	},
-	sp: {
-		frameProperty: 'sp'
 	},
 	limited_bonus: {
 		defaultValue: 0,
@@ -61,3 +78,5 @@ export const DISPLAYED_MECH_STAT_IDS = Object.freeze(
 		)
 		.map(([statId]) => statId)
 );
+
+export const ROMAN_NUMERALS = ['I', 'II', 'III'];
