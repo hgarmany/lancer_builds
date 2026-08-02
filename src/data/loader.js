@@ -10,21 +10,37 @@ const LCP_COLLECTIONS = Object.freeze([
 	'core_bonuses',
 	'frames',
 	'weapons',
-	'systems'
+	'systems',
+	'mods'
 ]);
 
 export const srcData = {};
+
+function normalizeById(dataset) {
+	const normalizedSet = new Array();
+
+	for (const item of dataset) {
+		const id = item.id;
+		delete item.id;
+		normalizedSet[id] = item;
+	}
+
+	return normalizedSet;
+}
 
 export function importCoreData() {
 	const mergedData = {
 		...lancerData
 	};
-
-	srcData.skillTriggers = mergedData.skills ?? [];
-	srcData.talents = mergedData.talents ?? [];
+	
+	srcData.skillTriggers = normalizeById(mergedData.skills ?? []);
+	srcData.talents = normalizeById(mergedData.talents ?? []);
 	srcData.licenses = getLicenses(mergedData);
-	srcData.frames = mergedData.frames ?? [];
-	srcData.coreBonuses = mergedData.core_bonuses ?? [];
-	srcData.weapons = mergedData.weapons ?? [];
-	srcData.systems = mergedData.systems ?? [];
+	srcData.frames = normalizeById(mergedData.frames ?? []);
+	srcData.coreBonuses = normalizeById(mergedData.core_bonuses ?? []);
+	srcData.weapons = normalizeById(mergedData.weapons ?? []);
+	srcData.systems = normalizeById(mergedData.systems ?? []);
+	srcData.mods = normalizeById(mergedData.mods ?? []);
+
+	console.log(srcData);
 }

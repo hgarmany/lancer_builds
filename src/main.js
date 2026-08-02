@@ -5,7 +5,7 @@ import {
 } from './data/loader.js';
 
 import {
-    createRoadmap
+    createDefaultRoadmap
 } from './data/roadmap.js';
 
 import {
@@ -14,17 +14,17 @@ import {
 
 import {
     wireHeader
-} from './wires.js';
+} from './ui/wires.js';
 
 import {
     initializeRenderPipeline
-} from './render/renderer.js';
+} from './ui/renderer.js';
 
 // grab official massif press data
 importCoreData();
 
 // configure a blank roadmap
-createRoadmap();
+createDefaultRoadmap();
 
 // initialize roadmap planner
 wireHeader();

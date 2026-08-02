@@ -6,7 +6,7 @@ const excludeLicenseNamesIds = [
 
 /**
  * Derive existence of licenses from
- * frame, system, and weapon requirements.
+ * frame, system, and weapon requirements
  *
  * @param {Object} gameData
  * @returns {Array<{id: string, name: string}>}
@@ -21,9 +21,8 @@ export function getLicenses(gameData) {
 	];
 
 	for (const collection of collections) {
-		if (!Array.isArray(collection)) {
+		if (!Array.isArray(collection))
 			continue;
-		}
 
 		for (const item of collection) {
 			const licenseName = getLicenseName(item);
@@ -32,11 +31,11 @@ export function getLicenses(gameData) {
 				licenseNames.add(licenseName);
 		}
 	}
-
+	
 	return [...licenseNames]
 		.sort((a, b) => a.localeCompare(b))
 		.map(name => ({
-			id: slugify(name),
+			id: `mf_${slugify(name)}`,
 			name
 		}));
 }

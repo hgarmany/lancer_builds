@@ -55,35 +55,41 @@ function createDefaultRoadmapLevel(level) {
 	return {
 		skillTriggerIds: createEmptySlots(limits.skillTriggers),
 		talentIds: createEmptySlots(limits.talents),
-		mechSkillIds: createEmptySlots(limits.mechSkills),
+		haseIds: createEmptySlots(limits.mechSkills),
 		licenseId: null,
 		coreBonusId: null,
-		weaponIds: [],
-		systemIds: [],
-		loadoutTags: {},
+		systems: [],
 
 		// null means "continue using the previously active frame"
-		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null
+		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null,
+		mounts: level == 0 ? [
+			{ type: 'Flex', weapons: [ null ] },
+			{ type: 'Main', weapons: [ null ] },
+			{ type: 'Heavy', weapons: [ null ] }
+		] : []
 	};
 }
 
-export function createRoadmap({
-    name = 'New Roadmap',
-    maxLevel = MAX_LICENSE_LEVELS
-} = {}) {
+/**
+ * Configure roadmap to default blank
+ */
+export function createDefaultRoadmap() {
     roadmap = {
-        name,
-        maxLevel,
+        name: 'New Roadmap',
+        maxLevel: MAX_LICENSE_LEVELS,
+		allowExotics: false,
         ll: Array.from(
-            { length: maxLevel + 1 },
+            { length: MAX_LICENSE_LEVELS + 1 },
             (_, level) => createDefaultRoadmapLevel(level)
         )
-    }
+    };
 
     console.log(roadmap);
 }
 
 /**
+ * Resize roadmap to match new maximum level
+ * 
  * @param {Roadmap} roadmap
  * @param {number} maxLevel
  */
@@ -91,14 +97,10 @@ export function setMaxLevel(roadmap, maxLevel) {
 	validateLevel(maxLevel);
 
 	if (maxLevel > roadmap.maxLevel) {
-		for (
-			let level = roadmap.maxLevel + 1;
-			level <= maxLevel;
-			level += 1
-		) {
+		for (let i = roadmap.maxLevel + 1; i <= maxLevel; i++)
 			roadmap.levels.push(createRoadmapLevel(level));
-		}
-	} else if (maxLevel < roadmap.maxLevel) {
+	}
+	else if (maxLevel < roadmap.maxLevel) {
 		roadmap.levels.length = maxLevel + 1;
 	}
 

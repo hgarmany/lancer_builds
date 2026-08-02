@@ -2,7 +2,7 @@
 
 import {
 	roadmap
-} from './data/roadmap.js';
+} from '../data/roadmap.js';
 
 const roadmapName = document.getElementById('roadmap-name');
 const roadmapShell = document.getElementById("roadmap-shell");
