@@ -1,0 +1,126 @@
+// rules/systems.js
+
+import {
+	roadmap
+} from '../data/roadmap.js';
+
+import {
+	cumulativeCatalog
+} from '../data/cumulativeCatalog.js';
+
+import {
+	srcData
+} from '../data/loader.js';
+
+import {
+	TAGS,
+	doesItemHaveTag,
+	getItemNumUses,
+	isFrameIntegratedItem
+} from './installsCommon.js';
+
+const talents = cumulativeCatalog.talents;
+const licenses = cumulativeCatalog.licenses;
+const stats = cumulativeCatalog.stats;
+
+/**
+ * Get whether a system has a given tag
+ * 
+ * @param {string} id
+ * @param {string} tagId
+ * @returns {boolean}
+ */
+export function doesSystemHaveTag(id, tagId) {
+	return doesItemHaveTag(srcData.systems[id], tagId);
+}
+
+/**
+ * Get the bonus a system adds to the AI cap
+ * Defaults to 0 for non-bonus systems
+ * 
+ * @param {string} id
+ * @returns {number}
+ */
+function systemAIBonus(id) {
+	return Number(srcData.systems[id]?.bonuses
+		?.find(bonus => bonus.id === 'ai_cap')?.val) ?? 0;
+}
+
+/**
+ * Get the number of uses a limited system has
+ * Non-limited systems return -1
+ * 
+ * @param {string} id
+ * @returns {number}
+ */
+export function getSystemNumUses(id) {
+	return getItemNumUses(srcData.systems[id]);
+}
+
+/**
+ * Determine whether the system with the given id
+ * is a valid choice at this level
+ * 
+ * @param {number} level
+ * @param {string} id
+ * @param {string} selectedId
+ * @returns {boolean}
+ */
+export function isSystemEligible(level, id, selectedId = null) {
+	const candidate = srcData.systems[id];
+
+	// reject invalid systems, unpermitted exotics, integrated systems
+	if (!candidate ||
+		!roadmap.allowExotics && doesSystemHaveTag(id, TAGS.EXOTIC) ||
+		isFrameIntegrated(id))
+		return false;
+
+	const selectedSystem = selectedId ? srcData.systems[selectedId] : null;
+
+	// determine whether adding/swapping systems is within the level's budget
+	const withinSPBudget =
+		(selectedId ?
+			Number(candidate.sp) - Number(selectedSystem.sp) :
+			Number(candidate.sp)) <=
+			stats[level].sp_budget;
+	
+	if (!withinSPBudget)
+		return false;
+
+	// AI systems need a free AI slot
+	if (doesSystemHaveTag(id, TAGS.AI)) {
+		stats[level].ai_budget +
+			systemAIBonus(candidate) -
+			systemAIBonus(selectedSystem) >= 0;
+	}
+
+	// check for uniques, reject unique systems already installed
+	if (doesSystemHaveTag(id, TAGS.UNIQUE) &&
+		id != selectedId &&
+		roadmap.ll[level].systems.find(system => system.id === id) !== null)
+		return false;
+
+	// talent-issued systems must match rank exactly
+	if (candidate.talent_item)
+		return candidate.talent_rank == talents[level][candidate.talent_id];
+
+	// gms systems are always eligible
+	if (!candidate.license_id)
+		return true;
+
+	// allow systems at or below the level's license rank
+	return candidate.license_level <=
+		licenses[level][candidate.license_id];
+}
+
+/**
+ * Get whether a level can take any more systems
+ * 
+ * @param {number} level
+ * @returns {boolean}
+ */
+export function hasEligibleSystem(level) {
+	return srcData.systems.some(system =>
+		isSystemEligible(level, system.id, null)
+	);
+}

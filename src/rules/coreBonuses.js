@@ -28,12 +28,12 @@ export function hasCoreBonus(level, id) {
  * 
  * @param {number} level 
  * @param {string} id 
- * @param {boolean} selected 
+ * @param {string} selectedId
  * @returns {boolean}
  */
-export function isCoreBonusEligible(level, id, selected = false) {
+export function isCoreBonusEligible(level, id, selectedId = null) {
 	// forbid repeat selections
-	if (!selected && hasCoreBonus(level, id))
+	if (!(id === selectedId) && hasCoreBonus(level, id))
 		return false;
 
 	const candidateCB = srcData.coreBonuses[id];

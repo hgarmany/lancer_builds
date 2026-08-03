@@ -18,9 +18,9 @@ const licenses = cumulativeCatalog.licenses;
  * @param {boolean} selected 
  * @returns {number}
  */
-export function getLicenseRank(level, id, selected = false) {
+export function getLicenseRank(level, id, selectedId = null) {
 	const rank = licenses[level][id] ?? 0;
-	return selected ? rank - 1 : rank;
+	return (id === selectedId) ? rank - 1 : rank;
 }
 
 /**
@@ -32,7 +32,7 @@ export function getLicenseRank(level, id, selected = false) {
  * @param {boolean} selected 
  * @returns {boolean}
  */
-export function isLicenseEligible(level, id, selected = false) {
+export function isLicenseEligible(level, id, selectedId = null) {
 	// licenses limited by total rank
-	return getLicenseRank(level, id, selected) < MAX_LICENSE_RANK;
+	return getLicenseRank(level, id, selectedId) < MAX_LICENSE_RANK;
 }
