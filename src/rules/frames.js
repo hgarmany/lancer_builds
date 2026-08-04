@@ -33,7 +33,7 @@ export function getEffectiveFrameId(level) {
  * @returns {Array<string>}
  */
 export function getActiveFrameMountTypes(level) {
-	return srcData.frames[frameCatalog[level]]?.mounts ?? [];
+	return srcData.frames.get(frameCatalog[level])?.mounts ?? [];
 }
 
 /**
@@ -41,13 +41,12 @@ export function getActiveFrameMountTypes(level) {
  * is a valid choice at this level
  * 
  * @param {number} level 
- * @param {string} id 
- * @param {boolean} selected 
+ * @param {string} id
  * @returns 
  */
-export function isFrameEligible(level, id, selected = false) {
+export function isFrameEligible(level, id) {
 	// frame must be either GMS or within the scope of selected licenses
-	const frame = srcData.frames[id];
-	return Number(licenses[level][frame.license_id]) >= frame.license_level ||
+	const frame = srcData.frames.get(id);
+	return Number(licenses[level].get(frame.license_id)) >= frame.license_level ||
 		frame.source === 'GMS';
 }

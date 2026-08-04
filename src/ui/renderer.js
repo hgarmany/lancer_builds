@@ -16,9 +16,23 @@ import {
 	createCommonSelect
 } from './selectControl.js';
 
+import {
+	MAX_LICENSE_RANK,
+	ROMAN_NUMERALS
+} from '../constants.js';
 
 
 
+
+
+import {
+	getLicenseRank,
+	isLicenseEligible
+} from '../rules/licenses.js';
+
+import {
+	isCoreBonusEligible
+} from '../rules/coreBonuses.js';
 
 import {
 	getEffectiveFrameId,
@@ -32,11 +46,107 @@ import {
 function applySelection(level, select, id, getEligibility) {
 	select.value = id;
 	select.classList.add('occupied');
-	select.classList.toggle('error', !getEligibility(level, id, true));
+	select.classList.toggle('error', !getEligibility(level, id, id));
+}
+
+function renderSkillTriggerGroup(level) {
+	return null;
+}
+
+function renderTalentGroup(level) {
+	return null;
+}
+
+function renderLicense(level) {
+	const licenseId = roadmap.ll[level].licenseId;
+
+	// generate prototype selector
+	const select = createCommonSelect({
+		className: CELL.LEVELUP.name,
+		srcItems: srcData.licenses,
+		placeholderText: 'Select a license',
+		getLabel: ({ item }) => {
+			const selectedId =
+				item.id === licenseId ? licenseId : null;
+			const rank = getLicenseRank(level, item.id, selectedId);
+			const showRank = selectedId !== null || rank < MAX_LICENSE_RANK;
+
+			return item.name + (showRank ?
+				` <span class="rank">${ROMAN_NUMERALS[rank]}</span>` : '');
+		},
+		getEligibility: ({ id }) => isLicenseEligible(level, id)
+	});
+
+	// configure selector for current user-selected value
+	if (licenseId) {
+		applySelection(level, select, licenseId, isLicenseEligible);
+	}
+
+	// wire selector to perform page updates when selection changes
+	select.addEventListener('change', event => {
+		licenseUpdate(event);
+	});
+
+	return select;
+}
+
+function renderCoreBonus(level) {
+	const coreBonusId = roadmap.ll[level].coreBonusId;
+
+	if (level === 0 || level % 3 !== 0)
+		return null;
+
+	// generate prototype selector
+	const select = createCommonSelect({
+		className: CELL.LEVELUP.name,
+		srcItems: srcData.coreBonuses,
+		placeholderText: 'Select a core bonus',
+		getLabel: ({ item }) => item.name,
+		getDescription: ({ item }) => item.description,
+		getEligibility: ({ id }) => isCoreBonusEligible(level, id)
+	});
+
+	// configure selector for current user-selected value
+	if (coreBonusId)
+		applySelection(level, select, coreBonusId, isCoreBonusEligible);
+
+	// wire selector to perform page updates when selection changes
+	select.addEventListener('change', event => {
+		coreBonusUpdate(event);
+	});
+
+	return select;
+}
+
+function renderHASEGroup(level) {
+	return null;
 }
 
 function renderLevelUp(level) {
-	return [];
+	const leftColumn = document.createElement('div');
+	leftColumn.className = 'level-up-col';
+
+	const rightColumn = document.createElement('div');
+	rightColumn.className = 'level-up-col';
+
+	leftColumn.append(renderSkillTriggerGroup(level));
+
+	if (level === 0) {
+		rightColumn.append(
+			renderTalentGroup(level),
+			renderHASEGroup(level)
+		);
+	}
+	else {
+		leftColumn.append(
+			renderTalentGroup(level),
+			renderLicense(level),
+			renderCoreBonus(level)
+		);
+		rightColumn.append(renderHASEGroup(level));
+	}
+
+	return [leftColumn, rightColumn];
 }
 
 function renderFrame(level) {
@@ -44,17 +154,17 @@ function renderFrame(level) {
 
 	// load icon image from third party database
 	const icon = document.createElement('img');
-	icon.src = srcData.frames[activeFrameId]?.image_url ?? '';
+	icon.src = srcData.frames.get(activeFrameId)?.image_url ?? '';
 
 	// generate prototype selector
 	const select = createCommonSelect({
 		className: CELL.FRAME.name,
 		srcItems: srcData.frames,
 		placeholderText: 'Select a frame',
-		getLabel: frame => frame.name,
-		getDescription: frame =>
-			frame.description?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
-		getEligibility: id => isFrameEligible(level, id)
+		getLabel: ({ item }) => item.name,
+		getDescription: ({ item }) =>
+			item.description?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
+		getEligibility: ({ id }) => isFrameEligible(level, id)
 	});
 
 	// configure selector for current user-selected value

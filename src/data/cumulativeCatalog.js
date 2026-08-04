@@ -43,9 +43,9 @@ function initializeCatalogLevel(level) {
 			numAtMax: 0
 		};
 
-		cumulativeCatalog.talents[level] = {};
-		cumulativeCatalog.hase[level] = {};
-		cumulativeCatalog.licenses[level] = {};
+		cumulativeCatalog.talents[level] = new Map();
+		cumulativeCatalog.hase[level] = new Map();
+		cumulativeCatalog.licenses[level] = new Map();
 		cumulativeCatalog.coreBonuses[level] = [];
 		cumulativeCatalog.activeFrame[level] = null;
 		cumulativeCatalog.stats[level] = {};
@@ -59,17 +59,14 @@ function initializeCatalogLevel(level) {
 		...cumulativeCatalog.skillTriggers[previousLevel]
 	};
 
-	cumulativeCatalog.talents[level] = {
-		...cumulativeCatalog.talents[previousLevel]
-	};
+	cumulativeCatalog.talents[level] =
+		new Map(cumulativeCatalog.talents[previousLevel]);
 
-	cumulativeCatalog.hase[level] = {
-		...cumulativeCatalog.hase[previousLevel]
-	};
+	cumulativeCatalog.hase[level] =
+		new Map(cumulativeCatalog.hase[previousLevel]);
 
-	cumulativeCatalog.licenses[level] = {
-		...cumulativeCatalog.licenses[previousLevel]
-	};
+	cumulativeCatalog.licenses[level] =
+		new Map(cumulativeCatalog.licenses[previousLevel]);
 
 	cumulativeCatalog.coreBonuses[level] = [
 		...cumulativeCatalog.coreBonuses[previousLevel]
@@ -91,7 +88,7 @@ function initializeCatalogLevel(level) {
  * @returns 
  */
 function increment(catalog, id) {
-	return catalog[id] = (catalog[id] ?? 0) + 1;
+	return catalog.set(id, (catalog.get(id) ?? 0) + 1);
 }
 
 /**
@@ -166,7 +163,8 @@ export function initializeCatalog() {
 		if (levelData.coreBonusId) {
 			if (level === 0 || level % 3 !== 0)
 				throw new Error(`Core bonus found at invalid level LL${level}`);
-			cumulativeCatalog.coreBonuses[level][level / 3 - 1] = coreBonusId;
+			cumulativeCatalog.coreBonuses[level][level / 3 - 1] =
+				levelData.coreBonusId;
 		}
 
 		// load in active frame

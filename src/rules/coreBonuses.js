@@ -34,30 +34,29 @@ export function hasCoreBonus(level, id) {
  *	}}
  * @returns {boolean}
  */
-export function isCoreBonusEligible({
-	level, coreBonus = null, id = null, selected = false
-}) {
+export function isCoreBonusEligible(level, id, selectedId = null) {
 	// forbid repeat selections
 	if (!(id === selectedId) && hasCoreBonus(level, id))
 		return false;
 
-	if (!coreBonus)
-		coreBonus = srcData.coreBonuses[id];
-	const manufacturer = coreBonus.source;
+	const candidate = srcData.coreBonuses.get(id);
+	const manufacturer = candidate.source;
+
 	// allow all GMS core bonuses
 	if (manufacturer == 'GMS')
 		return true;
 
 	// otherwise evaluate unspent license levels
 	let total = 0;
-	licenses[level]?.forEach((key, value) => {
-		if (srcData.frames?.[key] == manufacturer)
+	licenses[level]?.forEach((value, key) => {
+		if (srcData.frames?.get(key).source === manufacturer)
 			total += value;
 	});
 	
 	if (level > 3) {
 		for (const refCBId of cbCatalog[level - 1]) {
-			if (srcData.coreBonuses[refCBId]?.source === manufacturer)
+			console.log(refCBId);
+			if (srcData.coreBonuses.get(refCBId)?.source === manufacturer)
 				total -= 3;
 		}
 	}

@@ -84,6 +84,13 @@ export function createDefaultRoadmap() {
 		)
 	};
 
+	roadmap.ll[1].licenseId = 'mf_hydra';
+	roadmap.ll[2].licenseId = 'mf_hydra';
+	roadmap.ll[3].licenseId = 'mf_hydra';
+	roadmap.ll[2].frameId = 'mf_hydra';
+	roadmap.ll[4].licenseId = 'mf_balor';
+	roadmap.ll[3].coreBonusId = 'cb_the_lesson_of_the_held_image';
+
 	console.log(roadmap);
 }
 

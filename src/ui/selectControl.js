@@ -5,7 +5,7 @@
  * 
  * @param {{
  *	className: string,
- *	srcItems: Array<Object>,
+ *	srcItems: Map<string, Object>,
  *	placeholderText: string,
  *	getLabel: function,
  *	getDescription: function,
@@ -29,24 +29,26 @@ export function createCommonSelect({
 	placeholderOption.value = '';
 	placeholderOption.innerHTML = placeholderText;
 	selectTemplate.append(placeholderOption);
-	
-	Object.entries(srcItems).forEach(([id, item]) => {
+
+	for (const [id, item] of srcItems) {
+		const context = { id, item };
+
 		// prepare an option for each item
 		const option = document.createElement('option');
 		option.value = id;
 		if (getLabel)
-			option.innerHTML = getLabel(item) ?? '';
+			option.innerHTML = getLabel?.(context) ?? '';
 
 		if (getDescription)
-			option.title = getDescription(item) ?? '';
+			option.title = getDescription?.(context) ?? '';
 
-		if (getEligibility && !getEligibility(id)) {
+		if (getEligibility && !getEligibility?.(context)) {
 			option.disabled = true;
 			option.hidden = true;
 		}
 
 		selectTemplate.append(option);
-	});
+	}
 
 	return selectTemplate;
 }

@@ -31,13 +31,15 @@ export function getLicenses(gameData) {
 				licenseNames.add(licenseName);
 		}
 	}
-	
-	return [...licenseNames]
-		.sort((a, b) => a.localeCompare(b))
-		.map(name => ({
-			id: `mf_${slugify(name)}`,
-			name
-		}));
+
+	const licenses = new Map();
+
+	for (const name of [...licenseNames].sort((a, b) => a.localeCompare(b))) {
+		const id = `mf_${slugify(name)}`;
+		licenses.set(id, { id, name });
+	}
+
+	return licenses;
 }
 
 /**

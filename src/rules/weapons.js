@@ -61,7 +61,7 @@ const MOUNT_SLOTS = Object.freeze({
  * @returns {boolean}
  */
 export function doesWeaponHaveTag(id, tagId) {
-	return doesItemHaveTag(srcData.weapons[id], tagId);
+	return doesItemHaveTag(srcData.weapons.get(id), tagId);
 }
 
 /**
@@ -72,7 +72,7 @@ export function doesWeaponHaveTag(id, tagId) {
  * @returns {number}
  */
 export function getWeaponNumUses(id) {
-	return getItemNumUses(srcData.weapons[id]);
+	return getItemNumUses(srcData.weapons.get(id));
 }
 
 /**
@@ -90,7 +90,7 @@ export function getMountSlots(mountType, selectedIds) {
 
 	// flex mount expands to include a second aux slot
 	// if the first weapon is aux
-	return srcData.weapons[selectedIds[0]]?.mount === 'Auxiliary' ?
+	return srcData.weapons.get(selectedIds[0])?.mount === 'Auxiliary' ?
 		[MAIN_SLOT, AUXILIARY_SLOT] :
 		[MAIN_SLOT];
 }
@@ -122,7 +122,7 @@ export function isWeaponEligible(
 	selectedId = null,
 	slotDefinition = null
 ) {
-	const candidate = srcData.weapons[id];
+	const candidate = srcData.weapons.get(id);
 
 	// reject invalid weapons, unpermitted exotics, integrated weapons
 	if (!candidate ||
@@ -141,7 +141,7 @@ export function isWeaponEligible(
 
 	// determine whether adding/swapping weapons is within the level's budget
 	if (candidate.sp) {
-		const selectedWeapon = selectedId ? srcData.weapons[selectedId] : null;
+		const selectedWeapon = selectedId ? srcData.weapons.get(selectedId) : null;
 		const withinBudget =
 			Number(candidate.sp ?? 0) - Number(selectedWeapon?.sp ?? 0) <=
 			stats[level].sp_budget;
@@ -158,7 +158,7 @@ export function isWeaponEligible(
 
 	// talent-issued weapons must match rank exactly
 	if (candidate.talent_item)
-		return candidate.talent_rank == talents[level][candidate.talent_id];
+		return candidate.talent_rank == talents[level].get(candidate.talent_id);
 
 	// gms weapons are always eligible
 	if (!weapon.license_id)
@@ -166,7 +166,7 @@ export function isWeaponEligible(
 
 	// allow weapons at or below the level's license rank
 	return weapon.license_level <=
-		licenses[level][weapon.license_id];
+		licenses[level].get(weapon.license_id);
 }
 
 /**
@@ -177,7 +177,7 @@ export function isWeaponEligible(
  * 
  */
 export function getStaticWeaponIds(level) {
-	const frame = srcData.frames[activeFrame[level]];
+	const frame = srcData.frames.get(activeFrame[level]);
 	const staticWeaponIds = [];
 
 	// get integrated weapons from frame
@@ -186,8 +186,8 @@ export function getStaticWeaponIds(level) {
 	});
 
 	// get integrated weapons from talents
-	talents?.forEach((talentId, val) => {
-		srcData.talents[talentId]?.ranks[val]?.integrated?.forEach(id => {
+	talents[level]?.forEach((talentId, val) => {
+		srcData.talents.get(talentId)?.ranks[val]?.integrated?.forEach(id => {
 			staticWeaponIds.push(id);
 		})
 	});

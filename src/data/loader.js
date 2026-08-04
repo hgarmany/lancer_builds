@@ -17,15 +17,7 @@ const LCP_COLLECTIONS = Object.freeze([
 export const srcData = {};
 
 function normalizeById(dataset) {
-	const normalizedSet = new Object();
-
-	for (const item of dataset) {
-		const id = item.id;
-		delete item.id;
-		normalizedSet[id] = item;
-	}
-
-	return normalizedSet;
+	return new Map(dataset.map(item => [item.id, item]));
 }
 
 export function importCoreData() {

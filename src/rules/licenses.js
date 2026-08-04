@@ -19,7 +19,7 @@ const licenses = cumulativeCatalog.licenses;
  * @returns {number}
  */
 export function getLicenseRank(level, id, selectedId = null) {
-	const rank = licenses[level][id] ?? 0;
+	const rank = licenses[level].get(id) ?? 0;
 	return (id === selectedId) ? rank - 1 : rank;
 }
 
@@ -29,7 +29,7 @@ export function getLicenseRank(level, id, selectedId = null) {
  * 
  * @param {number} level 
  * @param {string} id 
- * @param {boolean} selected 
+ * @param {string} selectedId
  * @returns {boolean}
  */
 export function isLicenseEligible(level, id, selectedId = null) {
