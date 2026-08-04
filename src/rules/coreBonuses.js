@@ -26,18 +26,24 @@ export function hasCoreBonus(level, id) {
  * Determine whether the core bonus with the given id
  * is a valid choice at this level
  * 
- * @param {number} level 
- * @param {string} id 
- * @param {string} selectedId
+ * @param {{
+ *		level: number,
+ *		coreBonus: Object,
+ *		id: string,
+ *		selected: boolean
+ *	}}
  * @returns {boolean}
  */
-export function isCoreBonusEligible(level, id, selectedId = null) {
+export function isCoreBonusEligible({
+	level, coreBonus = null, id = null, selected = false
+}) {
 	// forbid repeat selections
 	if (!(id === selectedId) && hasCoreBonus(level, id))
 		return false;
 
-	const candidateCB = srcData.coreBonuses[id];
-	const manufacturer = candidateCB.source;
+	if (!coreBonus)
+		coreBonus = srcData.coreBonuses[id];
+	const manufacturer = coreBonus.source;
 	// allow all GMS core bonuses
 	if (manufacturer == 'GMS')
 		return true;

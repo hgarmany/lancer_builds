@@ -13,7 +13,7 @@ import {
 } from '../data/loader.js';
 
 const licenses = cumulativeCatalog.licenses;
-const frameCatalog = cumulativeCatalog.frames;
+const frameCatalog = cumulativeCatalog.activeFrame;
 
 /**
  * Get frame id for the active frame at this level

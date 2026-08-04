@@ -10,10 +10,10 @@ export let roadmap = {};
  *
  * @param {number} level
  * @returns {{
- *   skillTriggers: number,
- *   talents: number,
- *   licenses: number,
- *   coreBonuses: number
+ *		skillTriggers: number,
+ *		talents: number,
+ *		licenses: number,
+ *		coreBonuses: number
  * }}
  */
 function getChoiceLimits(level) {
@@ -74,17 +74,17 @@ function createDefaultRoadmapLevel(level) {
  * Configure roadmap to default blank
  */
 export function createDefaultRoadmap() {
-    roadmap = {
-        name: 'New Roadmap',
-        maxLevel: MAX_LICENSE_LEVEL,
+	roadmap = {
+		name: 'New Roadmap',
+		maxLevel: MAX_LICENSE_LEVEL,
 		allowExotics: false,
-        ll: Array.from(
-            { length: MAX_LICENSE_LEVEL + 1 },
-            (_, level) => createDefaultRoadmapLevel(level)
-        )
-    };
+		ll: Array.from(
+			{ length: MAX_LICENSE_LEVEL + 1 },
+			(_, level) => createDefaultRoadmapLevel(level)
+		)
+	};
 
-    console.log(roadmap);
+	console.log(roadmap);
 }
 
 /**

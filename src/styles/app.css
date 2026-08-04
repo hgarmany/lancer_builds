@@ -1,0 +1,10 @@
+/* styles/app.css */
+
+.roadmap-table tbody td {
+    border: 1px solid black;
+}
+
+.roadmap-table img {
+    max-height: 12rem;
+    max-width: 12rem;
+} 
