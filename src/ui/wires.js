@@ -7,7 +7,7 @@ import {
 const roadmapName = document.getElementById('roadmap-name');
 const roadmapShell = document.getElementById("roadmap-shell");
 const roadmapContainer = document.querySelector(".roadmap-container");
-const tableBody = document.getElementById("roadmap-body");
+export const tableBody = document.getElementById("roadmap-body");
 const tableHead = document.querySelector("#roadmap-table thead");
 const levelRail = document.querySelector(".level-rail");
 const levelTabs = document.getElementById("level-tabs");
