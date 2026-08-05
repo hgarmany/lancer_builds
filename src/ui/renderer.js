@@ -17,6 +17,7 @@ import {
 } from './selectControl.js';
 
 import {
+	MAX_TALENT_RANK,
 	MAX_LICENSE_RANK,
 	ROMAN_NUMERALS
 } from '../constants.js';
@@ -24,6 +25,10 @@ import {
 
 
 
+import {
+	getTalentRank,
+	isTalentEligible
+} from '../rules/talents.js';
 
 import {
 	getLicenseRank,
@@ -54,7 +59,47 @@ function renderSkillTriggerGroup(level) {
 }
 
 function renderTalentGroup(level) {
-	return null;
+	const talentIds = roadmap.ll[level].talentIds;
+
+	// generate prototype selector
+	const selectTemplate = createCommonSelect({
+		className: CELL.LEVELUP.name,
+		srcItems: srcData.talents,
+		placeholderText: 'Select a talent',
+		getLabel: ({ item }) => {
+			const rank = getTalentRank(level, item.id);
+			const showRank = rank < MAX_TALENT_RANK;
+			console.log(level + ' rank ' + rank);
+			console.log(item);
+
+			return item.name + (showRank ?
+				` <span class="rank">${ROMAN_NUMERALS[rank]}</span>` : '');
+		},
+		getDescription: ({ item }) => item.description,
+		getEligibility: ({ id }) => isTalentEligible(level, id)
+	});
+
+	const selectGroup = document.createElement('div');
+	selectGroup.className = 'select-group';
+
+	// configure selectors for current user-selected value
+	talentIds.forEach((talentId, idx) => {
+		const select = selectTemplate.cloneNode(true);
+		select.dataset.idx = idx
+
+		if (talentId) {
+			applySelection(level, select, talentId, isTalentEligible);
+		}
+
+		// wire selector to perform page updates when selection changes
+		select.addEventListener('change', event => {
+			talentsUpdate(event);
+		});
+
+		selectGroup.append(select);
+	});
+
+	return selectGroup;
 }
 
 function renderLicense(level) {

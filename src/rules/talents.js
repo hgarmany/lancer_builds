@@ -23,6 +23,9 @@ const talents = cumulativeCatalog.talents;
  * @returns {number}
  */
 export function getTalentRank(level, id, selectedId = null) {
+	console.log(talents[level]);
+	console.log('talent: ' + id);
+	console.log(talents[level].get(id));
 	const rank = talents[level].get(id) ?? 0;
 	return (id === selectedId) ? rank - 1 : rank;
 }
@@ -33,13 +36,13 @@ export function getTalentRank(level, id, selectedId = null) {
  * 
  * @param {number} level 
  * @param {string} id 
- * @param {boolean} selected 
+ * @param {string} selectedId
  * @returns {boolean}
  */
 export function isTalentEligible(level, id, selectedId = null) {
 	// all ll0 talents must be different
 	if (level === 0)
-		return id === selectedId || roadmap.ll[0].talentIds.includes(id);
+		return id === selectedId || !roadmap.ll[0].talentIds.includes(id);
 	// talents limited by total rank
 	else
 		return getTalentRank(level, id, selectedId) < MAX_TALENT_RANK;

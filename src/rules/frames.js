@@ -42,7 +42,7 @@ export function getActiveFrameMountTypes(level) {
  * 
  * @param {number} level 
  * @param {string} id
- * @returns 
+ * @returns {boolean}
  */
 export function isFrameEligible(level, id) {
 	// frame must be either GMS or within the scope of selected licenses

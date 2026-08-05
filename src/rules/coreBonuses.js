@@ -30,7 +30,7 @@ export function hasCoreBonus(level, id) {
  *		level: number,
  *		coreBonus: Object,
  *		id: string,
- *		selected: boolean
+ *		selectedId: string
  *	}}
  * @returns {boolean}
  */
@@ -55,7 +55,6 @@ export function isCoreBonusEligible(level, id, selectedId = null) {
 	
 	if (level > 3) {
 		for (const refCBId of cbCatalog[level - 1]) {
-			console.log(refCBId);
 			if (srcData.coreBonuses.get(refCBId)?.source === manufacturer)
 				total -= 3;
 		}

@@ -90,6 +90,8 @@ export function createDefaultRoadmap() {
 	roadmap.ll[2].frameId = 'mf_hydra';
 	roadmap.ll[4].licenseId = 'mf_balor';
 	roadmap.ll[3].coreBonusId = 'cb_the_lesson_of_the_held_image';
+	roadmap.ll[0].talentIds[1] = 't_ace';
+	roadmap.ll[1].talentIds[0] = 't_ace';
 
 	console.log(roadmap);
 }
