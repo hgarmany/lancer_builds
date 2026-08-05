@@ -17,13 +17,16 @@ import {
 } from './selectControl.js';
 
 import {
-	MAX_TALENT_RANK,
+    MAX_TALENT_RANK,
 	MAX_LICENSE_RANK,
 	ROMAN_NUMERALS
 } from '../constants.js';
 
 
 
+import {
+    isSkillTriggerEligible
+} from '../rules/skillTriggers.js';
 
 import {
 	getTalentRank,
@@ -49,13 +52,57 @@ import {
 
 
 function applySelection(level, select, id, getEligibility) {
+    // set class flags / selector value to indicate an active selection
 	select.value = id;
 	select.classList.add('occupied');
-	select.classList.toggle('error', !getEligibility(level, id, id));
+
+    const isEligible = getEligibility(level, id, id);
+	select.classList.toggle('error', !isEligible);
+
+    if (isEligible) {
+        // find the selected option and force it to appear in the dropdown
+        const selectedOption =
+            [...select.options].find(option => option.value === id);
+        if (selectedOption) {
+            selectedOption.disabled = false;
+            selectedOption.hidden = false;
+        }
+    }
 }
 
 function renderSkillTriggerGroup(level) {
-	return null;
+	const skillTriggerIds = roadmap.ll[level].skillTriggerIds;
+	
+	// generate prototype selector
+	const selectTemplate = createCommonSelect({
+		className: CELL.LEVELUP.name,
+		srcItems: srcData.skillTriggers,
+		placeholderText: 'Select a skill trigger',
+		getLabel: ({ item }) => item.name,
+		getDescription: ({ item }) => item.description,
+		getEligibility: ({ id }) => isSkillTriggerEligible(level, id)
+	});
+
+	const selectGroup = document.createElement('div');
+	selectGroup.className = 'select-group';
+
+	// configure selectors for current user-selected value
+	skillTriggerIds.forEach((skillId, idx) => {
+		const select = selectTemplate.cloneNode(true);
+		select.dataset.idx = idx;
+
+		if (skillId)
+			applySelection(level, select, skillId, isSkillTriggerEligible);
+
+		// wire selector to perform page updates when selection changes
+		select.addEventListener('change', event => {
+			skillTriggersUpdate(event);
+		});
+
+		selectGroup.append(select);
+	});
+
+	return selectGroup;
 }
 
 function renderTalentGroup(level) {
@@ -66,11 +113,11 @@ function renderTalentGroup(level) {
 		className: CELL.LEVELUP.name,
 		srcItems: srcData.talents,
 		placeholderText: 'Select a talent',
-		getLabel: ({ item }) => {
-			const rank = getTalentRank(level, item.id);
+		getLabel: ({ id, item }) => {
+			const selectedId =
+				talentIds.includes(id) ? id : null;
+			const rank = getTalentRank(level, id, selectedId);
 			const showRank = rank < MAX_TALENT_RANK;
-			console.log(level + ' rank ' + rank);
-			console.log(item);
 
 			return item.name + (showRank ?
 				` <span class="rank">${ROMAN_NUMERALS[rank]}</span>` : '');
@@ -85,11 +132,10 @@ function renderTalentGroup(level) {
 	// configure selectors for current user-selected value
 	talentIds.forEach((talentId, idx) => {
 		const select = selectTemplate.cloneNode(true);
-		select.dataset.idx = idx
+		select.dataset.idx = idx;
 
-		if (talentId) {
+		if (talentId)
 			applySelection(level, select, talentId, isTalentEligible);
-		}
 
 		// wire selector to perform page updates when selection changes
 		select.addEventListener('change', event => {
@@ -167,6 +213,10 @@ function renderHASEGroup(level) {
 	return null;
 }
 
+function appendIfPresent(parent, ...children) {
+	parent.append(...children.filter(child => child != null));
+}
+
 function renderLevelUp(level) {
 	const leftColumn = document.createElement('div');
 	leftColumn.className = 'level-up-col';
@@ -174,21 +224,29 @@ function renderLevelUp(level) {
 	const rightColumn = document.createElement('div');
 	rightColumn.className = 'level-up-col';
 
-	leftColumn.append(renderSkillTriggerGroup(level));
-
 	if (level === 0) {
-		rightColumn.append(
+		appendIfPresent(
+			leftColumn,
+			renderSkillTriggerGroup(level)
+		);
+		appendIfPresent(
+			rightColumn,
 			renderTalentGroup(level),
 			renderHASEGroup(level)
 		);
 	}
 	else {
-		leftColumn.append(
+		appendIfPresent(
+			leftColumn,
+			renderSkillTriggerGroup(level),
 			renderTalentGroup(level),
 			renderLicense(level),
 			renderCoreBonus(level)
 		);
-		rightColumn.append(renderHASEGroup(level));
+		appendIfPresent(
+			rightColumn,
+			renderHASEGroup(level)
+		);
 	}
 
 	return [leftColumn, rightColumn];

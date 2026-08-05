@@ -27,7 +27,7 @@ export function isSkillTriggerEligible(level, id, selectedId = null) {
 	// all ll0 skills must be different
 	if (level === 0)
 		return (id === selectedId) ||
-			roadmap.ll[0].skillTriggerIds.includes(id);
+			!roadmap.ll[0].skillTriggerIds.includes(id);
 	// skills limited by total rank
 	else
 		return (skillTriggers[level][id] ?? 0) <

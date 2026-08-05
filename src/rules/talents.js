@@ -23,9 +23,6 @@ const talents = cumulativeCatalog.talents;
  * @returns {number}
  */
 export function getTalentRank(level, id, selectedId = null) {
-	console.log(talents[level]);
-	console.log('talent: ' + id);
-	console.log(talents[level].get(id));
 	const rank = talents[level].get(id) ?? 0;
 	return (id === selectedId) ? rank - 1 : rank;
 }
