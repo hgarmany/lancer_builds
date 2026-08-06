@@ -41,14 +41,14 @@ export function didStatWorsen(catalog, level, id) {
  * @returns stats Object
  */
 function getBaseFrameStats(frameId) {
-	const frame = srcData.frames[frameId];
-
+	const frame = srcData.frames.get(frameId);
+	
 	return Object.fromEntries(
 		Object.entries(STAT_DEFINITIONS).map(
 			([statId, definition]) => {
 				if (!frame)
 					return [statId, null];
-
+				
 				const value = definition.frameProperty
 					? frame.stats?.[definition.frameProperty]
 					: definition.defaultValue;
@@ -219,7 +219,7 @@ export function calculateMechStats(catalog, level) {
 	// build a list of bonuses on top of base stats
 	const modifiers = modifierSets.flatMap(
 		setFunc => setFunc({ catalog, level }));
-
+		
 	for (const modifier of modifiers) {
 		const definition = STAT_DEFINITIONS[modifier.stat];
 

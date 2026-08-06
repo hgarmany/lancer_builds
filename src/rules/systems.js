@@ -72,7 +72,7 @@ export function isSystemEligible(level, id, selectedId = null) {
 	// reject invalid systems, unpermitted exotics, integrated systems
 	if (!candidate ||
 		!roadmap.allowExotics && doesSystemHaveTag(id, TAGS.EXOTIC) ||
-		isFrameIntegrated(id))
+		isFrameIntegratedItem(id))
 		return false;
 
 	const selectedSystem = selectedId ? srcData.systems[selectedId] : null;

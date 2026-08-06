@@ -4,8 +4,10 @@
  * 
  * 
  * @param {{
+ *	level?: number,
  *	className: string,
- *	srcItems: Map<string, Object>,
+ *	srcItems?: Map<string, Object>,
+ *	getSrcItems?: function(): Map<string, Object>,
  *	placeholderText: string,
  *	getLabel: function,
  *	getDescription: function,
@@ -14,9 +16,11 @@
  * @returns {Element}
  */
 export function createCommonSelect({
+	level,
 	className,
-	srcItems,
 	placeholderText,
+	srcItems,
+	getSrcItems,
 	getLabel,
 	getDescription,
 	getEligibility
@@ -30,8 +34,10 @@ export function createCommonSelect({
 	placeholderOption.innerHTML = placeholderText;
 	selectTemplate.append(placeholderOption);
 
+	srcItems = getSrcItems ? getSrcItems() : srcItems;
+
 	for (const [id, item] of srcItems) {
-		const context = { id, item };
+		const context = { level, id, item };
 
 		// prepare an option for each item
 		const option = document.createElement('option');
@@ -42,7 +48,7 @@ export function createCommonSelect({
 		if (getDescription)
 			option.title = getDescription?.(context) ?? '';
 
-		if (getEligibility && !getEligibility?.(context)) {
+		if (getEligibility && !getEligibility(context)) {
 			option.disabled = true;
 			option.hidden = true;
 		}
