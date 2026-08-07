@@ -30,6 +30,6 @@ export function isSkillTriggerEligible(level, id, selectedId = null) {
 			!roadmap.ll[0].skillTriggerIds.includes(id);
 	// skills limited by total rank
 	else
-		return (skillTriggers[level][id] ?? 0) <
+		return (skillTriggers[level].get(id) ?? 0) <
 			((id === selectedId) ? MAX_SKILL_RANK + 1 : MAX_SKILL_RANK);
 }

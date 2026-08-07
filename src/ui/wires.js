@@ -4,6 +4,15 @@ import {
 	roadmap
 } from '../data/roadmap.js';
 
+import {
+	incrementFromLevel,
+	decrementFromLevel
+} from '../data/cumulativeCatalog.js';
+
+import {
+	SELECT_TEMPLATE
+} from './renderModules.js';
+
 const roadmapName = document.getElementById('roadmap-name');
 const roadmapShell = document.getElementById("roadmap-shell");
 const roadmapContainer = document.querySelector(".roadmap-container");
@@ -40,4 +49,67 @@ export function wireHeader() {
 		setMaxLevel(roadmap, newMaxLevel);
 		resizeViaHide(roadmap, newMaxLevel);
 	});
+}
+
+function refreshSelectors(level, template) {
+	const srcItems = template.getSrcItems();
+
+	for (let i = level; i < roadmap.maxLevel; i++) {
+		const selectGroup = document.getElementById(
+			`${template.className}s-ll-${i}`);
+
+		for (const select of selectGroup.children) {
+			let selectionIsInvalid = false;
+
+			for (const option of select) {
+				if (option.value === '')
+					continue;
+
+				const context = {
+					level: i,
+					id: option.value,
+					selectedId: select.value,
+					item: srcItems.get(option.value)
+				};
+
+				const disable = !template.getEligibility(context);
+
+				option.innerHTML = template.getLabel?.(context);
+				option.hidden = disable;
+				option.disabled = disable;
+
+				if (option.selected && disable)
+					selectionIsInvalid = true;
+			}
+			
+			select.classList.toggle('error', selectionIsInvalid);
+		}
+	}
+}
+
+/**
+ * In-class selector refresh and database update
+ * Template passes through class-specific functionality and targeting
+ * 
+ * @param {EventPrototype} event 
+ * @param {Object} template 
+ */
+export function selectionUpdate(event, template) {
+	const eventSelect = event.currentTarget;
+	const currentLevel = Number(eventSelect.dataset.ll);
+	const idx = Number(eventSelect.dataset.idx);
+
+	const oldId = template.getRoadmapId({ level: currentLevel, idx });
+	const newId = eventSelect.value === '' ? null: eventSelect.value;
+
+	// update this selector
+	eventSelect.classList.toggle('occupied', newId);
+
+	// update roadmap and cumulative catalog
+	template.setRoadmapId({ level: currentLevel, idx, id: newId });
+	incrementFromLevel(template.catalog, newId, currentLevel);
+	decrementFromLevel(template.catalog, oldId, currentLevel);
+
+	// update all skill selectors at this and later levels
+	refreshSelectors(currentLevel, template);
 }

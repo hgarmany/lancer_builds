@@ -7,4 +7,8 @@
 .roadmap-table img {
     max-height: 12rem;
     max-width: 12rem;
-} 
+}
+
+.error {
+    background-color: red;
+}

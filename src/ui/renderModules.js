@@ -5,6 +5,10 @@ import {
 } from '../data/roadmap.js';
 
 import {
+	cumulativeCatalog
+} from '../data/cumulativeCatalog.js';
+
+import {
 	srcData
 } from '../data/loader.js';
 
@@ -41,6 +45,11 @@ export const SELECT_TEMPLATE = Object.freeze({
 		className: 'skill-trigger',
 		placeholderText: 'Select a skill trigger',
 		getSrcItems: () => srcData.skillTriggers,
+		getRoadmapId: ({ level, idx }) =>
+			roadmap.ll[level].skillTriggerIds[idx],
+		setRoadmapId: ({ level, idx, id }) =>
+			roadmap.ll[level].skillTriggerIds[idx] = id,
+		catalog: cumulativeCatalog.skillTriggers,
 		getLabel: ({ item }) => item.name,
 		getDescription: ({ item }) => item.description,
 		getEligibility: ({ level, id, selectedId }) =>
@@ -50,6 +59,11 @@ export const SELECT_TEMPLATE = Object.freeze({
 		className: 'talent',
 		placeholderText: 'Select a talent',
 		getSrcItems: () => srcData.talents,
+		getRoadmapId: ({ level, idx }) =>
+			roadmap.ll[level].talentIds[idx],
+		setRoadmapId: ({ level, idx, id }) =>
+			roadmap.ll[level].talentIds[idx] = id,
+		catalog: cumulativeCatalog.talents,
 		getLabel: ({ level, id, item }) => {
 			const selectedId =
 				roadmap.ll[level].talentIds.includes(id) ? id : null;
@@ -68,12 +82,17 @@ export const SELECT_TEMPLATE = Object.freeze({
 		className: 'license',
 		placeholderText: 'Select a license',
 		getSrcItems: () => srcData.licenses,
+		getRoadmapId: ({ level }) =>
+			roadmap.ll[level].licenseId,
+		setRoadmapId: ({ level, id }) =>
+			roadmap.ll[level].licenseId = id,
+		catalog: cumulativeCatalog.licenses,
 		getLabel: ({ level, item }) => {
 			const licenseId = roadmap.ll[level].licenseId;
 			const selectedId =
 				item.id === licenseId ? licenseId : null;
 			const rank = getLicenseRank(level, item.id, selectedId);
-			const showRank = selectedId !== null || rank < MAX_LICENSE_RANK;
+			const showRank = rank < MAX_LICENSE_RANK;
 
 			return item.name + (showRank ?
 				` <span class="rank">${ROMAN_NUMERALS[rank]}</span>` : '');
@@ -85,6 +104,11 @@ export const SELECT_TEMPLATE = Object.freeze({
 		className: 'core-bonus',
 		placeholderText: 'Select a core bonus',
 		getSrcItems: () => srcData.coreBonuses,
+		getRoadmapId: ({ level }) =>
+			roadmap.ll[level].coreBonusId,
+		setRoadmapId: ({ level, id }) =>
+			roadmap.ll[level].coreBonusId = id,
+		catalog: cumulativeCatalog.coreBonuses,
 		getLabel: ({ item }) => item.name,
 		getDescription: ({ item }) => item.description,
 		getEligibility: ({ level, id, selectedId }) =>
@@ -94,6 +118,11 @@ export const SELECT_TEMPLATE = Object.freeze({
 		className: 'frame',
 		placeholderText: 'Select a frame',
 		getSrcItems: () => srcData.frames,
+		getRoadmapId: ({ level }) =>
+			roadmap.ll[level].frameId,
+		setRoadmapId: ({ level, id }) =>
+			roadmap.ll[level].frameId = id,
+		catalog: cumulativeCatalog.activeFrame,
 		getLabel: ({ item }) => item.name,
 		getDescription: ({ item }) =>
 			item.description?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),

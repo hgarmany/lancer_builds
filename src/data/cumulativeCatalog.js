@@ -38,11 +38,7 @@ export function purgeCumulativeCatalog() {
  */
 function initializeCatalogLevel(level) {
 	if (level === 0) {
-		cumulativeCatalog.skillTriggers[level] = {
-			maxInstances: 1,
-			numAtMax: 0
-		};
-
+		cumulativeCatalog.skillTriggers[level] = new Map();
 		cumulativeCatalog.talents[level] = new Map();
 		cumulativeCatalog.hase[level] = new Map();
 		cumulativeCatalog.licenses[level] = new Map();
@@ -55,9 +51,8 @@ function initializeCatalogLevel(level) {
 
 	const previousLevel = level - 1;
 
-	cumulativeCatalog.skillTriggers[level] = {
-		...cumulativeCatalog.skillTriggers[previousLevel]
-	};
+	cumulativeCatalog.skillTriggers[level] =
+		new Map(cumulativeCatalog.skillTriggers[previousLevel]);
 
 	cumulativeCatalog.talents[level] =
 		new Map(cumulativeCatalog.talents[previousLevel]);
@@ -83,12 +78,53 @@ function initializeCatalogLevel(level) {
 /**
  * Add a new id to the catalog or increment an existing one
  * 
- * @param {Object} catalog 
- * @param {String} id 
- * @returns 
+ * @param {Map} catalogLevel 
+ * @param {String} id
  */
-function increment(catalog, id) {
-	return catalog.set(id, (catalog.get(id) ?? 0) + 1);
+function increment(catalogLevel, id) {
+	catalogLevel.set(id, (catalogLevel.get(id) ?? 0) + 1);
+}
+
+/**
+ * Decrement an id in the catalog, removing ids that would point to a zero
+ *
+ * @param {Map} catalogLevel
+ * @param {String} id
+ */
+function decrement(catalogLevel, id) {
+	const newVal = (catalogLevel.get(id) ?? 0) - 1
+	if (newVal > 0)
+		catalogLevel.set(id, newVal);
+	else
+		catalogLevel.delete(id);
+}
+
+/**
+ * Increment all instances of an id
+ * in the cumulative catalog up from a starting level
+ * 
+ * @param {any} catalog
+ * @param {any} id
+ * @param {any} level
+ */
+export function incrementFromLevel(catalog, id, level) {
+	if (!id) return;
+	for (let i = level; i < roadmap.maxLevel; i++)
+		increment(catalog[i], id);
+}
+
+/**
+ * Decrement all instances of an id
+ * in the cumulative catalog up from a starting level
+ * 
+ * @param {any} catalog
+ * @param {any} id
+ * @param {any} level
+ */
+export function decrementFromLevel(catalog, id, level) {
+	if (!id) return;
+	for (let i = level; i < roadmap.maxLevel; i++)
+		decrement(catalog[i], id);
 }
 
 /**
@@ -104,49 +140,30 @@ export function initializeCatalog() {
 		initializeCatalogLevel(level);
 
 		// load in skill triggers
-		const inSkillTriggers = cumulativeCatalog.skillTriggers[level];
 		for (const skillTriggerId of levelData.skillTriggerIds) {
-			// skip non-choices
-			if (!skillTriggerId)
-				continue;
-
-			increment(
-				cumulativeCatalog.skillTriggers[level],
-				skillTriggerId
-			);
-
-			// evaluate limits on trigger selection
-			if (inSkillTriggers[skillTriggerId] > inSkillTriggers.maxInstances) {
-				inSkillTriggers.maxInstances++;
-				inSkillTriggers.numAtMax = 1;
-			}
-			else if (inSkillTriggers[skillTriggerId] === inSkillTriggers.maxInstances) {
-				inSkillTriggers.numAtMax++;
-			}
+			if (skillTriggerId)
+				increment(
+					cumulativeCatalog.skillTriggers[level],
+					skillTriggerId
+				);
 		}
 
 		// load in talents
 		for (const talentId of levelData.talentIds) {
-			// skip non-choices
-			if (!talentId)
-				continue;
-
-			increment(
-				cumulativeCatalog.talents[level],
-				talentId
-			);
+			if (talentId)
+				increment(
+					cumulativeCatalog.talents[level],
+					talentId
+				);
 		}
 
 		// load in mech skills
 		for (const haseId of levelData.haseIds) {
-			// skip non-choices
-			if (!haseId)
-				continue;
-
-			increment(
-				cumulativeCatalog.hase[level],
-				haseId
-			);
+			if (haseId)
+				increment(
+					cumulativeCatalog.hase[level],
+					haseId
+				);
 		}
 
 		// load in license

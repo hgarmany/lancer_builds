@@ -13,7 +13,8 @@ import {
 } from '../data/cumulativeCatalog.js';
 
 import {
-	tableBody
+	tableBody,
+	selectionUpdate
 } from './wires.js';
 
 import {
@@ -45,22 +46,22 @@ import {
 
 
 function applySelection(level, select, id, template) {
-    // set class flags / selector value to indicate an active selection
+	// set class flags / selector value to indicate an active selection
 	select.value = id;
 	select.classList.add('occupied');
 
-    const isEligible = template.getEligibility({ level, id, selectedId: id });
+	const isEligible = template.getEligibility({ level, id, selectedId: id });
 	select.classList.toggle('error', !isEligible);
 
-    if (isEligible) {
-        // find the selected option and force it to appear in the dropdown
-        const selectedOption =
-            [...select.options].find(option => option.value === id);
-        if (selectedOption) {
-            selectedOption.disabled = false;
-            selectedOption.hidden = false;
-        }
-    }
+	if (isEligible) {
+		// find the selected option and force it to appear in the dropdown
+		const selectedOption =
+			[...select.options].find(option => option.value === id);
+		if (selectedOption) {
+			selectedOption.disabled = false;
+			selectedOption.hidden = false;
+		}
+	}
 }
 
 function renderSkillTriggerGroup(level) {
@@ -71,6 +72,7 @@ function renderSkillTriggerGroup(level) {
 		createCommonSelect({ level, ...SELECT_TEMPLATE.SKILL_TRIGGER });
 
 	const selectGroup = document.createElement('div');
+	selectGroup.id = `${SELECT_TEMPLATE.SKILL_TRIGGER.className}s-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// configure selectors for current user-selected value
@@ -83,7 +85,7 @@ function renderSkillTriggerGroup(level) {
 
 		// wire selector to perform page updates when selection changes
 		select.addEventListener('change', event => {
-			skillTriggersUpdate(event);
+			selectionUpdate(event, SELECT_TEMPLATE.SKILL_TRIGGER);
 		});
 
 		selectGroup.append(select);
@@ -100,6 +102,7 @@ function renderTalentGroup(level) {
 		createCommonSelect({ level, ...SELECT_TEMPLATE.TALENT });
 
 	const selectGroup = document.createElement('div');
+	selectGroup.id = `${SELECT_TEMPLATE.TALENT.className}s-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// configure selectors for current user-selected value
@@ -112,7 +115,7 @@ function renderTalentGroup(level) {
 
 		// wire selector to perform page updates when selection changes
 		select.addEventListener('change', event => {
-			talentsUpdate(event);
+			selectionUpdate(event, SELECT_TEMPLATE.TALENT);
 		});
 
 		selectGroup.append(select);
@@ -124,21 +127,26 @@ function renderTalentGroup(level) {
 function renderLicense(level) {
 	const licenseId = roadmap.ll[level].licenseId;
 
+	const selectGroup = document.createElement('div');
+	selectGroup.id = `${SELECT_TEMPLATE.LICENSE.className}s-ll-${level}`;
+	selectGroup.className = 'select-group';
+
 	// generate prototype selector
 	const select =
 		createCommonSelect({ level, ...SELECT_TEMPLATE.LICENSE });
 
 	// configure selector for current user-selected value
-	if (licenseId) {
+	if (licenseId)
 		applySelection(level, select, licenseId, SELECT_TEMPLATE.LICENSE);
-	}
 
 	// wire selector to perform page updates when selection changes
 	select.addEventListener('change', event => {
-		licenseUpdate(event);
+		selectionUpdate(event, SELECT_TEMPLATE.LICENSE);
 	});
 
-	return select;
+	selectGroup.append(select);
+	
+	return selectGroup;
 }
 
 function renderCoreBonus(level) {
@@ -146,6 +154,10 @@ function renderCoreBonus(level) {
 
 	if (level === 0 || level % 3 !== 0)
 		return null;
+	
+	const selectGroup = document.createElement('div');
+	selectGroup.id = `${SELECT_TEMPLATE.CORE_BONUS.className}s-ll-${level}`;
+	selectGroup.className = 'select-group';
 
 	// generate prototype selector
 	const select =
@@ -157,10 +169,12 @@ function renderCoreBonus(level) {
 
 	// wire selector to perform page updates when selection changes
 	select.addEventListener('change', event => {
-		coreBonusUpdate(event);
+		selectionUpdate(event, SELECT_TEMPLATE.CORE_BONUS);
 	});
 
-	return select;
+	selectGroup.append(select);
+	
+	return selectGroup;
 }
 
 function renderHASEGroup(level) {

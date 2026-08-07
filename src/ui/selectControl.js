@@ -27,6 +27,7 @@ export function createCommonSelect({
 }) {
 	const selectTemplate = document.createElement('select');
 	selectTemplate.className = `${className}-select`;
+	selectTemplate.dataset.ll = level;
 
 	// prepare a default pseudo-option for unfilled selectors
 	const placeholderOption = document.createElement('option');
