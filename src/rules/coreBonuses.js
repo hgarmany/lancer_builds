@@ -36,7 +36,7 @@ export function hasCoreBonus(level, id) {
  */
 export function isCoreBonusEligible(level, id, selectedId = null) {
 	// forbid repeat selections
-	if (!(id === selectedId) && hasCoreBonus(level, id))
+	if (hasCoreBonus(level - 1, id))
 		return false;
 
 	const candidate = srcData.coreBonuses.get(id);

@@ -204,3 +204,19 @@ export function initializeCatalog() {
 
 	console.log(cumulativeCatalog);
 }
+
+export function resizeCatalog(newMaxLevel) {
+	if (newMaxLevel > roadmap.maxLevel) {
+		initializeCatalogLevel(newMaxLevel);
+	}
+	else {
+		const spliceTarget = newMaxLevel + 1;
+		cumulativeCatalog.skillTriggers.splice(spliceTarget);
+		cumulativeCatalog.talents.splice(spliceTarget);
+		cumulativeCatalog.hase.splice(spliceTarget);
+		cumulativeCatalog.licenses.splice(spliceTarget);
+		cumulativeCatalog.activeFrame.splice(spliceTarget);
+		cumulativeCatalog.coreBonuses.splice(spliceTarget);
+		cumulativeCatalog.stats.splice(spliceTarget);
+	}
+}

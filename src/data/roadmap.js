@@ -103,14 +103,12 @@ export function createDefaultRoadmap() {
  * @param {number} maxLevel
  */
 export function setMaxLevel(roadmap, maxLevel) {
-	validateLevel(maxLevel);
-
 	if (maxLevel > roadmap.maxLevel) {
 		for (let i = roadmap.maxLevel + 1; i <= maxLevel; i++)
-			roadmap.levels.push(createRoadmapLevel(level));
+			roadmap.ll.push(createDefaultRoadmapLevel(i));
 	}
 	else if (maxLevel < roadmap.maxLevel) {
-		roadmap.levels.length = maxLevel + 1;
+		roadmap.ll.length = maxLevel + 1;
 	}
 
 	roadmap.maxLevel = maxLevel;

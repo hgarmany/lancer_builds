@@ -5,21 +5,8 @@ import {
 } from '../data/roadmap.js';
 
 import {
-	srcData
-} from '../data/loader.js';
-
-import {
 	cumulativeCatalog
 } from '../data/cumulativeCatalog.js';
-
-import {
-	tableBody,
-	selectionUpdate
-} from './wires.js';
-
-import {
-	createCommonSelect
-} from './selectControl.js';
 
 import {
 	STAT_DEFINITIONS,
@@ -27,9 +14,16 @@ import {
 } from '../constants.js';
 
 import {
-	SELECT_TEMPLATE,
+	tableBody,
 	getFrameImageSrc
 } from './renderModules.js';
+
+import {
+	SELECT_TEMPLATE,
+	renderSelector,
+	selectionUpdate,
+	refreshSelectors
+} from './selectors.js';
 
 
 
@@ -58,6 +52,8 @@ function applySelection(level, select, id, template) {
 		const selectedOption =
 			[...select.options].find(option => option.value === id);
 		if (selectedOption) {
+			selectedOption.innerHTML =
+				template.getLabel({ level, id, selectedId: id });
 			selectedOption.disabled = false;
 			selectedOption.hidden = false;
 		}
@@ -69,10 +65,10 @@ function renderSkillTriggerGroup(level) {
 	
 	// generate prototype selector
 	const selectTemplate =
-		createCommonSelect({ level, ...SELECT_TEMPLATE.SKILL_TRIGGER });
+		renderSelector({ level, ...SELECT_TEMPLATE.SKILL_TRIGGER });
 
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.SKILL_TRIGGER.className}-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.SKILL_TRIGGER.type}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// configure selectors for current user-selected value
@@ -86,6 +82,9 @@ function renderSkillTriggerGroup(level) {
 		// wire selector to perform page updates when selection changes
 		select.addEventListener('change', event => {
 			selectionUpdate(event, SELECT_TEMPLATE.SKILL_TRIGGER);
+
+			// update all attached selectors at this and later levels
+			refreshSelectors(SELECT_TEMPLATE.SKILL_TRIGGER, level);
 		});
 
 		selectGroup.append(select);
@@ -99,10 +98,10 @@ function renderTalentGroup(level) {
 
 	// generate prototype selector
 	const selectTemplate =
-		createCommonSelect({ level, ...SELECT_TEMPLATE.TALENT });
+		renderSelector({ level, ...SELECT_TEMPLATE.TALENT });
 
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.TALENT.className}-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.TALENT.type}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// configure selectors for current user-selected value
@@ -116,6 +115,11 @@ function renderTalentGroup(level) {
 		// wire selector to perform page updates when selection changes
 		select.addEventListener('change', event => {
 			selectionUpdate(event, SELECT_TEMPLATE.TALENT);
+
+			// update all attached selectors at this and later levels
+			refreshSelectors(SELECT_TEMPLATE.TALENT, level);
+
+			// update integrated mounts and systems
 		});
 
 		selectGroup.append(select);
@@ -128,12 +132,12 @@ function renderLicense(level) {
 	const licenseId = roadmap.ll[level].licenseId;
 
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.LICENSE.className}-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.LICENSE.type}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// generate prototype selector
 	const select =
-		createCommonSelect({ level, ...SELECT_TEMPLATE.LICENSE });
+		renderSelector({ level, ...SELECT_TEMPLATE.LICENSE });
 
 	// configure selector for current user-selected value
 	if (licenseId)
@@ -142,6 +146,11 @@ function renderLicense(level) {
 	// wire selector to perform page updates when selection changes
 	select.addEventListener('change', event => {
 		selectionUpdate(event, SELECT_TEMPLATE.LICENSE);
+
+		// update all attached selectors at this and later levels
+		refreshSelectors(SELECT_TEMPLATE.LICENSE, level);
+		refreshSelectors(SELECT_TEMPLATE.FRAME, level);
+		refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 	});
 
 	selectGroup.append(select);
@@ -156,12 +165,12 @@ function renderCoreBonus(level) {
 		return null;
 	
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.CORE_BONUS.className}-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.CORE_BONUS.type}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// generate prototype selector
 	const select =
-		createCommonSelect({ level, ...SELECT_TEMPLATE.CORE_BONUS });
+		renderSelector({ level, ...SELECT_TEMPLATE.CORE_BONUS });
 
 	// configure selector for current user-selected value
 	if (coreBonusId)
@@ -170,6 +179,11 @@ function renderCoreBonus(level) {
 	// wire selector to perform page updates when selection changes
 	select.addEventListener('change', event => {
 		selectionUpdate(event, SELECT_TEMPLATE.CORE_BONUS);
+
+		// update all attached selectors at this and later levels
+		refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
+
+		// update stats and all mounts
 	});
 
 	selectGroup.append(select);
@@ -227,9 +241,13 @@ function renderFrame(level) {
 	const icon = document.createElement('img');
 	icon.src = getFrameImageSrc(activeFrameId) ?? '';
 
+	const selectGroup = document.createElement('div');
+	selectGroup.id = `${SELECT_TEMPLATE.FRAME.type}-ll-${level}`;
+	selectGroup.className = 'select-group';
+
 	// generate prototype selector
 	const select =
-		createCommonSelect({ level, ...SELECT_TEMPLATE.FRAME });
+		renderSelector({ level, ...SELECT_TEMPLATE.FRAME });
 
 	// configure selector for current user-selected value
 	if (activeFrameId)
@@ -237,12 +255,19 @@ function renderFrame(level) {
 
 	// wire selector to perform page updates when selection changes
 	select.addEventListener('change', event => {
-		frameUpdate(event);
+		selectionUpdate(event, SELECT_TEMPLATE.FRAME);
+		icon.src = getFrameImageSrc(event.currentTarget.value) ?? '';
+
+		// update all attached selectors at this and later levels
+		refreshSelectors(SELECT_TEMPLATE.FRAME, level);
+
 		// full cell replacement for mounts
-		// rerender integrated systems, do not change selectors
+		// update integrated systems
 	});
 
-	return [icon, select];
+	selectGroup.append(select);
+
+	return [icon, selectGroup];
 }
 
 function renderStatBubble(level, statId, value) {
@@ -288,15 +313,24 @@ function renderMounts(level) {
 	return [];
 }
 
+function renderIntegratedSystems(level) {
+	const integratedSystems = document.createElement('div');
+	integratedSystems.className = 'systems-integrated';
+
+	return integratedSystems;
+}
+
 function renderSystems(level) {
+	const integratedSystems = renderIntegratedSystems(level);
+
 	const systems = roadmap.ll[level].systems;
 
 	// generate prototype selector
 	const selectTemplate =
-		createCommonSelect({ level, ...SELECT_TEMPLATE.SYSTEM });
+		renderSelector({ level, ...SELECT_TEMPLATE.SYSTEM });
 
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.SYSTEM.className}-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.SYSTEM.type}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// configure selectors for current user-selected value
@@ -310,6 +344,9 @@ function renderSystems(level) {
 		// wire selector to perform page updates when selection changes
 		select.addEventListener('change', event => {
 			selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
+			
+			// update all attached selectors at this and later levels
+			refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
 		});
 
 		selectGroup.append(select);
@@ -318,10 +355,15 @@ function renderSystems(level) {
 	selectTemplate.dataset.idx = systems.length;
 	selectTemplate.addEventListener('change', event => {
 		selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
+		
+		// update all attached selectors at this and later levels
+		refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
+
+		// update stats and budget pill
 	});
 	selectGroup.append(selectTemplate);
 
-	return [selectGroup];
+	return [integratedSystems, selectGroup];
 }
 
 const CELL = {
@@ -347,22 +389,23 @@ const CELL = {
 	}
 }
 
-function renderCellType(type, level) {
+function renderCellType(cellType, level) {
 	const cell = document.createElement('td');
-	cell.className = `${type.name}-cell`;
+	cell.className = `${cellType.name}-cell`;
 
 	const cellContent = document.createElement('div');
-	cellContent.className = type.name;
+	cellContent.className = cellType.name;
 	cellContent.dataset.ll = level;
 
-	cellContent.append(...type.render(level));
+	cellContent.append(...cellType.render(level));
 	cell.append(cellContent);
 
 	return cell;
 }
 
-function renderLevelRow(level) {
+export function renderLevelRow(level) {
 	const row = document.createElement('tr');
+	row.id = `row-ll-${level}`;
 
 	row.append(
 		renderCellType(CELL.LEVELUP, level),
