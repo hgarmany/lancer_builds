@@ -82,7 +82,10 @@ function initializeCatalogLevel(level) {
  * @param {String} id
  */
 function increment(catalogLevel, id) {
-	catalogLevel.set(id, (catalogLevel.get(id) ?? 0) + 1);
+	if (catalogLevel instanceof Map)
+		catalogLevel.set(id, (catalogLevel.get(id) ?? 0) + 1);
+	else
+		catalogLevel.push(id);
 }
 
 /**
@@ -92,11 +95,17 @@ function increment(catalogLevel, id) {
  * @param {String} id
  */
 function decrement(catalogLevel, id) {
-	const newVal = (catalogLevel.get(id) ?? 0) - 1
-	if (newVal > 0)
-		catalogLevel.set(id, newVal);
-	else
-		catalogLevel.delete(id);
+	if (catalogLevel instanceof Map) {
+		const newVal = (catalogLevel.get(id) ?? 0) - 1
+		if (newVal > 0)
+			catalogLevel.set(id, newVal);
+		else
+			catalogLevel.delete(id);
+	}
+	else {
+		const idx = catalogLevel.findIndex(item => item === id);
+		catalogLevel.splice(idx, 1);
+	}
 }
 
 /**
@@ -108,8 +117,8 @@ function decrement(catalogLevel, id) {
  * @param {any} level
  */
 export function incrementFromLevel(catalog, id, level) {
-	if (!id) return;
-	for (let i = level; i < roadmap.maxLevel; i++)
+	if (!catalog || !id) return;
+	for (let i = level; i <= roadmap.maxLevel; i++)
 		increment(catalog[i], id);
 }
 
@@ -122,8 +131,8 @@ export function incrementFromLevel(catalog, id, level) {
  * @param {any} level
  */
 export function decrementFromLevel(catalog, id, level) {
-	if (!id) return;
-	for (let i = level; i < roadmap.maxLevel; i++)
+	if (!catalog || !id) return;
+	for (let i = level; i <= roadmap.maxLevel; i++)
 		decrement(catalog[i], id);
 }
 

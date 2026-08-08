@@ -54,9 +54,11 @@ export function wireHeader() {
 function refreshSelectors(level, template) {
 	const srcItems = template.getSrcItems();
 
-	for (let i = level; i < roadmap.maxLevel; i++) {
+	for (let i = level; i <= roadmap.maxLevel; i++) {
 		const selectGroup = document.getElementById(
-			`${template.className}s-ll-${i}`);
+			`${template.className}-ll-${i}`);
+		if (!selectGroup)
+			continue;
 
 		for (const select of selectGroup.children) {
 			let selectionIsInvalid = false;
@@ -99,14 +101,14 @@ export function selectionUpdate(event, template) {
 	const currentLevel = Number(eventSelect.dataset.ll);
 	const idx = Number(eventSelect.dataset.idx);
 
-	const oldId = template.getRoadmapId({ level: currentLevel, idx });
+	const oldId = template.roadmapRead({ level: currentLevel, idx });
 	const newId = eventSelect.value === '' ? null: eventSelect.value;
 
 	// update this selector
 	eventSelect.classList.toggle('occupied', newId);
 
 	// update roadmap and cumulative catalog
-	template.setRoadmapId({ level: currentLevel, idx, id: newId });
+	template.roadmapWrite({ level: currentLevel, idx, id: newId });
 	incrementFromLevel(template.catalog, newId, currentLevel);
 	decrementFromLevel(template.catalog, oldId, currentLevel);
 

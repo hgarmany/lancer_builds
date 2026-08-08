@@ -25,7 +25,7 @@ export const TAGS = Object.freeze({
  * @returns {boolean}
  */
 export function doesItemHaveTag(item, tagId) {
-    return item?.tags?.find(tag => tag.id === tagId) !== null;
+    return item?.tags?.find(tag => tag.id === tagId) !== undefined;
 }
 
 /**
@@ -46,7 +46,11 @@ export function getItemNumUses(item) {
  * @param {string} id
  * @returns {boolean}
  */
-function isFrameIntegratedItem(id) {
-	return srcData.frames.some(frame =>
-		frame.core_system?.integrated?.includes(id));
-};
+export function isFrameIntegratedItem(id) {
+	for (const frame of srcData.frames.values()) {
+		if (frame.core_system?.integrated?.includes(id))
+			return true;
+	}
+
+	return false;
+}

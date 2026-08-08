@@ -72,7 +72,7 @@ function renderSkillTriggerGroup(level) {
 		createCommonSelect({ level, ...SELECT_TEMPLATE.SKILL_TRIGGER });
 
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.SKILL_TRIGGER.className}s-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.SKILL_TRIGGER.className}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// configure selectors for current user-selected value
@@ -102,7 +102,7 @@ function renderTalentGroup(level) {
 		createCommonSelect({ level, ...SELECT_TEMPLATE.TALENT });
 
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.TALENT.className}s-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.TALENT.className}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// configure selectors for current user-selected value
@@ -128,7 +128,7 @@ function renderLicense(level) {
 	const licenseId = roadmap.ll[level].licenseId;
 
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.LICENSE.className}s-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.LICENSE.className}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// generate prototype selector
@@ -156,7 +156,7 @@ function renderCoreBonus(level) {
 		return null;
 	
 	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.CORE_BONUS.className}s-ll-${level}`;
+	selectGroup.id = `${SELECT_TEMPLATE.CORE_BONUS.className}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
 	// generate prototype selector
@@ -289,7 +289,39 @@ function renderMounts(level) {
 }
 
 function renderSystems(level) {
-	return [];
+	const systems = roadmap.ll[level].systems;
+
+	// generate prototype selector
+	const selectTemplate =
+		createCommonSelect({ level, ...SELECT_TEMPLATE.SYSTEM });
+
+	const selectGroup = document.createElement('div');
+	selectGroup.id = `${SELECT_TEMPLATE.SYSTEM.className}-ll-${level}`;
+	selectGroup.className = 'select-group';
+
+	// configure selectors for current user-selected value
+	systems.forEach((system, idx) => {
+		const select = selectTemplate.cloneNode(true);
+		select.dataset.idx = idx;
+
+		if (system)
+			applySelection(level, select, system.id, SELECT_TEMPLATE.SYSTEM);
+
+		// wire selector to perform page updates when selection changes
+		select.addEventListener('change', event => {
+			selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
+		});
+
+		selectGroup.append(select);
+	});
+
+	selectTemplate.dataset.idx = systems.length;
+	selectTemplate.addEventListener('change', event => {
+		selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
+	});
+	selectGroup.append(selectTemplate);
+
+	return [selectGroup];
 }
 
 const CELL = {
@@ -346,7 +378,7 @@ function renderLevelRow(level) {
 export function initializeRenderPipeline() {
 	tableBody.append(
 		...Array.from(
-			{ length: roadmap.maxLevel },
+			{ length: roadmap.maxLevel + 1 },
 			(_, index) => renderLevelRow(index)
 		)
 	);

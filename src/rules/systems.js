@@ -31,7 +31,7 @@ const stats = cumulativeCatalog.stats;
  * @returns {boolean}
  */
 export function doesSystemHaveTag(id, tagId) {
-	return doesItemHaveTag(srcData.systems[id], tagId);
+	return doesItemHaveTag(srcData.systems.get(id), tagId);
 }
 
 /**
@@ -67,15 +67,15 @@ export function getSystemNumUses(id) {
  * @returns {boolean}
  */
 export function isSystemEligible(level, id, selectedId = null) {
-	const candidate = srcData.systems[id];
-
+	const candidate = srcData.systems.get(id);
+	
 	// reject invalid systems, unpermitted exotics, integrated systems
 	if (!candidate ||
-		!roadmap.allowExotics && doesSystemHaveTag(id, TAGS.EXOTIC) ||
+		!roadmap.allowExotics && doesItemHaveTag(candidate, TAGS.EXOTIC) ||
 		isFrameIntegratedItem(id))
 		return false;
-
-	const selectedSystem = selectedId ? srcData.systems[selectedId] : null;
+		
+	const selectedSystem = selectedId ? srcData.systems.get(selectedId) : null;
 
 	// determine whether adding/swapping systems is within the level's budget
 	const withinSPBudget =
@@ -88,21 +88,21 @@ export function isSystemEligible(level, id, selectedId = null) {
 		return false;
 
 	// AI systems need a free AI slot
-	if (doesSystemHaveTag(id, TAGS.AI)) {
+	if (doesItemHaveTag(candidate, TAGS.AI)) {
 		stats[level].ai_budget +
 			systemAIBonus(candidate) -
 			systemAIBonus(selectedSystem) >= 0;
 	}
 
 	// check for uniques, reject unique systems already installed
-	if (doesSystemHaveTag(id, TAGS.UNIQUE) &&
+	if (doesItemHaveTag(candidate, TAGS.UNIQUE) &&
 		id != selectedId &&
-		roadmap.ll[level].systems.find(system => system.id === id) !== null)
+		roadmap.ll[level].systems.find(system => system.id === id) !== undefined)
 		return false;
 
 	// talent-issued systems must match rank exactly
 	if (candidate.talent_item)
-		return candidate.talent_rank == talents[level][candidate.talent_id];
+		return candidate.talent_rank == talents[level].get(candidate.talent_id);
 
 	// gms systems are always eligible
 	if (!candidate.license_id)
@@ -110,7 +110,7 @@ export function isSystemEligible(level, id, selectedId = null) {
 
 	// allow systems at or below the level's license rank
 	return candidate.license_level <=
-		licenses[level][candidate.license_id];
+		licenses[level].get(candidate.license_id);
 }
 
 /**
