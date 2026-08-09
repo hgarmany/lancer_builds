@@ -25,8 +25,8 @@ const haseCatalog = cumulativeCatalog.hase;
  */
 export function allowIncreaseHASE(level, id) {
 	const haseIds = roadmap.ll[level].haseIds;
-	const skill = haseCatalog[level][id];
-	return haseCatalog[level][id] < MAX_HASE_RANK &&
+	const skill = haseCatalog[level].get(id) ?? 0;
+	return skill < MAX_HASE_RANK &&
 		(!haseIds[0] || level === 0 && !haseIds[1]);
 }
 

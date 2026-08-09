@@ -92,6 +92,9 @@ export function createDefaultRoadmap() {
 	roadmap.ll[3].coreBonusId = 'cb_the_lesson_of_the_held_image';
 	roadmap.ll[0].talentIds[1] = 't_ace';
 	roadmap.ll[1].talentIds[0] = 't_ace';
+	roadmap.ll[0].haseIds[0] = 'hull';
+	roadmap.ll[0].haseIds[1] = 'hull';
+	roadmap.ll[1].haseIds[0] = 'agility';
 
 	console.log(roadmap);
 }

@@ -91,10 +91,10 @@ function getLevelModifiers({ level }) {
  * @returns stat modifier Array
  */
 function getMechSkillModifiers({ catalog, level }) {
-	const hull = catalog.hase[level]?.h ?? 0;
-	const evasion = catalog.hase[level]?.a ?? 0;
-	const systems = catalog.hase[level]?.s ?? 0;
-	const engineering = catalog.hase[level]?.e ?? 0;
+	const hull = catalog.hase[level]?.get('hull') ?? 0;
+	const evasion = catalog.hase[level]?.get('agility') ?? 0;
+	const systems = catalog.hase[level]?.get('systems') ?? 0;
+	const engineering = catalog.hase[level]?.get('engineering') ?? 0;
 
 	return [
 		{
