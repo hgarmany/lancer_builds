@@ -9,7 +9,9 @@ import {
 } from '../data/roadmap.js';
 
 import {
-	cumulativeCatalog
+	cumulativeCatalog,
+	incrementFromLevel,
+	decrementFromLevel
 } from '../data/cumulativeCatalog.js';
 
 const haseCatalog = cumulativeCatalog.hase;
@@ -51,11 +53,11 @@ export function allowDecreaseHASE(level, id) {
  * @param {string} id 
  * @param {number} modifier 
  */
-export function updateHASELog(level, id, modifier) {
+export function updateHASELog(level, id, doIncrement) {
 	// roadmap update
 	const haseIds = roadmap.ll[level].haseIds;
 	if (level === 0) {
-		if (modifier > 0) {
+		if (doIncrement) {
 			if (haseIds[0])
 				haseIds[1] = id;
 			else
@@ -69,11 +71,12 @@ export function updateHASELog(level, id, modifier) {
 		}
 	}
 	else {
-		haseIds[0] = modifier > 0 ? id : null;
+		haseIds[0] = doIncrement ? id : null;
 	}
 
 	// cumulative catalog update
-	for (let i = level; i <= roadmap.maxLevel; i++) {
-		haseCatalog[i][id] += modifier;
-	}
+	if (doIncrement)
+		incrementFromLevel(haseCatalog, id, level);
+	else
+		decrementFromLevel(haseCatalog, id, level);
 }

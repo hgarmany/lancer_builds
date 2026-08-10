@@ -13,10 +13,7 @@ import {
 } from './data/cumulativeCatalog.js';
 
 import {
-    wireHeader
-} from './ui/wires.js';
-
-import {
+    configureHeader,
     initializeRenderPipeline
 } from './ui/renderer.js';
 
@@ -27,6 +24,6 @@ importCoreData();
 createDefaultRoadmap();
 
 // initialize roadmap planner
-wireHeader();
+configureHeader();
 initializeCatalog();
 initializeRenderPipeline();

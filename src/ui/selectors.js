@@ -243,7 +243,7 @@ export function renderSelector({
  * Update this particular selector's occupied status and
  * write database changes to record user selection
  * 
- * @param {EventPrototype} event 
+ * @param {Event} event 
  * @param {Object} template 
  */
 export function selectionUpdate(event, template) {
@@ -348,7 +348,7 @@ function coreBonusUpdate(event, level) {
  * Frame cells default to mimic the last cell where the user
  * specified a particular frame
  * 
- * @param {EventPrototype} event 
+ * @param {Event} event 
  * @param {number} level 
  */
 function activeFrameWaterfall(event, level) {
