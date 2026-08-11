@@ -80,6 +80,10 @@ function getLevelModifiers({ level }) {
 		{
 			stat: 'sp',
 			value: grit
+		},
+		{
+			stat: 'sp_budget',
+			value: grit
 		}
 	];
 }
@@ -126,6 +130,10 @@ function getMechSkillModifiers({ catalog, level }) {
 			value: Math.floor(systems / 2)
 		},
 		{
+			stat: 'sp_budget',
+			value: Math.floor(systems / 2)
+		},
+		{
 			stat: 'heatcap',
 			value: engineering
 		},
@@ -166,6 +174,21 @@ function getCoreBonusModifiers({ catalog, level }) {
 }
 
 /**
+ * Placeholder for weapon effects on stats
+ * Primarily for SP-cost weapons
+ * 
+ * @param {{Object, number}} {catalog, level} 
+ * @returns stat modifier Array
+ */
+function getWeaponModifiers({ catalog, level }) {
+	let modifiers = [];
+
+
+
+	return modifiers;
+}
+
+/**
  * Get special stat modifiers from systems
  * Only collects stat bonuses
  * 
@@ -178,21 +201,32 @@ function getSystemModifiers({ catalog, level }) {
 	roadmap.ll[level].systems?.forEach(system => {
 		const sysSrc = srcData.systems.get(system.id);
 
-		modifier.push({
-			stat: 'sp_budget',
-			value: sysSrc.sp
-		});
-
-		if (sysSrc && sysSrc.bonuses) {
-			sysSrc.bonuses.forEach(bonus => {
-				const value = Number(bonus.val) ?? 0;
-				if (value && STAT_DEFINITIONS[bonus.id]) {
-					modifiers.push({
-						stat: bonus.id,
-						value: bonus.val
-					});
-				}
+		if (sysSrc) {
+			// deduct sp cost from the budget
+			modifiers.push({
+				stat: 'sp_budget',
+				value: -sysSrc.sp
 			});
+
+			if (sysSrc?.tags?.find(tag => tag.id === 'tg_ai') !== undefined) {
+				// mark off AI from budget
+				modifiers.push({
+					stat: 'ai_budget',
+					value: -1
+				});
+			}
+
+			if (sysSrc.bonuses) {
+				sysSrc.bonuses.forEach(bonus => {
+					const value = Number(bonus.val) ?? 0;
+					if (value && STAT_DEFINITIONS[bonus.id]) {
+						modifiers.push({
+							stat: bonus.id,
+							value: bonus.val
+						});
+					}
+				});
+			}
 		}
 	});
 
@@ -203,6 +237,7 @@ const modifierSets = [
 	getLevelModifiers,
 	getMechSkillModifiers,
 	getCoreBonusModifiers,
+	getWeaponModifiers,
 	getSystemModifiers
 ];
 
@@ -220,6 +255,8 @@ export function calculateMechStats(catalog, level) {
 
 	// initialize stats from frame data
 	const stats = getBaseFrameStats(frameId);
+	stats.sp_budget = stats.sp;
+	stats.ai_budget = stats.ai_cap;
 
 	// build a list of bonuses on top of base stats
 	const modifiers = modifierSets.flatMap(
@@ -239,8 +276,6 @@ export function calculateMechStats(catalog, level) {
 	}
 
 	stats.size = Math.min(MAX_FRAME_SIZE, stats.size);
-	stats.sp_budget = stats.sp;
-	stats.ai_budget = stats.ai_cap;
 
 	catalog.stats[level] = stats;
 

@@ -22,8 +22,8 @@ import {
 
 import {
 	getFrameImageSrc,
-	updateStatsWaterfall,
-	updateBudgetPill
+	refreshStats,
+	refreshBudgetPill
 } from './renderModules.js';
 
 
@@ -383,8 +383,11 @@ function frameUpdate(event, level) {
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
 
-	// update stats and budget pill
-	updateStatsWaterfall(level);
+	// update stats and budget pill in waterfall
+	for (let i = level; i <= roadmap.maxLevel; i++) {
+		refreshStats(i);
+		refreshBudgetPill(i);
+	}
 
 	// full cell replacement for mounts
 	// update integrated systems
@@ -397,6 +400,6 @@ function systemUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
 
 	// update stats and budget pill
-	updateStatsWaterfall(level);
-	updateBudgetPill(level);
+	refreshStats(level);
+	refreshBudgetPill(level);
 }

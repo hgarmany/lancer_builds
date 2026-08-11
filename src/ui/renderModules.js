@@ -75,22 +75,60 @@ function renderHASEButton({
  * @param {number} level
  * @param {string} id
  */
-function updateHASEWaterfall(level, id) {
-	for (let i = level; i <= roadmap.maxLevel; i++) {
-		const hexGroup = document.getElementById(`hase-ll-${i}`);
+function refreshHexes(level, id) {
+	const hexGroup = document.getElementById(`hase-ll-${level}`);
 
-		for (const hex of hexGroup.children) {
-			const hexId = hex.dataset.skillId;
+	for (const hex of hexGroup.children) {
+		const hexId = hex.dataset.skillId;
 
-			if (hexId === id) {
-				const value = cumulativeCatalog.hase[i].get(id);
-				hex.classList.toggle('error', value > MAX_HASE_RANK);
-				hex.children[1].textContent = value ?? 0;
-			}
-
-			hex.children[0].disabled = !allowIncreaseHASE(i, hexId);
-			hex.children[2].disabled = !allowDecreaseHASE(i, hexId);
+		if (hexId === id) {
+			const value = cumulativeCatalog.hase[level].get(id);
+			hex.classList.toggle('error', value > MAX_HASE_RANK);
+			hex.children[1].textContent = value ?? 0;
 		}
+
+		hex.children[0].disabled = !allowIncreaseHASE(level, hexId);
+		hex.children[2].disabled = !allowDecreaseHASE(level, hexId);
+	}
+}
+
+/**
+ * Refresh display stats values
+ * 
+ * @param {number} level
+ */
+export function refreshStats(level) {
+	const stats = calculateMechStats(cumulativeCatalog, level);
+	for (const [id, value] of Object.entries(stats)) {
+		const statBubble = document.getElementById(`stat-${id}-ll-${level}`);
+		if (statBubble)
+			statBubble.textContent = value;
+	}
+}
+
+/**
+ * Targeted replacement of free and total SP counts
+ * 
+ * @param {number} level
+ */
+export function refreshBudgetPill(level) {
+	const stats = cumulativeCatalog.stats[level];
+	
+	document.getElementById(
+		`budget-free-ll-${level}`).textContent = stats.sp_budget;
+	document.getElementById(
+		`budget-total-ll-${level}`).textContent = stats.sp;
+}
+
+function updateHASEWaterfall(level, id, doIncrement) {
+	// update roadmap and cumulative catalog
+	updateHASELog(level, id, doIncrement);
+
+	// update each level's hex displays, stat table, and SP budget pill
+	for (let i = 0; i <= roadmap.maxLevel; i++) {
+		refreshHexes(level, id);
+		refreshStats(i);
+		refreshBudgetPill(i);
 	}
 }
 
@@ -114,11 +152,7 @@ export function renderHexStat(level, id) {
 		symbol: '+',
 		className: 'increase',
 		label: `Add ${id} at LL${level}`,
-		action: () => {
-			updateHASELog(level, id, true);
-			updateHASEWaterfall(level, id);
-			updateStatsWaterfall(level);
-		},
+		action: () => updateHASEWaterfall(level, id, true),
 		disabled: !allowIncreaseHASE(level, id)
 	});
 
@@ -126,11 +160,7 @@ export function renderHexStat(level, id) {
 		symbol: '\u2212',
 		className: 'decrease',
 		label: `Remove ${id} point assigned at LL${level}`,
-		action: () => {
-			updateHASELog(level, id, false);
-			updateHASEWaterfall(level, id);
-			updateStatsWaterfall(level);
-		},
+		action: () => updateHASEWaterfall(level, id, false),
 		disabled: !allowDecreaseHASE(level, id)
 	});
 
@@ -207,22 +237,6 @@ export function renderStats(level) {
 }
 
 /**
- * Refresh display stats values
- * 
- * @param {number} level
- */
-export function updateStatsWaterfall(level) {
-	for (let i = 0; i < roadmap.maxLevel; i++) {
-		const stats = calculateMechStats(cumulativeCatalog, i);
-		for (const [id, value] of Object.entries(stats)) {
-			const statBubble = document.getElementById(`stat-${id}-ll-${i}`);
-			if (statBubble)
-				statBubble.textContent = value;
-		}
-	}
-}
-
-/**
  * Draw fractional SP budget for the systems column
  * 
  * @param {number} level
@@ -238,13 +252,4 @@ export function renderBudgetPill(level) {
 		<span id="budget-total-ll-${level}">${stats.sp}</span> SP`;
 
 	return budgetPill;
-}
-
-export function updateBudgetPill(level) {
-	const stats = cumulativeCatalog.stats[level];
-
-	document.getElementById(
-		`budget-free-ll-${level}`).textContent = stats.sp_budget;
-	document.getElementById(
-		`budget-total-ll-${level}`).textContent = stats.sp;
 }

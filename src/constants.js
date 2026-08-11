@@ -64,6 +64,12 @@ export const STAT_DEFINITIONS = {
 	ai_cap: {
 		defaultValue: 1,
 		display: false
+	},
+	sp_budget: {
+		display: false
+	},
+	ai_budget: {
+		display: false
 	}
 };
 
