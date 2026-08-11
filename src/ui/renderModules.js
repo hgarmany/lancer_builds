@@ -25,6 +25,7 @@ import {
 } from '../rules/hase.js';
 
 import {
+	calculateMechStats,
 	didStatWorsen
 } from '../rules/stats.js';
 
@@ -116,6 +117,7 @@ export function renderHexStat(level, id) {
 		action: () => {
 			updateHASELog(level, id, true);
 			updateHASEWaterfall(level, id);
+			updateStatsWaterfall(level);
 		},
 		disabled: !allowIncreaseHASE(level, id)
 	});
@@ -127,6 +129,7 @@ export function renderHexStat(level, id) {
 		action: () => {
 			updateHASELog(level, id, false);
 			updateHASEWaterfall(level, id);
+			updateStatsWaterfall(level);
 		},
 		disabled: !allowDecreaseHASE(level, id)
 	});
@@ -204,6 +207,22 @@ export function renderStats(level) {
 }
 
 /**
+ * Refresh display stats values
+ * 
+ * @param {number} level
+ */
+export function updateStatsWaterfall(level) {
+	for (let i = 0; i < roadmap.maxLevel; i++) {
+		const stats = calculateMechStats(cumulativeCatalog, i);
+		for (const [id, value] of Object.entries(stats)) {
+			const statBubble = document.getElementById(`stat-${id}-ll-${i}`);
+			if (statBubble)
+				statBubble.textContent = value;
+		}
+	}
+}
+
+/**
  * Draw fractional SP budget for the systems column
  * 
  * @param {number} level
@@ -215,8 +234,17 @@ export function renderBudgetPill(level) {
 	const budgetPill = document.createElement('div');
 	budgetPill.className = 'budget-pill';
 	budgetPill.innerHTML = `
-		<span class="budget-free">${stats.sp}</span> /
-		<span class="budget-total">${stats.sp_budget}</span> SP`;
+		<span id="budget-free-ll-${level}">${stats.sp_budget}</span> /
+		<span id="budget-total-ll-${level}">${stats.sp}</span> SP`;
 
 	return budgetPill;
+}
+
+export function updateBudgetPill(level) {
+	const stats = cumulativeCatalog.stats[level];
+
+	document.getElementById(
+		`budget-free-ll-${level}`).textContent = stats.sp_budget;
+	document.getElementById(
+		`budget-total-ll-${level}`).textContent = stats.sp;
 }

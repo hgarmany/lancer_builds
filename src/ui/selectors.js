@@ -21,7 +21,9 @@ import {
 } from '../constants.js';
 
 import {
-	getFrameImageSrc
+	getFrameImageSrc,
+	updateStatsWaterfall,
+	updateBudgetPill
 } from './renderModules.js';
 
 
@@ -342,6 +344,7 @@ function coreBonusUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
 
 	// update stats and all mounts
+	updateStatsWaterfall(level);
 }
 
 /**
@@ -380,6 +383,9 @@ function frameUpdate(event, level) {
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
 
+	// update stats and budget pill
+	updateStatsWaterfall(level);
+
 	// full cell replacement for mounts
 	// update integrated systems
 }
@@ -391,4 +397,6 @@ function systemUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
 
 	// update stats and budget pill
+	updateStatsWaterfall(level);
+	updateBudgetPill(level);
 }

@@ -147,8 +147,8 @@ function getCoreBonusModifiers({ catalog, level }) {
 	let modifiers = [];
 
 	catalog.coreBonuses[level]?.forEach(coreBonus => {
-		const cbSrc = srcData.coreBonuses[coreBonus];
-		
+		const cbSrc = srcData.coreBonuses.get(coreBonus);
+
 		if (cbSrc && cbSrc.bonuses) {
 			cbSrc.bonuses.forEach(bonus => {
 				const value = Number(bonus.val) ?? 0;
@@ -176,8 +176,13 @@ function getSystemModifiers({ catalog, level }) {
 	let modifiers = [];
 
 	roadmap.ll[level].systems?.forEach(system => {
-		const sysSrc = srcData.systems[system.id];
-		
+		const sysSrc = srcData.systems.get(system.id);
+
+		modifier.push({
+			stat: 'sp_budget',
+			value: sysSrc.sp
+		});
+
 		if (sysSrc && sysSrc.bonuses) {
 			sysSrc.bonuses.forEach(bonus => {
 				const value = Number(bonus.val) ?? 0;
