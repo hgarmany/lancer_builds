@@ -106,6 +106,71 @@ select {
 	padding: 0.1rem 0.25rem 0.1rem 0.5rem;
 }
 
+/* new custom selector */
+.selector-control {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center;
+	padding: 0.1rem 0.5rem;
+	line-height: 1.2;
+	text-align: left;
+	cursor: pointer;
+}
+
+.custom-select.occupied .selector-control {
+	background-color: transparent;
+	border-color: transparent;
+}
+
+.selector-value {
+	max-width: 12rem;
+}
+
+.selector-arrow {
+	width: 0;
+	height: 0;
+	margin-inline-start: 0.5rem;
+	border-inline: 0.3rem solid transparent;
+	border-top: 0.4rem solid currentColor;
+}
+
+.custom-select {
+	position: relative;
+}
+
+.selector-menu {
+	position: absolute;
+	top: calc(100% + 0.25rem);
+	left: 0;
+	z-index: 1;
+	max-height: 15rem;
+	overflow-y: auto;
+	border: 1px solid ButtonBorder;
+	border-radius: 0.5rem;
+	background-color: white;
+	box-shadow: 0 0.35rem 0.8rem gray;
+}
+
+.custom-select:not(.open) .selector-menu {
+	display: none;
+}
+
+.selector-option {
+	padding: 0.25rem 1.25rem 0.25rem 0.5rem;
+	cursor: pointer;
+}
+
+.selector-option:hover {
+	background-color: Highlight;
+	color: HighlightText;
+}
+
+.custom-select.open .selector-arrow {
+	transform: rotate(180deg);
+}
+
+/* end new custom selector */
+
 .error {
 	background-color: red;
 }

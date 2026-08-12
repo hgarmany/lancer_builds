@@ -272,17 +272,19 @@ export function applySelection(level, select, id, template) {
 	}
 }
 
-export function renderSelectorNew(level, template) {
+export function renderSelectorNew(level, selectedId, template) {
 	const selector = document.createElement('div');
-	selector.className = `${template.type}-select`;
+	selector.className = `custom-select ${template.type}-select`;
 	selector.dataset.ll = level;
+	selector.dataset.value = '';
 
-	const control = document.createElement('div');
+	const control = document.createElement('button');
+	control.type = 'button';
 	control.className = 'selector-control';
 
 	const value = document.createElement('span');
 	value.className = 'selector-value';
-	value.innerHTML = template.placeholderText;
+	value.textContent = template.placeholderText ?? '';
 
 	const arrow = document.createElement('span');
 	arrow.className = 'selector-arrow';
@@ -294,20 +296,60 @@ export function renderSelectorNew(level, template) {
 	menu.className = 'selector-menu';
 	menu.id = `${template.type}-options-ll-${level}`;
 
+	// suppress default-close behavior when menu option is clicked
+	menu.addEventListener('mousedown', event => event.preventDefault());
+
+	function toggleOpen(isOpen = null) {
+		if (isOpen !== null)
+			selector.classList.toggle('open', isOpen);
+		else
+			selector.classList.toggle('open');
+	}
+
 	for (const [id, item] of template.getSrcItems()) {
 		const context = { level, id, selectedId: null };
 
 		// prepare an option for each item
 		const option = document.createElement('div');
-		option.value = id;
-		option.innerHTML = template.getLabel?.(context) ?? '';
+		option.className = 'selector-option';
+		option.dataset.value = id;
+
+		option.textContent = template.getLabel?.(context) ?? '';
 		option.title = template.getDescription?.(context) ?? '';
 		if (!template.getEligibility?.(context) ?? false)
 			setOptionHidden(option, true);
 
+		option.addEventListener('click', () => {
+			selector.dataset.value = id;
+			value.textContent = option.textContent;
+			for (const menuOption of menu.children) {
+
+			}
+			selector.classList.add('occupied');
+			toggleOpen(false);
+			control.focus();
+		});
+
 		menu.append(option);
 	}
 
+	control.addEventListener('click', () => toggleOpen());
+
+	control.addEventListener('keydown', event => {
+		switch (event.key) {
+			case 'Escape':
+				toggleOpen(false);
+				break;
+			default:
+				break;
+		}
+	});
+
+	// loss of focus simply closes the menu
+	control.addEventListener('blur', event => {
+		if (!selector.contains(event.relatedTarget))
+			toggleOpen(false);
+	});
 
 	selector.append(control, menu);
 
@@ -317,17 +359,9 @@ export function renderSelectorNew(level, template) {
 /**
  * Creates an empty selector with default options configured
  * 
- * @param {{
- *	level?: number,
- *	type: string,
- *	srcItems?: Map<string, Object>,
- *	getSrcItems?: function(): Map<string, Object>,
- *	placeholderText: string,
- *	getLabel: function,
- *	getDescription: function,
- *	getEligibility: function
- * }}
- * @returns {Element}
+ * @param {number} level
+ * @param {Object} template
+ * @returns {HTMLElement}
  */
 export function renderSelector(level, template) {
 	const selectTemplate = document.createElement('select');

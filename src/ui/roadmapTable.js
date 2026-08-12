@@ -68,7 +68,7 @@ function renderMenu(level, template) {
 
 	menu.append(menuLabel, selectGroup);
 
-	menu.append(renderSelectorNew(level, template));
+	menu.append(renderSelectorNew(level, null, template));
 
 	return menu;
 }
