@@ -51,7 +51,8 @@ import {
 } from '../rules/frames.js';
 
 import {
-	isSystemEligible
+	isSystemEligible,
+	hasEligibleSystem
 } from '../rules/systems.js';
 
 /**
@@ -172,8 +173,12 @@ export const SELECT_TEMPLATE = Object.freeze({
 		placeholderText: 'Select a system',
 		getSrcItems: () => srcData.systems,
 		readLevel: (level) => roadmap.ll[level].systems,
-		write: ({ level, idx, id, data }) =>
-			roadmap.ll[level].systems[idx] = { id, data },
+		write: ({ level, idx, id, data }) => {
+			if (!id)
+				roadmap.ll[level].systems.splice(idx, 1);
+			else
+				roadmap.ll[level].systems[idx] = { id, data };
+		}				,
 		getLabel: ({ id }) => srcData.systems.get(id)?.name,
 		getDescription: ({ id }) => {
 			const item = srcData.systems.get(id);
@@ -349,6 +354,9 @@ function talentUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.TALENT, level);
 
 	// update integrated mounts and systems
+	for (let i = 0; i <= roadmap.maxLevel; i++)
+		refreshElectiveSystemList(i);
+	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
 function licenseUpdate(event, level) {
@@ -356,6 +364,7 @@ function licenseUpdate(event, level) {
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.LICENSE, level);
+	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
 	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
@@ -367,7 +376,8 @@ function coreBonusUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
 
 	// update stats and all mounts
-	updateStatsWaterfall(level);
+	refreshStats(level);
+	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
 /**
@@ -417,51 +427,48 @@ function frameUpdate(event, level) {
 
 	// full cell replacement for mounts
 	// update integrated systems
+
+	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
-function refreshElectiveSystemList(event, level) {
-	const emptySelect = document.getElementById(`system-add-ll-${level}`);
-	const idx = Number(event.currentTarget.dataset.idx);
-	const systemId = event.currentTarget.value;
+export function refreshElectiveSystemList(level) {
+	const selectGroup = document.getElementById(`system-ll-${level}`);
 
-	if (event.currentTarget !== emptySelect) {
-		if (systemId === '')
-			event.currentTarget.remove();
-		return;
+	let newIdx = 0;
+
+	for (const select of Array.from(selectGroup.children)) {
+		// remove any vacant system slots, adjust indices
+		if (select.value === '')
+			select.remove();
+		else
+			select.dataset.idx = newIdx++;
 	}
-	console.log('test');
 
-	emptySelect.id = '';
+	if (hasEligibleSystem(level)) {
+		// generate prototype selector
+		const selectTemplate =
+			renderSelector({ level, ...SELECT_TEMPLATE.SYSTEM });
+		selectTemplate.dataset.idx = newIdx;
+		selectTemplate.value = '';
 
-	// generate prototype selector
-	const selectTemplate =
-		renderSelector({ level, ...SELECT_TEMPLATE.SYSTEM });
+		// wire selector to perform page updates when selection changes
+		selectTemplate.addEventListener('change', event =>
+			SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
 
-	const selectGroup =
-		document.getElementById(`${SELECT_TEMPLATE.SYSTEM.type}-ll-${level}`);
-
-	// add selector to list
-	const select = selectTemplate.cloneNode(true);
-	select.id = `system-add-ll-${level}`;
-	select.dataset.idx = idx + 1;
-	applySelection(level, select, systemId, SELECT_TEMPLATE.SYSTEM);
-
-	// wire selector to perform page updates when selection changes
-	select.addEventListener('change', event =>
-		SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
-
-	selectGroup.append(select);
+		// add empty selector to list
+		selectGroup.append(selectTemplate);
+	}
 }
 
 function systemUpdate(event, level) {
 	selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
-	console.log(roadmap.ll[level].systems);
 
 	// update stats and budget pill
 	refreshStats(level);
 	refreshBudgetPill(level);
-	refreshElectiveSystemList(event, level);
+	refreshElectiveSystemList(level);
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
+	console.log(cumulativeCatalog.stats[level]);
 }

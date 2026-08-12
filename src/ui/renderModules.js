@@ -20,6 +20,12 @@ import {
 } from '../constants.js';
 
 import {
+	SELECT_TEMPLATE,
+	refreshSelectors,
+	refreshElectiveSystemList
+} from './selectors.js';
+
+import {
 	allowIncreaseHASE,
 	allowDecreaseHASE,
 	countUsedHASEPoints,
@@ -132,12 +138,15 @@ function updateHASEWaterfall(level, id, doIncrement) {
 	updateHASELog(level, id, doIncrement);
 	refreshHASETooltip(level);
 
-	// update each level's hex displays, stat table, and SP budget pill
+	// update each level's hex displays, stat table, and systems menu
 	for (let i = 0; i <= roadmap.maxLevel; i++) {
 		refreshHexes(i, id);
 		refreshStats(i);
 		refreshBudgetPill(i);
+		refreshElectiveSystemList(i);
 	}
+
+	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
 /**

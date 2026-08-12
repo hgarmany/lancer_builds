@@ -219,7 +219,6 @@ function renderSystems(level) {
 	});
 
 	selectTemplate.dataset.idx = systems.length;
-	selectTemplate.id = `system-add-ll-${level}`;
 	selectTemplate.addEventListener('change', event =>
 		SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
 	selectGroup.append(selectTemplate);

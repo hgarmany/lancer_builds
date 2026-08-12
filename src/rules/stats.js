@@ -218,13 +218,10 @@ function getSystemModifiers({ catalog, level }) {
 
 			if (sysSrc.bonuses) {
 				sysSrc.bonuses.forEach(bonus => {
+					const stat = bonus.id;
 					const value = Number(bonus.val) ?? 0;
-					if (value && STAT_DEFINITIONS[bonus.id]) {
-						modifiers.push({
-							stat: bonus.id,
-							value: bonus.val
-						});
-					}
+					if (value && STAT_DEFINITIONS[stat])
+						modifiers.push({ stat, value });
 				});
 			}
 		}
@@ -273,6 +270,8 @@ export function calculateMechStats(catalog, level) {
 
 		stats[modifier.stat] =
 			Math.floor(stats[modifier.stat]) + modifier.value;
+		if (modifier.stat === 'ai_cap')
+			stats['ai_budget'] += modifier.value;
 	}
 
 	stats.size = Math.min(MAX_FRAME_SIZE, stats.size);

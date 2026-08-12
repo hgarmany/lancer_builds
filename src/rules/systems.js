@@ -42,8 +42,9 @@ export function doesSystemHaveTag(id, tagId) {
  * @returns {number}
  */
 function systemAIBonus(id) {
-	return Number(srcData.systems[id]?.bonuses
-		?.find(bonus => bonus.id === 'ai_cap')?.val) ?? 0;
+	const bonus = Number(srcData.systems.get(id)?.bonuses
+		?.find(bonus => bonus.id === 'ai_cap')?.val);
+	return Number.isFinite(bonus) ? bonus : 0;
 }
 
 /**
@@ -54,7 +55,7 @@ function systemAIBonus(id) {
  * @returns {number}
  */
 export function getSystemNumUses(id) {
-	return getItemNumUses(srcData.systems[id]);
+	return getItemNumUses(srcData.systems.get(id));
 }
 
 /**
@@ -88,11 +89,12 @@ export function isSystemEligible(level, id, selectedId = null) {
 		return false;
 
 	// AI systems need a free AI slot
-	if (doesItemHaveTag(candidate, TAGS.AI)) {
+	if (doesItemHaveTag(candidate, TAGS.AI) &&
 		stats[level].ai_budget +
-			systemAIBonus(candidate) -
-			systemAIBonus(selectedSystem) >= 0;
-	}
+			(doesItemHaveTag(selectedSystem, TAGS.AI) | 0) + 
+			systemAIBonus(id) -
+			systemAIBonus(selectedId) <= 0)
+		return false;
 
 	// check for uniques, reject unique systems already installed
 	if (doesItemHaveTag(candidate, TAGS.UNIQUE) &&
@@ -120,7 +122,10 @@ export function isSystemEligible(level, id, selectedId = null) {
  * @returns {boolean}
  */
 export function hasEligibleSystem(level) {
-	return srcData.systems.some(system =>
-		isSystemEligible(level, system.id, null)
-	);
+	for (const systemId of srcData.systems.keys()) {
+		if (isSystemEligible(level, systemId, null))
+			return true;
+	}
+
+	return false;
 }
