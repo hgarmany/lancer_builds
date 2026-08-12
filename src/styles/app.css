@@ -102,6 +102,10 @@ select {
 	border-color: transparent;
 }
 
+select {
+	padding: 0.1rem 0.25rem 0.1rem 0.5rem;
+}
+
 .error {
 	background-color: red;
 }
@@ -114,7 +118,7 @@ select {
 
 /* HASE hex styles */
 
-.roadmap-table .hase-group {
+.hase-group {
 	--hex-width: 35px;
 	--hex-height: 40px;
 	--hex-gap: 0.3rem;
@@ -140,43 +144,33 @@ select {
 	font-size: 0.55rem;
 }
 
-.roadmap-table .hase-option {
+.hase-option {
 	position: absolute;
 	width: var(--hex-width);
 	height: var(--hex-height);
 }
 
-.roadmap-table .hase-option:nth-child(1) {
+.hase-option:nth-child(1) {
 	top: 0;
 	left: calc((var(--hex-width) + var(--hex-gap)) / 2);
 }
 
-.roadmap-table .hase-option:nth-child(2) {
+.hase-option:nth-child(2) {
 	top: calc(var(--hex-height) * 0.75 + var(--hex-gap));
 	left: 0;
 }
 
-.roadmap-table .hase-option:nth-child(3) {
+.hase-option:nth-child(3) {
 	top: 0;
 	left: calc((var(--hex-width) + var(--hex-gap)) * 1.5);
 }
 
-.roadmap-table .hase-option:nth-child(4) {
+.hase-option:nth-child(4) {
 	top: calc(var(--hex-height) * 0.75 + var(--hex-gap));
 	left: calc(var(--hex-width) + var(--hex-gap));
 }
 
-.roadmap-table .hex-border {
-	box-sizing: border-box;
-	width: 100%;
-	height: 100%;
-	padding: 2px;
-	background-color: black;
-	clip-path: var(--hexagon);
-	-webkit-clip-path: var(--hexagon);
-}
-
-.roadmap-table .hase-label {
+.hase-label {
 	position: absolute;
 	display: flex;
 	align-items: center;
@@ -189,19 +183,29 @@ select {
 	white-space: nowrap;
 }
 
-.roadmap-table .hase-option:nth-child(1) .hase-label,
-.roadmap-table .hase-option:nth-child(2) .hase-label {
+.hase-option:nth-child(1) .hase-label,
+.hase-option:nth-child(2) .hase-label {
 	right: calc(100% + var(--label-gap));
 	justify-content: flex-end;
 }
 
-.roadmap-table .hase-option:nth-child(3) .hase-label,
-.roadmap-table .hase-option:nth-child(4) .hase-label {
+.hase-option:nth-child(3) .hase-label,
+.hase-option:nth-child(4) .hase-label {
 	left: calc(100% + var(--label-gap));
 	justify-content: flex-start;
 }
 
-.roadmap-table .hex {
+.hex-border {
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	padding: 2px;
+	background-color: black;
+	clip-path: var(--hexagon);
+	-webkit-clip-path: var(--hexagon);
+}
+
+.hex {
 	position: relative;
 	display: grid;
 	width: 100%;
@@ -213,14 +217,14 @@ select {
 	font-weight: 900;
 }
 
-.roadmap-table .hex .hase-value {
+.hex .hase-value {
 	position: relative;
 	z-index: 1;
 	font-size: 1rem;
 	user-select: none;
 }
 
-.roadmap-table .hase-button {
+.hase-button {
 	position: absolute;
 	z-index: 2;
 	width: 100%;
@@ -233,25 +237,25 @@ select {
 	font-weight: 800;
 }
 
-.roadmap-table tbody .hase-button.increase {
+.hase-button.increase {
 	top: 0px;
 }
 
-.roadmap-table tbody .hase-button.decrease {
+.hase-button.decrease {
 	bottom: 0px;
 }
 
-.roadmap-table .hase-button:hover:not(:disabled),
-.roadmap-table .hase-button:focus-visible {
+.hase-button:hover:not(:disabled),
+.hase-button:focus-visible {
 	outline: none;
 }
 
-.roadmap-table .hase-button:disabled {
+.hase-button:disabled {
 	cursor: default;
 	opacity: 0.3;
 }
 
-.roadmap-table tbody .hase-tooltip {
+.hase-tooltip {
 	position: absolute;
 	top: calc(
 		var(--hex-height) * 1.75 +
@@ -314,4 +318,22 @@ select {
 .stat-value {
 	font-size: medium;
 	font-weight: 900;
+}
+
+.roadmap-table .systems {
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.budget-pill {
+	width: min-content;
+	border: 1px solid black;
+	border-radius: 1rem;
+	padding: 0.1rem 0.5rem;
+
+	white-space: nowrap;
+}
+
+.roadmap-table .systems .select-group {
+	display: grid;
 }

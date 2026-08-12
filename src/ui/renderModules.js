@@ -1,12 +1,12 @@
-// ui/renderModules.js
+/**
+ * ui/renderModules.js
+ * 
+ * assorted rendering rules for non-selector UI elements common to level rows
+ */
 
 import {
 	srcData
 } from '../data/loader.js';
-
-import {
-	roadmap
-} from '../data/roadmap.js';
 
 import {
 	cumulativeCatalog
@@ -20,20 +20,16 @@ import {
 } from '../constants.js';
 
 import {
-	SELECT_TEMPLATE,
-	refreshSelectors,
-	refreshElectiveSystemList
-} from './selectors.js';
+	updateHASEWaterfall
+} from './updates.js';
 
 import {
 	allowIncreaseHASE,
 	allowDecreaseHASE,
-	countUsedHASEPoints,
-	updateHASELog
+	countUsedHASEPoints
 } from '../rules/hase.js';
 
 import {
-	calculateMechStats,
 	didStatWorsen
 } from '../rules/stats.js';
 
@@ -74,79 +70,6 @@ function renderHASEButton({
 
 	button.addEventListener('click', action);
 	return button;
-}
-
-function refreshHASETooltip(level) {
-	document.getElementById(`hase-ll-${level}`)
-		.querySelector('.hase-spent').textContent = countUsedHASEPoints(level);
-}
-
-/**
- * Lightweight UI update for stat hexes
- * +/- buttons and number values update
- * 
- * @param {number} level
- * @param {string} id
- */
-function refreshHexes(level, id) {
-	const hexGroup = document.getElementById(`hase-ll-${level}`);
-
-	for (const hex of hexGroup.querySelectorAll('.hex')) {
-		const hexId = hex.dataset.skillId;
-
-		if (hexId === id) {
-			const value = cumulativeCatalog.hase[level].get(id);
-			hex.classList.toggle('error', value > MAX_HASE_RANK);
-			hex.children[1].textContent = value ?? 0;
-		}
-
-		hex.children[0].disabled = !allowIncreaseHASE(level, hexId);
-		hex.children[2].disabled = !allowDecreaseHASE(level, hexId);
-	}
-}
-
-/**
- * Refresh display stats values
- * 
- * @param {number} level
- */
-export function refreshStats(level) {
-	const stats = calculateMechStats(cumulativeCatalog, level);
-	for (const [id, value] of Object.entries(stats)) {
-		const statBubble = document.getElementById(`stat-${id}-ll-${level}`);
-		if (statBubble)
-			statBubble.textContent = value;
-	}
-}
-
-/**
- * Targeted replacement of free and total SP counts
- * 
- * @param {number} level
- */
-export function refreshBudgetPill(level) {
-	const stats = cumulativeCatalog.stats[level];
-	
-	document.getElementById(
-		`budget-free-ll-${level}`).textContent = stats.sp_budget;
-	document.getElementById(
-		`budget-total-ll-${level}`).textContent = stats.sp;
-}
-
-function updateHASEWaterfall(level, id, doIncrement) {
-	// update roadmap and cumulative catalog
-	updateHASELog(level, id, doIncrement);
-	refreshHASETooltip(level);
-
-	// update each level's hex displays, stat table, and systems menu
-	for (let i = 0; i <= roadmap.maxLevel; i++) {
-		refreshHexes(i, id);
-		refreshStats(i);
-		refreshBudgetPill(i);
-		refreshElectiveSystemList(i);
-	}
-
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
 /**
@@ -242,8 +165,8 @@ function renderStatBubble(level, statId) {
 
 	// mark for user attention any stats that have gotten worse this level
 	// typically, the result of changing active frames
-	if (didStatWorsen(cumulativeCatalog, level, statId))
-		statBubble.classList.add('hazard');
+	statBubble.classList.toggle('hazard',
+		didStatWorsen(cumulativeCatalog, level, statId));
 
 	// label-value pair
 	const label = document.createElement('span');

@@ -1,4 +1,8 @@
-// ui/selectors.js
+/**
+ * ui/selectors.js
+ * 
+ * authority on initialization + configuration of selectors
+ */
 
 import {
 	roadmap
@@ -21,11 +25,18 @@ import {
 } from '../constants.js';
 
 import {
-	getFrameImageSrc,
 	refreshStats,
 	refreshBudgetPill
-} from './renderModules.js';
+} from './refreshRenderModules.js';
 
+import {
+	skillTriggerUpdate,
+	talentUpdate,
+	licenseUpdate,
+	coreBonusUpdate,
+	frameUpdate,
+	systemUpdate
+} from './updates.js';
 
 import {
 	isSkillTriggerEligible
@@ -152,7 +163,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 	},
 	FRAME: {
 		type: 'frame',
-		placeholderText: 'Select a frame',
 		getSrcItems: () => srcData.frames,
 		readLevel: (level) => roadmap.ll[level].frameId,
 		write: ({ level, id }) => {
@@ -212,6 +222,10 @@ export function applySelection(level, select, id, template) {
 	}
 }
 
+export function renderSelecterNew() {
+
+}
+
 /**
  * Creates an empty selector with default options configured
  * 
@@ -241,10 +255,12 @@ export function renderSelector({
 	selectTemplate.dataset.ll = level;
 
 	// prepare a default pseudo-option for unfilled selectors
-	const placeholderOption = document.createElement('option');
-	placeholderOption.value = '';
-	placeholderOption.innerHTML = placeholderText;
-	selectTemplate.append(placeholderOption);
+	if (placeholderText) {
+		const placeholderOption = document.createElement('option');
+		placeholderOption.value = '';
+		placeholderOption.innerHTML = placeholderText;
+		selectTemplate.append(placeholderOption);
+	}
 
 	for (const [id, item] of getSrcItems()) {
 		const context = { level, id, selectedId: null };
@@ -267,208 +283,4 @@ export function renderSelector({
 	}
 
 	return selectTemplate;
-}
-
-/**
- * Update this particular selector's occupied status and
- * write database changes to record user selection
- * 
- * @param {Event} event 
- * @param {Object} template 
- */
-export function selectionUpdate(event, template) {
-	const eventSelect = event.currentTarget;
-	const currentLevel = Number(eventSelect.dataset.ll);
-	const idx = Number(eventSelect.dataset.idx);
-
-	const newId = eventSelect.value === '' ? null: eventSelect.value;
-
-	// update this selector
-	eventSelect.classList.toggle('occupied', newId);
-
-	// update roadmap and cumulative catalog
-	template.write({ level: currentLevel, idx, id: newId });
-}
-
-/**
- * Update option visibility within a selector class
- * at all levels starting from the given one
- * 
- * @param {number} level 
- * @param {Object} template 
- */
-export function refreshSelectors(
-	template,
-	level,
-	maxLevel = roadmap.maxLevel
-) {
-	const srcItems = template.getSrcItems();
-	
-	for (let i = level; i <= maxLevel; i++) {
-		const selectGroup = document.getElementById(
-			`${template.type}-ll-${i}`);
-
-		if (!selectGroup)
-			continue;
-
-		for (const select of selectGroup.children) {
-			let selectionIsInvalid = false;
-
-			for (const option of select) {
-				if (option.value === '')
-					continue;
-
-				const context = {
-					level: i,
-					id: option.value,
-					selectedId: select.value,
-					item: srcItems.get(option.value)
-				};
-
-				const disable = !template.getEligibility(context);
-
-				option.innerHTML = template.getLabel?.(context);
-				option.hidden = disable;
-				option.disabled = disable;
-
-				if (option.selected && disable)
-					selectionIsInvalid = true;
-			}
-			
-			select.classList.toggle('error', selectionIsInvalid);
-		}
-	}
-}
-
-function skillTriggerUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.SKILL_TRIGGER);
-
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.SKILL_TRIGGER, level);
-}
-
-function talentUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.TALENT);
-
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.TALENT, level);
-
-	// update integrated mounts and systems
-	for (let i = 0; i <= roadmap.maxLevel; i++)
-		refreshElectiveSystemList(i);
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
-}
-
-function licenseUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.LICENSE);
-
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.LICENSE, level);
-	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
-	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
-}
-
-function coreBonusUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.CORE_BONUS);
-
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
-
-	// update stats and all mounts
-	refreshStats(level);
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
-}
-
-/**
- * Frame cells default to mimic the last cell where the user
- * specified a particular frame
- * 
- * @param {Event} event 
- * @param {number} level 
- */
-function activeFrameWaterfall(event, level) {
-	const value = event.currentTarget.value;
-
-	for (let i = level; i <= roadmap.maxLevel; i++) {
-		if (roadmap.ll[i].frameId === getEffectiveFrameId(i - 1))
-			roadmap.ll[i].frameId = null;
-
-		if (i !== level && roadmap.ll[i].frameId)
-			break;
-
-		cumulativeCatalog.activeFrame[i] = value;
-
-		// update frame image
-		const icon = document.getElementById(
-			`${SELECT_TEMPLATE.FRAME.type}-ll-${i}-icon`);
-		icon.src = getFrameImageSrc(value) ?? '';
-
-		const select = document.getElementById(
-			`${SELECT_TEMPLATE.FRAME.type}-ll-${i}`)
-			.querySelector('select');
-		select.value = value;
-		select.classList.toggle('inherited', i !== level);
-	}
-}
-
-function frameUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.FRAME);
-	activeFrameWaterfall(event, level);
-
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
-
-	// update stats and budget pill in waterfall
-	for (let i = level; i <= roadmap.maxLevel; i++) {
-		refreshStats(i);
-		refreshBudgetPill(i);
-	}
-
-	// full cell replacement for mounts
-	// update integrated systems
-
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
-}
-
-export function refreshElectiveSystemList(level) {
-	const selectGroup = document.getElementById(`system-ll-${level}`);
-
-	let newIdx = 0;
-
-	for (const select of Array.from(selectGroup.children)) {
-		// remove any vacant system slots, adjust indices
-		if (select.value === '')
-			select.remove();
-		else
-			select.dataset.idx = newIdx++;
-	}
-
-	if (hasEligibleSystem(level)) {
-		// generate prototype selector
-		const selectTemplate =
-			renderSelector({ level, ...SELECT_TEMPLATE.SYSTEM });
-		selectTemplate.dataset.idx = newIdx;
-		selectTemplate.value = '';
-
-		// wire selector to perform page updates when selection changes
-		selectTemplate.addEventListener('change', event =>
-			SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
-
-		// add empty selector to list
-		selectGroup.append(selectTemplate);
-	}
-}
-
-function systemUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
-
-	// update stats and budget pill
-	refreshStats(level);
-	refreshBudgetPill(level);
-	refreshElectiveSystemList(level);
-
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
-	console.log(cumulativeCatalog.stats[level]);
 }
