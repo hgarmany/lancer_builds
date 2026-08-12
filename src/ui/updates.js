@@ -14,6 +14,9 @@ import {
 } from '../data/cumulativeCatalog.js';
 
 import {
+	getSelectorValue,
+	setSelectorValue,
+	setSelectorClass,
 	SELECT_TEMPLATE
 } from './selectors.js';
 
@@ -50,10 +53,10 @@ export function selectionUpdate(event, template) {
 	const currentLevel = Number(eventSelect.dataset.ll);
 	const idx = Number(eventSelect.dataset.idx);
 
-	const newId = eventSelect.value === '' ? null : eventSelect.value;
+	const newId = getSelectorValue(eventSelect);
 
 	// update this selector
-	eventSelect.classList.toggle('occupied', newId);
+	setSelectorClass(eventSelect, 'occupied', newId);
 
 	// update roadmap and cumulative catalog
 	template.write({ level: currentLevel, idx, id: newId });
@@ -142,8 +145,8 @@ export function activeFrameWaterfall(event, level) {
 		const select = document.getElementById(
 			`${SELECT_TEMPLATE.FRAME.type}-ll-${i}`)
 			.querySelector('select');
-		select.value = value;
-		select.classList.toggle('inherited', i !== level);
+		setSelectorValue(select, value);
+		setSelectorClass(select, 'inherited', i !== level);
 	}
 }
 

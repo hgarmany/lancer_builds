@@ -19,7 +19,12 @@ import {
 
 import {
 	SELECT_TEMPLATE,
-	renderSelector
+	renderSelector,
+	getSelectorValue,
+	setSelectorClass,
+	getOptions,
+	getOptionValue,
+	setOptionHidden
 } from './selectors.js';
 
 import {
@@ -49,8 +54,6 @@ export function refreshSelectors(
 	level,
 	maxLevel = roadmap.maxLevel
 ) {
-	const srcItems = template.getSrcItems();
-
 	for (let i = level; i <= maxLevel; i++) {
 		const selectGroup = document.getElementById(
 			`${template.type}-ll-${i}`);
@@ -60,29 +63,24 @@ export function refreshSelectors(
 
 		for (const select of selectGroup.children) {
 			let selectionIsInvalid = false;
+			const selectedId = getSelectorValue(select);
 
-			for (const option of select) {
-				if (option.value === '')
+			for (const option of getOptions(select)) {
+				const id = getOptionValue(option);
+				if (!id)
 					continue;
 
-				const context = {
-					level: i,
-					id: option.value,
-					selectedId: select.value,
-					item: srcItems.get(option.value)
-				};
-
+				const context = { level: i, id, selectedId };
 				const disable = !template.getEligibility(context);
 
 				option.innerHTML = template.getLabel?.(context);
-				option.hidden = disable;
-				option.disabled = disable;
+				setOptionHidden(option, disable);
 
-				if (option.selected && disable)
+				if (disable && id === selectedId)
 					selectionIsInvalid = true;
 			}
 
-			select.classList.toggle('error', selectionIsInvalid);
+			setSelectorClass(select, 'error', selectionIsInvalid);
 		}
 	}
 }
@@ -154,7 +152,7 @@ export function refreshElectiveSystemList(level) {
 
 	for (const select of Array.from(selectGroup.children)) {
 		// remove any vacant system slots, adjust indices
-		if (select.value === '')
+		if (!getSelectorValue(select))
 			select.remove();
 		else
 			select.dataset.idx = newIdx++;
@@ -163,9 +161,8 @@ export function refreshElectiveSystemList(level) {
 	if (hasEligibleSystem(level)) {
 		// generate prototype selector
 		const selectTemplate =
-			renderSelector({ level, ...SELECT_TEMPLATE.SYSTEM });
+			renderSelector(level, SELECT_TEMPLATE.SYSTEM);
 		selectTemplate.dataset.idx = newIdx;
-		selectTemplate.value = '';
 
 		// wire selector to perform page updates when selection changes
 		selectTemplate.addEventListener('change', event =>

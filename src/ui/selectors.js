@@ -201,29 +201,117 @@ export const SELECT_TEMPLATE = Object.freeze({
 	}
 });
 
+export function getSelectorValue(selector) {
+	return selector.value === '' ? null : selector.value;
+}
+
+export function setSelectorValue(selector, value) {
+	selector.value = value;
+}
+
+export function setSelectorClass(selector, className, toggle = true) {
+	selector.classList.toggle(className, toggle);
+}
+
+export function getOptions(selector) {
+	return selector.options;
+}
+
+export function getOption(selector, optionId) {
+	return [...selector.options].find(option => option.value === optionId);
+}
+
+export function getOptionValue(option) {
+	return option.value === '' ? null : option.value;
+}
+
+export function setOptionValue(option, value) {
+	option.value = value;
+}
+
+export function setOptionHidden(option, hide = true) {
+	option.disabled = hide;
+	option.hidden = hide;
+}
+
+export function renderOptionLabel(option, label) {
+	option.innerHTML = label;
+}
+
+function getSelectorOptions(template, level, selectedId) {
+	return [...template.getSrcItems().keys()].map(id => {
+		const context = { level, id, selectedId };
+
+		return {
+			id,
+			label: template.getLabel?.(context) ?? '',
+			description: template.getDescription?.(context) ?? '',
+			eligible: template.getEligibility?.(context) ?? false,
+			selected: id === selectedId
+		};
+	});
+}
+
+
 export function applySelection(level, select, id, template) {
 	// set class flags / selector value to indicate an active selection
-	select.value = id;
-	select.classList.add('occupied');
+	setSelectorValue(select, id);
+	setSelectorClass(select, 'occupied');
 
 	const isEligible = template.getEligibility({ level, id, selectedId: id });
-	select.classList.toggle('error', !isEligible);
+	setSelectorClass(select, 'error', !isEligible);
 
 	if (isEligible) {
 		// find the selected option and force it to appear in the dropdown
-		const selectedOption =
-			[...select.options].find(option => option.value === id);
+		const selectedOption = getOption(select, id);
 		if (selectedOption) {
-			selectedOption.innerHTML =
-				template.getLabel({ level, id, selectedId: id });
-			selectedOption.disabled = false;
-			selectedOption.hidden = false;
+			renderOptionLabel(selectedOption,
+				template.getLabel({ level, id, selectedId: id }));
+			setOptionHidden(selectedOption, false);
 		}
 	}
 }
 
-export function renderSelecterNew() {
+export function renderSelectorNew(level, template) {
+	const selector = document.createElement('div');
+	selector.className = `${template.type}-select`;
+	selector.dataset.ll = level;
 
+	const control = document.createElement('div');
+	control.className = 'selector-control';
+
+	const value = document.createElement('span');
+	value.className = 'selector-value';
+	value.innerHTML = template.placeholderText;
+
+	const arrow = document.createElement('span');
+	arrow.className = 'selector-arrow';
+
+	control.append(value, arrow);
+
+
+	const menu = document.createElement('div');
+	menu.className = 'selector-menu';
+	menu.id = `${template.type}-options-ll-${level}`;
+
+	for (const [id, item] of template.getSrcItems()) {
+		const context = { level, id, selectedId: null };
+
+		// prepare an option for each item
+		const option = document.createElement('div');
+		option.value = id;
+		option.innerHTML = template.getLabel?.(context) ?? '';
+		option.title = template.getDescription?.(context) ?? '';
+		if (!template.getEligibility?.(context) ?? false)
+			setOptionHidden(option, true);
+
+		menu.append(option);
+	}
+
+
+	selector.append(control, menu);
+
+	return selector;
 }
 
 /**
@@ -231,7 +319,7 @@ export function renderSelecterNew() {
  * 
  * @param {{
  *	level?: number,
- *	className: string,
+ *	type: string,
  *	srcItems?: Map<string, Object>,
  *	getSrcItems?: function(): Map<string, Object>,
  *	placeholderText: string,
@@ -241,46 +329,32 @@ export function renderSelecterNew() {
  * }}
  * @returns {Element}
  */
-export function renderSelector({
-	level,
-	type,
-	placeholderText,
-	getSrcItems,
-	getLabel,
-	getDescription,
-	getEligibility
-}) {
+export function renderSelector(level, template) {
 	const selectTemplate = document.createElement('select');
-	selectTemplate.className = `${type}-select`;
+	selectTemplate.className = `${template.type}-select`;
 	selectTemplate.dataset.ll = level;
 
 	// prepare a default pseudo-option for unfilled selectors
-	if (placeholderText) {
+	if (template.placeholderText) {
 		const placeholderOption = document.createElement('option');
 		placeholderOption.value = '';
-		placeholderOption.innerHTML = placeholderText;
+		placeholderOption.innerHTML = template.placeholderText;
 		selectTemplate.append(placeholderOption);
 	}
 
-	for (const [id, item] of getSrcItems()) {
+	for (const id of template.getSrcItems().keys()) {
 		const context = { level, id, selectedId: null };
 
 		// prepare an option for each item
 		const option = document.createElement('option');
 		option.value = id;
-		if (getLabel)
-			option.innerHTML = getLabel?.(context) ?? '';
-
-		if (getDescription)
-			option.title = getDescription?.(context) ?? '';
-
-		if (getEligibility && !getEligibility(context)) {
-			option.disabled = true;
-			option.hidden = true;
-		}
+		option.innerHTML = template.getLabel?.(context) ?? '';
+		option.title = template.getDescription?.(context) ?? '';
+		if (!template.getEligibility?.(context) ?? false)
+			setOptionHidden(option, true);
 
 		selectTemplate.append(option);
 	}
-
+	console.log(getSelectorOptions(template, level, null));
 	return selectTemplate;
 }

@@ -11,6 +11,7 @@ import {
 import {
 	SELECT_TEMPLATE,
 	renderSelector,
+	renderSelectorNew,
 	applySelection
 } from './selectors.js';
 
@@ -30,7 +31,7 @@ function renderMenu(level, template) {
 
 	// generate prototype selector
 	const selectTemplate =
-		renderSelector({ level, ...template });
+		renderSelector(level, template);
 
 	const selectGroup = document.createElement('div');
 	selectGroup.id = `${template.type}-ll-${level}`;
@@ -67,6 +68,8 @@ function renderMenu(level, template) {
 
 	menu.append(menuLabel, selectGroup);
 
+	menu.append(renderSelectorNew(level, template));
+
 	return menu;
 }
 
@@ -98,6 +101,8 @@ function renderHASEGroup(level) {
 	);
 
 	menu.append(menuLabel, haseGroup)
+
+
 
 	return menu;
 }
@@ -156,7 +161,7 @@ function renderFrame(level) {
 
 	// generate prototype selector
 	const select =
-		renderSelector({ level, ...SELECT_TEMPLATE.FRAME });
+		renderSelector(level, SELECT_TEMPLATE.FRAME);
 
 	const selectGroup = document.createElement('div');
 	selectGroup.id = `${SELECT_TEMPLATE.FRAME.type}-ll-${level}`;
@@ -197,7 +202,7 @@ function renderSystems(level) {
 
 	// generate prototype selector
 	const selectTemplate =
-		renderSelector({ level, ...SELECT_TEMPLATE.SYSTEM });
+		renderSelector(level, SELECT_TEMPLATE.SYSTEM);
 
 	const selectGroup = document.createElement('div');
 	selectGroup.id = `${SELECT_TEMPLATE.SYSTEM.type}-ll-${level}`;
