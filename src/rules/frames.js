@@ -23,6 +23,8 @@ const frameCatalog = cumulativeCatalog.activeFrame;
  * @returns 
  */
 export function getEffectiveFrameId(level) {
+	if (level < 0)
+		return null;
 	return frameCatalog[level];
 }
 

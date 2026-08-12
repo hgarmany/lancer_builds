@@ -86,3 +86,18 @@ export const DISPLAYED_MECH_STAT_IDS = Object.freeze(
 );
 
 export const ROMAN_NUMERALS = ['I', 'II', 'III'];
+
+export const HASE_MAP = {
+	hull: {
+		label: 'Hull'
+	},
+	agility: {
+		label: 'Agi'
+	},
+	systems: {
+		label: 'Sys'
+	},
+	engineering: {
+		label: 'Eng'
+	}
+}

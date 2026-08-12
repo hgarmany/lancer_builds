@@ -2,6 +2,7 @@
 
 import {
 	renderHexStat,
+	renderHASETooltip,
 	getFrameImageSrc,
 	renderStats,
 	renderBudgetPill
@@ -9,33 +10,13 @@ import {
 
 import {
 	SELECT_TEMPLATE,
-	renderSelector
+	renderSelector,
+	applySelection
 } from './selectors.js';
 
 import {
 	getEffectiveFrameId
 } from '../rules/frames.js';
-
-function applySelection(level, select, id, template) {
-	// set class flags / selector value to indicate an active selection
-	select.value = id;
-	select.classList.add('occupied');
-
-	const isEligible = template.getEligibility({ level, id, selectedId: id });
-	select.classList.toggle('error', !isEligible);
-
-	if (isEligible) {
-		// find the selected option and force it to appear in the dropdown
-		const selectedOption =
-			[...select.options].find(option => option.value === id);
-		if (selectedOption) {
-			selectedOption.innerHTML =
-				template.getLabel({ level, id, selectedId: id });
-			selectedOption.disabled = false;
-			selectedOption.hidden = false;
-		}
-	}
-}
 
 function renderMenu(level, template) {
 	const menu = document.createElement('div');
@@ -106,11 +87,14 @@ function renderHASEGroup(level) {
 	const systemsHex = renderHexStat(level, 'systems');
 	const engineeringHex = renderHexStat(level, 'engineering');
 
+	const haseTooltip = renderHASETooltip(level);
+
 	haseGroup.append(
 		hullHex,
 		agilityHex,
 		systemsHex,
-		engineeringHex
+		engineeringHex,
+		haseTooltip
 	);
 
 	menu.append(menuLabel, haseGroup)
@@ -235,6 +219,7 @@ function renderSystems(level) {
 	});
 
 	selectTemplate.dataset.idx = systems.length;
+	selectTemplate.id = `system-add-ll-${level}`;
 	selectTemplate.addEventListener('change', event =>
 		SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
 	selectGroup.append(selectTemplate);
@@ -270,7 +255,7 @@ function renderCellType(cellType, level) {
 	cell.className = `${cellType.name}-cell`;
 
 	const cellContent = document.createElement('div');
-	cellContent.className = cellType.name;
+	cellContent.className = `cell-content ${cellType.name}`;
 	cellContent.dataset.ll = level;
 
 	cellContent.append(...cellType.render(level));

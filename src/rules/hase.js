@@ -46,6 +46,21 @@ export function allowDecreaseHASE(level, id) {
 }
 
 /**
+ * Get the number of mech skill points used for HASE on this level
+ * 
+ * @param {number} level
+ * @returns {number}
+ */
+export function countUsedHASEPoints(level) {
+	const haseIds = roadmap.ll[level].haseIds;
+
+	if (level !== 0)
+		return haseIds[0] !== null | 0;
+
+	return (haseIds[0] !== null | 0) + (haseIds[1] !== null | 0);
+}
+
+/**
  * Sets HASE on both roadmap and cumulative catalog
  * HASE array does not correspond to selector list
  * 

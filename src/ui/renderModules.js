@@ -15,12 +15,14 @@ import {
 import {
 	STAT_DEFINITIONS,
 	DISPLAYED_MECH_STAT_IDS,
-	MAX_HASE_RANK
+	MAX_HASE_RANK,
+	HASE_MAP
 } from '../constants.js';
 
 import {
 	allowIncreaseHASE,
 	allowDecreaseHASE,
+	countUsedHASEPoints,
 	updateHASELog
 } from '../rules/hase.js';
 
@@ -68,6 +70,11 @@ function renderHASEButton({
 	return button;
 }
 
+function refreshHASETooltip(level) {
+	document.getElementById(`hase-ll-${level}`)
+		.querySelector('.hase-spent').textContent = countUsedHASEPoints(level);
+}
+
 /**
  * Lightweight UI update for stat hexes
  * +/- buttons and number values update
@@ -78,7 +85,7 @@ function renderHASEButton({
 function refreshHexes(level, id) {
 	const hexGroup = document.getElementById(`hase-ll-${level}`);
 
-	for (const hex of hexGroup.children) {
+	for (const hex of hexGroup.querySelectorAll('.hex')) {
 		const hexId = hex.dataset.skillId;
 
 		if (hexId === id) {
@@ -123,10 +130,11 @@ export function refreshBudgetPill(level) {
 function updateHASEWaterfall(level, id, doIncrement) {
 	// update roadmap and cumulative catalog
 	updateHASELog(level, id, doIncrement);
+	refreshHASETooltip(level);
 
 	// update each level's hex displays, stat table, and SP budget pill
 	for (let i = 0; i <= roadmap.maxLevel; i++) {
-		refreshHexes(level, id);
+		refreshHexes(i, id);
 		refreshStats(i);
 		refreshBudgetPill(i);
 	}
@@ -141,7 +149,18 @@ function updateHASEWaterfall(level, id, doIncrement) {
 export function renderHexStat(level, id) {
 	const value = cumulativeCatalog.hase[level].get(id) ?? 0;
 
+	// container for label and hex
+	const haseOption = document.createElement('div');
+	haseOption.className = 'hase-option';
+
+	const haseLabel = document.createElement('span');
+	haseLabel.className = 'hase-label';
+	haseLabel.textContent = HASE_MAP[id].label;
+
 	// surrounding hex layout
+	const hexBorder = document.createElement('div');
+	hexBorder.className = 'hex-border';
+
 	const hex = document.createElement('div');
 	hex.className = 'hex';
 	hex.classList.toggle('error', value > MAX_HASE_RANK);
@@ -151,7 +170,7 @@ export function renderHexStat(level, id) {
 	const increase = renderHASEButton({
 		symbol: '+',
 		className: 'increase',
-		label: `Add ${id} at LL${level}`,
+		tooltip: `Add ${id} at LL${level}`,
 		action: () => updateHASEWaterfall(level, id, true),
 		disabled: !allowIncreaseHASE(level, id)
 	});
@@ -159,19 +178,33 @@ export function renderHexStat(level, id) {
 	const decrease = renderHASEButton({
 		symbol: '\u2212',
 		className: 'decrease',
-		label: `Remove ${id} point assigned at LL${level}`,
+		tooltip: `Remove ${id} point assigned at LL${level}`,
 		action: () => updateHASEWaterfall(level, id, false),
 		disabled: !allowDecreaseHASE(level, id)
 	});
 
 	// display stat
 	const stat = document.createElement('div');
-	stat.className = 'stat';
+	stat.className = 'hase-value';
 	stat.textContent = value ?? '0';
 
 	hex.append(increase, stat, decrease);
+	hexBorder.append(hex);
+	haseOption.append(haseLabel, hexBorder);
 
-	return hex;
+	return haseOption;
+}
+
+export function renderHASETooltip(level) {
+	const countPoints = level === 0 ? 2 : 1;
+	const usedPoints = countUsedHASEPoints(level);
+
+	const tooltip = document.createElement('div');
+	tooltip.className = 'hase-tooltip';
+	tooltip.innerHTML =
+		`<span class='hase-spent'>${usedPoints}</span>/${countPoints} ASSIGNED`;
+
+	return tooltip;
 }
 
 /**
@@ -247,9 +280,18 @@ export function renderBudgetPill(level) {
 
 	const budgetPill = document.createElement('div');
 	budgetPill.className = 'budget-pill';
-	budgetPill.innerHTML = `
-		<span id="budget-free-ll-${level}">${stats.sp_budget}</span> /
-		<span id="budget-total-ll-${level}">${stats.sp}</span> SP`;
+
+	const budgetFree = document.createElement('span');
+	budgetFree.id = `budget-free-ll-${level}`;
+	budgetFree.textContent = stats.sp_budget;
+
+	const budgetTotal = document.createElement('span');
+	budgetTotal.id = `budget-total-ll-${level}`;
+	budgetTotal.textContent = stats.sp;
+
+	budgetPill.append(budgetFree, '/', budgetTotal, ' SP');
+	budgetPill.classList.toggle('error', stats.sp_budget < 0);
+	budgetPill.hidden = stats.sp_budget === 0;
 
 	return budgetPill;
 }

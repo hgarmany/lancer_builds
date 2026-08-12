@@ -1,14 +1,317 @@
 /* styles/app.css */
 
-.roadmap-table tbody td {
-    border: 1px solid black;
+@font-face {
+	font-family: 'Inter';
+	src: url('../assets/fonts/Inter/Inter-VariableFont_opsz,wght.ttf') format('truetype');
 }
 
-.roadmap-table img {
-    max-height: 12rem;
-    max-width: 12rem;
+:root {
+	--hexagon: polygon( 50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25% );
+
+	--body-font: Inter, sans-serif;
+	--header-font: Helvetica, sans-sarif;
+	--data-font: ui-monospace, monospace;
+
+	--background: #d9d9d6;
+	--grid-line: #d0d0d0;
+}
+
+body {
+	margin: 0;
+	-webkit-text-size-adjust: 100%;
+
+	/* default font */
+	text-rendering: optimizeLegibility;
+	color: var(--text);
+	font-family: var(--body-font);
+	font-size: small;
+	line-height: 1.25;
+
+	/* tiled background */
+	background-color: var(--background);
+	background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+		linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+	background-size: 24px 24px;
+}
+
+main {
+	width: 100%;
+	padding: 1rem;
+}
+
+.roadmap-table {
+	min-width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+}
+
+.roadmap-table thead th,
+.menu-label,
+.stat-label {
+	font-family: var(--header-font);
+	font-weight: 900;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+#roadmap-max-level,
+.hase-value,
+.stat-value,
+.budget-pill {
+	font-family: var(--data-font);
+}
+
+.roadmap-table thead {
+	background-color: black;
+	color: white;
+}
+
+.roadmap-table thead th {
+	padding: 0.25rem;
+}
+
+.roadmap-table tbody td {
+	border: 1px solid black;
+	background-color: white;
+	border-radius: 1rem;
+	padding: 0.5rem;
+}
+
+.roadmap-table .cell-content,
+.roadmap-table .select-group {
+	display: flex;
+	flex-direction: column;
+}
+
+.roadmap-table .menu-label {
+	font-size: 0.6rem;
+	margin-bottom: 0.25rem;
+}
+
+.roadmap-table .select-group {
+	gap: 0.375rem;
+	margin-bottom: 0.25rem;
+}
+
+button,
+input,
+select {
+	font-family: inherit;
+	line-height: 1.2;
+	border-radius: 1rem;
+	border-color: transparent;
 }
 
 .error {
-    background-color: red;
+	background-color: red;
+}
+
+.roadmap-table .level-up {
+	display: grid;
+	grid-template-columns: repeat(2, max-content);
+	column-gap: 1rem;
+}
+
+/* HASE hex styles */
+
+.roadmap-table .hase-group {
+	--hex-width: 35px;
+	--hex-height: 40px;
+	--hex-gap: 0.3rem;
+	--label-gap: 0.3rem;
+	--label-width: 2rem;
+	--label-space: calc(var(--label-width) + var(--label-gap));
+	--tooltip-gap: 0.25rem;
+	--tooltip-height: 0.5rem;
+
+	position: relative;
+	width: calc(
+		var(--hex-width) * 2.5 +
+		var(--hex-gap) * 1.5
+	);
+	height: calc(
+		var(--hex-height) * 1.75 +
+		var(--hex-gap) +
+		var(--tooltip-gap) +
+		var(--tooltip-height)
+	);
+
+	margin-inline: var(--label-space);
+	font-size: 0.55rem;
+}
+
+.roadmap-table .hase-option {
+	position: absolute;
+	width: var(--hex-width);
+	height: var(--hex-height);
+}
+
+.roadmap-table .hase-option:nth-child(1) {
+	top: 0;
+	left: calc((var(--hex-width) + var(--hex-gap)) / 2);
+}
+
+.roadmap-table .hase-option:nth-child(2) {
+	top: calc(var(--hex-height) * 0.75 + var(--hex-gap));
+	left: 0;
+}
+
+.roadmap-table .hase-option:nth-child(3) {
+	top: 0;
+	left: calc((var(--hex-width) + var(--hex-gap)) * 1.5);
+}
+
+.roadmap-table .hase-option:nth-child(4) {
+	top: calc(var(--hex-height) * 0.75 + var(--hex-gap));
+	left: calc(var(--hex-width) + var(--hex-gap));
+}
+
+.roadmap-table .hex-border {
+	box-sizing: border-box;
+	width: 100%;
+	height: 100%;
+	padding: 2px;
+	background-color: black;
+	clip-path: var(--hexagon);
+	-webkit-clip-path: var(--hexagon);
+}
+
+.roadmap-table .hase-label {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	width: var(--label-width);
+	height: 100%;
+	font-family: var(--header-font);
+	font-weight: 900;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.roadmap-table .hase-option:nth-child(1) .hase-label,
+.roadmap-table .hase-option:nth-child(2) .hase-label {
+	right: calc(100% + var(--label-gap));
+	justify-content: flex-end;
+}
+
+.roadmap-table .hase-option:nth-child(3) .hase-label,
+.roadmap-table .hase-option:nth-child(4) .hase-label {
+	left: calc(100% + var(--label-gap));
+	justify-content: flex-start;
+}
+
+.roadmap-table .hex {
+	position: relative;
+	display: grid;
+	width: 100%;
+	height: 100%;
+	place-items: center;
+	background-color: lightgray;
+	clip-path: inherit;
+	-webkit-clip-path: inherit;
+	font-weight: 900;
+}
+
+.roadmap-table .hex .hase-value {
+	position: relative;
+	z-index: 1;
+	font-size: 1rem;
+	user-select: none;
+}
+
+.roadmap-table .hase-button {
+	position: absolute;
+	z-index: 2;
+	width: 100%;
+	height: 16px;
+	border: 0;
+	background-color: transparent;
+	color: black;
+	cursor: pointer;
+	font-size: 0.75rem;
+	font-weight: 800;
+}
+
+.roadmap-table tbody .hase-button.increase {
+	top: 0px;
+}
+
+.roadmap-table tbody .hase-button.decrease {
+	bottom: 0px;
+}
+
+.roadmap-table .hase-button:hover:not(:disabled),
+.roadmap-table .hase-button:focus-visible {
+	outline: none;
+}
+
+.roadmap-table .hase-button:disabled {
+	cursor: default;
+	opacity: 0.3;
+}
+
+.roadmap-table tbody .hase-tooltip {
+	position: absolute;
+	top: calc(
+		var(--hex-height) * 1.75 +
+		var(--hex-gap) +
+		var(--tooltip-gap)
+	);
+	left: 50%;
+	transform: translateX(-50%);
+	color: var(--text-muted);
+	font-family: var(--data-font);
+	font-size: var(--tooltip-height);
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-align: center;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+/* frame cell styles */
+
+.frame {
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.frame img {
+	max-height: 12rem;
+	max-width: 12rem;
+}
+
+.stats-cell {
+	min-width: 19rem;
+}
+
+.stats {
+	display: grid !important;
+	grid-template-columns: repeat(6, minmax(4.5rem, 1fr));
+	align-items: center;
+}
+
+.stat-bubble {
+	display: flex;
+	flex-direction: column;
+	text-align: center;
+	gap: 0.2rem;
+
+	background-color: lightgray;
+	border-radius: 0.5rem;
+	margin: 0.15rem;
+	padding: 0.5rem 0.25rem;
+}
+
+.stat-label {
+	font-size: 0.5rem;
+	height: 2.2em;
+	align-content: center;
+	word-break: keep-all;
+}
+
+.stat-value {
+	font-size: medium;
+	font-weight: 900;
 }

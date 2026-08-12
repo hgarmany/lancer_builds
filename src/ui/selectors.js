@@ -1,23 +1,23 @@
 // ui/selectors.js
 
 import {
-    roadmap
+	roadmap
 } from '../data/roadmap.js';
 
 import {
-    cumulativeCatalog,
-    incrementFromLevel,
-    decrementFromLevel
+	cumulativeCatalog,
+	incrementFromLevel,
+	decrementFromLevel
 } from '../data/cumulativeCatalog.js';
 
 import {
-    srcData
+	srcData
 } from '../data/loader.js';
 
 import {
-    MAX_TALENT_RANK,
-    MAX_LICENSE_RANK,
-    ROMAN_NUMERALS
+	MAX_TALENT_RANK,
+	MAX_LICENSE_RANK,
+	ROMAN_NUMERALS
 } from '../constants.js';
 
 import {
@@ -28,29 +28,30 @@ import {
 
 
 import {
-    isSkillTriggerEligible
+	isSkillTriggerEligible
 } from '../rules/skillTriggers.js';
 
 import {
-    getTalentRank,
-    isTalentEligible
+	getTalentRank,
+	isTalentEligible
 } from '../rules/talents.js';
 
 import {
-    getLicenseRank,
-    isLicenseEligible
+	getLicenseRank,
+	isLicenseEligible
 } from '../rules/licenses.js';
 
 import {
-    isCoreBonusEligible
+	isCoreBonusEligible
 } from '../rules/coreBonuses.js';
 
 import {
-    isFrameEligible
+	getEffectiveFrameId,
+	isFrameEligible
 } from '../rules/frames.js';
 
 import {
-    isSystemEligible
+	isSystemEligible
 } from '../rules/systems.js';
 
 /**
@@ -154,7 +155,8 @@ export const SELECT_TEMPLATE = Object.freeze({
 		getSrcItems: () => srcData.frames,
 		readLevel: (level) => roadmap.ll[level].frameId,
 		write: ({ level, id }) => {
-			roadmap.ll[level].frameId = id;
+			roadmap.ll[level].frameId =
+				(getEffectiveFrameId(level - 1) !== id) ? id : null;
 			cumulativeCatalog.activeFrame[level] = id;
 		},
 		getLabel: ({ id }) => srcData.frames.get(id)?.name,
@@ -183,6 +185,27 @@ export const SELECT_TEMPLATE = Object.freeze({
 		changeEvent: (event, level) => systemUpdate(event, level)
 	}
 });
+
+export function applySelection(level, select, id, template) {
+	// set class flags / selector value to indicate an active selection
+	select.value = id;
+	select.classList.add('occupied');
+
+	const isEligible = template.getEligibility({ level, id, selectedId: id });
+	select.classList.toggle('error', !isEligible);
+
+	if (isEligible) {
+		// find the selected option and force it to appear in the dropdown
+		const selectedOption =
+			[...select.options].find(option => option.value === id);
+		if (selectedOption) {
+			selectedOption.innerHTML =
+				template.getLabel({ level, id, selectedId: id });
+			selectedOption.disabled = false;
+			selectedOption.hidden = false;
+		}
+	}
+}
 
 /**
  * Creates an empty selector with default options configured
@@ -358,6 +381,9 @@ function activeFrameWaterfall(event, level) {
 	const value = event.currentTarget.value;
 
 	for (let i = level; i <= roadmap.maxLevel; i++) {
+		if (roadmap.ll[i].frameId === getEffectiveFrameId(i - 1))
+			roadmap.ll[i].frameId = null;
+
 		if (i !== level && roadmap.ll[i].frameId)
 			break;
 
@@ -393,13 +419,49 @@ function frameUpdate(event, level) {
 	// update integrated systems
 }
 
+function refreshElectiveSystemList(event, level) {
+	const emptySelect = document.getElementById(`system-add-ll-${level}`);
+	const idx = Number(event.currentTarget.dataset.idx);
+	const systemId = event.currentTarget.value;
+
+	if (event.currentTarget !== emptySelect) {
+		if (systemId === '')
+			event.currentTarget.remove();
+		return;
+	}
+	console.log('test');
+
+	emptySelect.id = '';
+
+	// generate prototype selector
+	const selectTemplate =
+		renderSelector({ level, ...SELECT_TEMPLATE.SYSTEM });
+
+	const selectGroup =
+		document.getElementById(`${SELECT_TEMPLATE.SYSTEM.type}-ll-${level}`);
+
+	// add selector to list
+	const select = selectTemplate.cloneNode(true);
+	select.id = `system-add-ll-${level}`;
+	select.dataset.idx = idx + 1;
+	applySelection(level, select, systemId, SELECT_TEMPLATE.SYSTEM);
+
+	// wire selector to perform page updates when selection changes
+	select.addEventListener('change', event =>
+		SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
+
+	selectGroup.append(select);
+}
+
 function systemUpdate(event, level) {
 	selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
-	
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
+	console.log(roadmap.ll[level].systems);
 
 	// update stats and budget pill
 	refreshStats(level);
 	refreshBudgetPill(level);
+	refreshElectiveSystemList(event, level);
+
+	// update all attached selectors at this and later levels
+	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
 }
