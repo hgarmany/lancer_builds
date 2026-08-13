@@ -69,12 +69,12 @@ export function refreshSelectors(
 		if (template === SELECT_TEMPLATE.SYSTEM)
 			roadmapData = roadmapData.map(item => item?.id ?? null);
 
-		for (let idx = 0; idx < roadmapData.length; idx++) {
+		for (let idx = 0; idx < selectGroup.children.length; idx++) {
 			let selectionIsInvalid = false;
 
 			// selector adopts roadmap values
 			const selector = selectGroup.children[idx];
-			const selectedId = roadmapData[idx];
+			const selectedId = roadmapData[idx] ?? null;
 			selector.value = selectedId;
 			setSelectorClass(selector, 'occupied', selectedId);
 
@@ -94,13 +94,12 @@ export function refreshSelectors(
 					selectionIsInvalid = true;
 			}
 
-			if (selectedId) {
-				const label = selector.querySelector('.selector-value');
-				if (label)
-					label.textContent =
-						template.getLabel?.({ level: i, id: selectedId });
-				setSelectorClass(selector, 'error', selectionIsInvalid);
-			}
+			const label = selector.querySelector('.selector-value');
+			if (label)
+				label.textContent = selectedId
+					? template.getLabel?.({ level: i, id: selectedId })
+					: template.placeholderText ?? '';
+			setSelectorClass(selector, 'error', selectionIsInvalid);
 		}
 	}
 }
@@ -173,28 +172,28 @@ export function refreshBudgetPill(level) {
 
 export function refreshElectiveSystemList(level) {
 	const selectGroup = document.getElementById(`system-ll-${level}`);
+	if (!selectGroup)
+		return;
 
-	let newIdx = 0;
-	const systems = roadmap.ll[getEffectiveSystemLevel(level)].systems;
+	const systems = roadmap.ll[getEffectiveSystemLevel(level)].systems
+		.filter(system => system?.id);
 	const selectors = Array.from(selectGroup.children);
 
-	for (const system of systems) {
-		if (!system)
-			selectors[newIdx].remove();
-		if (newIdx < selectors.length) {
-			selectors[newIdx].dataset.idx = newIdx;
+	// guarantee selector count matches exactly the number of systems installed
+	for (let idx = 0; idx < systems.length; idx++) {
+		if (idx < selectors.length) {
+			selectors[idx].dataset.idx = idx;
 		}
 		else {
 			const selector =
-				renderSelector(level, system.id, SELECT_TEMPLATE.system);
-			selector.dataset.idx = newIdx;
+				renderSelector(level, systems[idx].id, SELECT_TEMPLATE.SYSTEM);
+			selector.dataset.idx = idx;
 			selectGroup.append(selector);
 		}
-
-		newIdx++;
 	}
 
-	for (let i = newIdx; i < selectors.length; i++) {
+	// remove empty selectors
+	for (let i = systems.length; i < selectors.length; i++) {
 		selectors[i].remove();
 	}
 
@@ -202,7 +201,7 @@ export function refreshElectiveSystemList(level) {
 		// generate prototype selector
 		const selector =
 			renderSelector(level, null, SELECT_TEMPLATE.SYSTEM);
-		selector.dataset.idx = newIdx;
+		selector.dataset.idx = systems.length;
 
 		// add empty selector to list
 		selectGroup.append(selector);

@@ -35,7 +35,7 @@ body {
 }
 
 main {
-	width: 100%;
+	width: max-content%;
 	padding: 1rem;
 }
 
@@ -134,15 +134,61 @@ select {
 	border-top: 0.4rem solid currentColor;
 }
 
+.selector-control.clearable.occupied .selector-arrow {
+	visibility: hidden;
+}
+
 .custom-select {
 	position: relative;
+}
+
+.selector-clear {
+	position: absolute;
+	top: 0.1rem;
+	right: 0rem;
+	z-index: 2;
+	display: none;
+	width: 1.25rem;
+	height: 1.25rem;
+	background: transparent;
+	cursor: pointer;
+}
+
+/* x marker */
+.selector-clear::before,
+.selector-clear::after {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 0.75rem;
+	height: 2px;
+	border-radius: 1px;
+	background-color: black;
+	content: '';
+}
+
+.selector-clear::before {
+	transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.selector-clear::after {
+	transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.selector-control.occupied + .selector-clear {
+	display: grid;
+}
+
+.selector-clear:hover,
+.selector-clear:focus-visible {
+	background-color: lightgray;
 }
 
 .selector-menu {
 	position: absolute;
 	top: calc(100% + 0.25rem);
 	left: 0;
-	z-index: 1;
+	z-index: 3;
 	max-height: 15rem;
 	overflow-y: auto;
 	border: 1px solid ButtonBorder;

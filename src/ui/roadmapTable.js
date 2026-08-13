@@ -58,6 +58,7 @@ function renderMenu(level, template) {
 		if (select) {
 			const label = select.querySelector('.selector-value');
 			const option = event.target.closest('.selector-option');
+			const clear = event.target.closest('.selector-clear');
 
 			if (option) {
 				select.value = option.value;
@@ -65,6 +66,15 @@ function renderMenu(level, template) {
 
 				// wire selector to perform page updates when selection changes
 				template.changeEvent(select, level);
+			}
+			else if (clear) {
+				// clear through the same write/refresh path as a selection
+				select.value = null;
+				label.textContent = template.placeholderText ?? '';
+				select.classList.remove('open');
+
+				template.changeEvent(select, level);
+				return;
 			}
 
 			select.classList.toggle('open');

@@ -291,7 +291,17 @@ export function renderSelector(level, selectedId, template) {
 			selector.classList.remove('open');
 	});
 
-	selector.append(control, menu);
+	selector.append(control);
+
+	if (template.placeholderText) {
+		control.classList.add('clearable');
+		const clear = document.createElement('button');
+		clear.className = 'selector-clear';
+		clear.title = 'Clear selection';
+		selector.append(clear);
+	}
+
+	selector.append(menu);
 
 	return selector;
 }

@@ -1,7 +1,8 @@
 // rules/systems.js
 
 import {
-	roadmap
+	roadmap,
+	getEffectiveSystemLevel
 } from '../data/roadmap.js';
 
 import {
@@ -97,9 +98,11 @@ export function isSystemEligible(level, id, selectedId = null) {
 		return false;
 
 	// check for uniques, reject unique systems already installed
+	const installedSystems =
+		roadmap.ll[getEffectiveSystemLevel(level)].systems;
 	if (doesItemHaveTag(candidate, TAGS.UNIQUE) &&
 		id != selectedId &&
-		roadmap.ll[level].systems
+		installedSystems
 			.find(system => system?.id === id) !== undefined)
 		return false;
 

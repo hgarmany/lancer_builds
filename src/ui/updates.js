@@ -162,6 +162,7 @@ export function frameUpdate(selector, level) {
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		refreshStats(i);
 		refreshBudgetPill(i);
+		refreshElectiveSystemList(i);
 	}
 
 	// full cell replacement for mounts
