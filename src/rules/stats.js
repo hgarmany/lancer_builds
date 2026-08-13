@@ -1,7 +1,8 @@
 // rules/stats.js
 
 import {
-	roadmap
+	roadmap,
+	getEffectiveSystemLevel
 } from '../data/roadmap.js';
 
 import {
@@ -197,8 +198,9 @@ function getWeaponModifiers({ catalog, level }) {
  */
 function getSystemModifiers({ catalog, level }) {
 	let modifiers = [];
+	const effectiveLevel = getEffectiveSystemLevel(level);
 
-	roadmap.ll[level].systems?.forEach(system => {
+	roadmap.ll[effectiveLevel].systems?.forEach(system => {
 		const sysSrc = srcData.systems.get(system?.id);
 
 		if (sysSrc) {

@@ -6,7 +6,8 @@
  */
 
 import {
-	roadmap
+	roadmap,
+	getEffectiveSystemLevel
 } from '../data/roadmap.js';
 
 import {
@@ -61,9 +62,21 @@ export function refreshSelectors(
 		if (!selectGroup)
 			continue;
 
-		for (const selector of selectGroup.children) {
+		// roadmap is source of truth for all selector refreshes
+		let roadmapData = template.readLevel(i);
+		if (!(roadmapData instanceof Array))
+			roadmapData = [roadmapData];
+		if (template === SELECT_TEMPLATE.SYSTEM)
+			roadmapData = roadmapData.map(item => item?.id ?? null);
+
+		for (let idx = 0; idx < roadmapData.length; idx++) {
 			let selectionIsInvalid = false;
-			const selectedId = selector.value;
+
+			// selector adopts roadmap values
+			const selector = selectGroup.children[idx];
+			const selectedId = roadmapData[idx];
+			selector.value = selectedId;
+			setSelectorClass(selector, 'occupied', selectedId);
 
 			const options = selector.querySelector('.selector-menu').children;
 			for (const option of options) {
@@ -141,6 +154,7 @@ export function refreshStats(level) {
 				didStatWorsen(cumulativeCatalog, level, id));
 		}
 	}
+	console.log(stats);
 }
 
 /**
@@ -161,26 +175,36 @@ export function refreshElectiveSystemList(level) {
 	const selectGroup = document.getElementById(`system-ll-${level}`);
 
 	let newIdx = 0;
+	const systems = roadmap.ll[getEffectiveSystemLevel(level)].systems;
+	const selectors = Array.from(selectGroup.children);
 
-	for (const select of Array.from(selectGroup.children)) {
-		// remove any vacant system slots, adjust indices
-		if (!getSelectorValue(select))
-			select.remove();
-		else
-			select.dataset.idx = newIdx++;
+	for (const system of systems) {
+		if (!system)
+			selectors[newIdx].remove();
+		if (newIdx < selectors.length) {
+			selectors[newIdx].dataset.idx = newIdx;
+		}
+		else {
+			const selector =
+				renderSelector(level, system.id, SELECT_TEMPLATE.system);
+			selector.dataset.idx = newIdx;
+			selectGroup.append(selector);
+		}
+
+		newIdx++;
+	}
+
+	for (let i = newIdx; i < selectors.length; i++) {
+		selectors[i].remove();
 	}
 
 	if (hasEligibleSystem(level)) {
 		// generate prototype selector
-		const selectTemplate =
+		const selector =
 			renderSelector(level, null, SELECT_TEMPLATE.SYSTEM);
-		selectTemplate.dataset.idx = newIdx;
-
-		// wire selector to perform page updates when selection changes
-		selectTemplate.addEventListener('change', event =>
-			SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
+		selector.dataset.idx = newIdx;
 
 		// add empty selector to list
-		selectGroup.append(selectTemplate);
+		selectGroup.append(selector);
 	}
 }

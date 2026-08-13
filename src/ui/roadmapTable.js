@@ -38,16 +38,17 @@ function renderMenu(level, template) {
 	// configure selectors for current user-selected value
 	if (roadmapData instanceof Array) {
 		roadmapData.forEach((id, idx) => {
-			const select = renderSelector(level, id, template);
-			select.dataset.idx = idx;
+			const selector = renderSelector(level, id, template);
+			selector.dataset.idx = idx;
 
-			selectGroup.append(select);
+			selectGroup.append(selector);
 		});
 	}
 	else {
-		const select = renderSelector(level, roadmapData, template);
+		const selector = renderSelector(level, roadmapData, template);
+		selector.dataset.idx = 0;
 
-		selectGroup.append(select);
+		selectGroup.append(selector);
 	}
 
 	// single manager for all menu selections

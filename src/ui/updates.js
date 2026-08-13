@@ -6,7 +6,8 @@
  */
 
 import {
-	roadmap
+	roadmap,
+	getEffectiveSystemLevel
 } from '../data/roadmap.js';
 
 import {
@@ -41,8 +42,7 @@ import {
 } from '../rules/frames.js';
 
 /**
- * Update this particular selector's occupied status and
- * write database changes to record user selection
+ * Write to the roadmap and cumulative catalog a user selection
  * 
  * @param {Event} event 
  * @param {Object} template 
@@ -52,9 +52,6 @@ export function selectionUpdate(selector, template) {
 	const idx = Number(selector.dataset.idx);
 
 	const newId = selector.value;
-
-	// update this selector
-	setSelectorClass(selector, 'occupied', newId);
 
 	// update roadmap and cumulative catalog
 	template.write({ level: currentLevel, idx, id: newId });
@@ -174,13 +171,25 @@ export function frameUpdate(selector, level) {
 }
 
 export function systemUpdate(selector, level) {
+	/**
+	 * systems menus quietly inherit configurations from previous levels
+	 * 
+	 * when the user manually selects a system in a level that is actually
+	 * empty in the roadmap, first copy system configuration into this level
+	 */
+	const listSrcLevel = getEffectiveSystemLevel(level);
+	if (listSrcLevel !== level)
+		roadmap.ll[level].systems = [...roadmap.ll[listSrcLevel].systems];
+
 	selectionUpdate(selector, SELECT_TEMPLATE.SYSTEM);
 
 	// update stats and budget pill
-	refreshStats(level);
-	refreshBudgetPill(level);
-	refreshElectiveSystemList(level);
+	for (let i = level; i <= roadmap.maxLevel; i++) {
+		refreshStats(i);
+		refreshBudgetPill(i);
+		refreshElectiveSystemList(i);
+	}
 
 	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
+	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }

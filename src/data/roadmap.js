@@ -99,6 +99,15 @@ export function createDefaultRoadmap() {
 	console.log(roadmap);
 }
 
+export function getEffectiveSystemLevel(level) {
+	for (let i = level; i > 0; i--) {
+		if (roadmap.ll[i].systems[0])
+			return i;
+	}
+
+	return 0;
+}
+
 /**
  * Resize roadmap to match new maximum level
  * 

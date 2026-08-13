@@ -163,11 +163,6 @@ function renderStatBubble(level, statId) {
 	const statBubble = document.createElement('div');
 	statBubble.className = 'stat-bubble';
 
-	// mark for user attention any stats that have gotten worse this level
-	// typically, the result of changing active frames
-	statBubble.classList.toggle('hazard',
-		didStatWorsen(cumulativeCatalog, level, statId));
-
 	// label-value pair
 	const label = document.createElement('span');
 	label.className = 'stat-label';
@@ -177,6 +172,10 @@ function renderStatBubble(level, statId) {
 	output.id = `stat-${statId}-ll-${level}`;
 	output.className = 'stat-value';
 	output.value = statValue;
+	// mark for user attention any stats that have gotten worse this level
+	// typically, the result of changing active frames
+	output.classList.toggle('hazard',
+		didStatWorsen(cumulativeCatalog, level, statId));
 
 	if (statValue !== null) {
 		output.textContent =

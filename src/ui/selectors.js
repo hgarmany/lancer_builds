@@ -182,7 +182,14 @@ export const SELECT_TEMPLATE = Object.freeze({
 		type: 'system',
 		placeholderText: 'Select a system',
 		getSrcItems: () => srcData.systems,
-		readLevel: (level) => roadmap.ll[level].systems,
+		readLevel: (level) => {
+			for (let i = level; i >= 0; i--) {
+				if (roadmap.ll[i].systems[0])
+					return roadmap.ll[i].systems;
+			}
+
+			return null;
+		},
 		write: ({ level, idx, id, data }) => {
 			if (!id)
 				roadmap.ll[level].systems.splice(idx, 1);
