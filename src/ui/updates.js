@@ -50,6 +50,7 @@ import {
  */
 export function selectionUpdate(event, template) {
 	const eventSelect = event.currentTarget;
+	console.log(eventSelect);
 	const currentLevel = Number(eventSelect.dataset.ll);
 	const idx = Number(eventSelect.dataset.idx);
 
@@ -63,6 +64,7 @@ export function selectionUpdate(event, template) {
 }
 
 export function skillTriggerUpdate(event, level) {
+	console.log('update');
 	selectionUpdate(event, SELECT_TEMPLATE.SKILL_TRIGGER);
 
 	// update all attached selectors at this and later levels

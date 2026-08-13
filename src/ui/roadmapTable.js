@@ -19,6 +19,65 @@ import {
 	getEffectiveFrameId
 } from '../rules/frames.js';
 
+function renderMenuNew(level, template) {
+	const menu = document.createElement('div');
+	menu.className = 'menu';
+
+	const menuLabel = document.createElement('div');
+	menuLabel.className = 'menu-label';
+	menuLabel.textContent = template.title + (level === 0 ? 's' : '');
+
+	const roadmapData = template.readLevel(level);
+
+	const selectGroup = document.createElement('div');
+	selectGroup.id = `${template.type}-ll-${level}`;
+	selectGroup.className = 'select-group';
+
+	// configure selectors for current user-selected value
+	if (roadmapData instanceof Array) {
+		roadmapData.forEach((id, idx) => {
+			const select = renderSelectorNew(level, id, template);
+			select.dataset.idx = idx;
+
+			selectGroup.append(select);
+		});
+	}
+	else {
+		const select = renderSelectorNew(level, roadmapData, template);
+
+		selectGroup.append(select);
+	}
+
+	menu.addEventListener('click', event => {
+		const select = event.target.closest('.custom-select');
+
+		if (select) {
+			const label = select.querySelector('.selector-value');
+			const option = event.target.closest('.selector-option');
+
+			if (option) {
+				console.log(option.value);
+				select.value = option.value;
+				label.textContent = option.textContent;
+				select.classList.toggle('occupied', option.value !== '');
+
+				// wire selector to perform page updates when selection changes
+				template.changeEvent(event, level);
+			}
+
+			select.classList.toggle('open');
+		}
+		// selector.value = id;
+		// value.textContent = option.textContent;
+		// selector.classList.add('occupied');
+		// control.focus();
+	});
+
+	menu.append(menuLabel, selectGroup);
+
+	return menu;
+}
+
 function renderMenu(level, template) {
 	const menu = document.createElement('div');
 	menu.className = 'menu';
@@ -67,8 +126,6 @@ function renderMenu(level, template) {
 	}
 
 	menu.append(menuLabel, selectGroup);
-
-	menu.append(renderSelectorNew(level, null, template));
 
 	return menu;
 }
@@ -121,11 +178,11 @@ function renderLevelUp(level) {
 	if (level === 0) {
 		appendIfPresent(
 			leftColumn,
-			renderMenu(level, SELECT_TEMPLATE.SKILL_TRIGGER)
+			renderMenuNew(level, SELECT_TEMPLATE.SKILL_TRIGGER)
 		);
 		appendIfPresent(
 			rightColumn,
-			renderMenu(level, SELECT_TEMPLATE.TALENT),
+			renderMenuNew(level, SELECT_TEMPLATE.TALENT),
 			renderHASEGroup(level)
 		);
 	}

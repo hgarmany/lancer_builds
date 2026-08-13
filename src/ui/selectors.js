@@ -78,6 +78,9 @@ export const SELECT_TEMPLATE = Object.freeze({
 		getSrcItems: () => srcData.skillTriggers,
 		readLevel: (level) => roadmap.ll[level].skillTriggerIds,
 		write: ({ level, idx, id }) => {
+			console.log(level);
+			console.log(idx);
+			console.log(id);
 			const oldId = roadmap.ll[level].skillTriggerIds[idx];
 			roadmap.ll[level].skillTriggerIds[idx] = id;
 			incrementFromLevel(cumulativeCatalog.skillTriggers, id, level);
@@ -275,8 +278,9 @@ export function applySelection(level, select, id, template) {
 export function renderSelectorNew(level, selectedId, template) {
 	const selector = document.createElement('div');
 	selector.className = `custom-select ${template.type}-select`;
+	selector.classList.toggle('occupied', selectedId);
 	selector.dataset.ll = level;
-	selector.dataset.value = '';
+	selector.value = selectedId;
 
 	const control = document.createElement('button');
 	control.type = 'button';
@@ -284,7 +288,9 @@ export function renderSelectorNew(level, selectedId, template) {
 
 	const value = document.createElement('span');
 	value.className = 'selector-value';
-	value.textContent = template.placeholderText ?? '';
+	value.textContent = selectedId ?
+		(template.getLabel?.({ level, id: selectedId }) ?? '') :
+		(template.placeholderText ?? '');
 
 	const arrow = document.createElement('span');
 	arrow.className = 'selector-arrow';
@@ -299,46 +305,26 @@ export function renderSelectorNew(level, selectedId, template) {
 	// suppress default-close behavior when menu option is clicked
 	menu.addEventListener('mousedown', event => event.preventDefault());
 
-	function toggleOpen(isOpen = null) {
-		if (isOpen !== null)
-			selector.classList.toggle('open', isOpen);
-		else
-			selector.classList.toggle('open');
-	}
-
 	for (const [id, item] of template.getSrcItems()) {
-		const context = { level, id, selectedId: null };
+		const context = { level, id, selectedId };
 
 		// prepare an option for each item
 		const option = document.createElement('div');
 		option.className = 'selector-option';
-		option.dataset.value = id;
+		option.value = id;
 
 		option.textContent = template.getLabel?.(context) ?? '';
 		option.title = template.getDescription?.(context) ?? '';
 		if (!template.getEligibility?.(context) ?? false)
 			setOptionHidden(option, true);
 
-		option.addEventListener('click', () => {
-			selector.dataset.value = id;
-			value.textContent = option.textContent;
-			for (const menuOption of menu.children) {
-
-			}
-			selector.classList.add('occupied');
-			toggleOpen(false);
-			control.focus();
-		});
-
 		menu.append(option);
 	}
-
-	control.addEventListener('click', () => toggleOpen());
 
 	control.addEventListener('keydown', event => {
 		switch (event.key) {
 			case 'Escape':
-				toggleOpen(false);
+				selector.classList.remove('open');
 				break;
 			default:
 				break;
@@ -347,8 +333,9 @@ export function renderSelectorNew(level, selectedId, template) {
 
 	// loss of focus simply closes the menu
 	control.addEventListener('blur', event => {
+		console.log('blur');
 		if (!selector.contains(event.relatedTarget))
-			toggleOpen(false);
+			selector.classList.remove('open');
 	});
 
 	selector.append(control, menu);
@@ -389,6 +376,6 @@ export function renderSelector(level, template) {
 
 		selectTemplate.append(option);
 	}
-	console.log(getSelectorOptions(template, level, null));
+	
 	return selectTemplate;
 }
