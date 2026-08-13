@@ -22,8 +22,6 @@ import {
 	renderSelector,
 	getSelectorValue,
 	setSelectorClass,
-	getOptions,
-	getOptionValue,
 	setOptionHidden
 } from './selectors.js';
 
@@ -46,8 +44,9 @@ import {
  * Update option visibility within a selector class
  * at all levels starting from the given one
  * 
- * @param {number} level 
- * @param {Object} template 
+ * @param {Object} template
+ * @param {number} level
+ * @param {number} maxLevel
  */
 export function refreshSelectors(
 	template,
@@ -55,36 +54,49 @@ export function refreshSelectors(
 	maxLevel = roadmap.maxLevel
 ) {
 	for (let i = level; i <= maxLevel; i++) {
+		// all selectors of a given type and level belong to the same group
 		const selectGroup = document.getElementById(
 			`${template.type}-ll-${i}`);
 
 		if (!selectGroup)
 			continue;
 
-		for (const select of selectGroup.children) {
+		for (const selector of selectGroup.children) {
 			let selectionIsInvalid = false;
-			const selectedId = getSelectorValue(select);
+			const selectedId = selector.value;
 
-			for (const option of getOptions(select)) {
-				const id = getOptionValue(option);
+			const options = selector.querySelector('.selector-menu').children;
+			for (const option of options) {
+				// update visibility and, where appropriate, rank #
+				const id = option.value;
 				if (!id)
 					continue;
 
 				const context = { level: i, id, selectedId };
-				const disable = !template.getEligibility(context);
-
 				option.innerHTML = template.getLabel?.(context);
-				setOptionHidden(option, disable);
 
+				const disable = !template.getEligibility(context);
+				setOptionHidden(option, disable);
 				if (disable && id === selectedId)
 					selectionIsInvalid = true;
 			}
 
-			setSelectorClass(select, 'error', selectionIsInvalid);
+			if (selectedId) {
+				const label = selector.querySelector('.selector-value');
+				if (label)
+					label.textContent =
+						template.getLabel?.({ level: i, id: selectedId });
+				setSelectorClass(selector, 'error', selectionIsInvalid);
+			}
 		}
 	}
 }
 
+/**
+ * Selectively update the numerator of the HASE point tooltip
+ * 
+ * @param {number} level
+ */
 export function refreshHASETooltip(level) {
 	document.getElementById(`hase-ll-${level}`)
 		.querySelector('.hase-spent').textContent = countUsedHASEPoints(level);
@@ -161,7 +173,7 @@ export function refreshElectiveSystemList(level) {
 	if (hasEligibleSystem(level)) {
 		// generate prototype selector
 		const selectTemplate =
-			renderSelector(level, SELECT_TEMPLATE.SYSTEM);
+			renderSelector(level, null, SELECT_TEMPLATE.SYSTEM);
 		selectTemplate.dataset.idx = newIdx;
 
 		// wire selector to perform page updates when selection changes

@@ -15,7 +15,6 @@ import {
 
 import {
 	getSelectorValue,
-	setSelectorValue,
 	setSelectorClass,
 	SELECT_TEMPLATE
 } from './selectors.js';
@@ -48,31 +47,28 @@ import {
  * @param {Event} event 
  * @param {Object} template 
  */
-export function selectionUpdate(event, template) {
-	const eventSelect = event.currentTarget;
-	console.log(eventSelect);
-	const currentLevel = Number(eventSelect.dataset.ll);
-	const idx = Number(eventSelect.dataset.idx);
+export function selectionUpdate(selector, template) {
+	const currentLevel = Number(selector.dataset.ll);
+	const idx = Number(selector.dataset.idx);
 
-	const newId = getSelectorValue(eventSelect);
+	const newId = selector.value;
 
 	// update this selector
-	setSelectorClass(eventSelect, 'occupied', newId);
+	setSelectorClass(selector, 'occupied', newId);
 
 	// update roadmap and cumulative catalog
 	template.write({ level: currentLevel, idx, id: newId });
 }
 
-export function skillTriggerUpdate(event, level) {
-	console.log('update');
-	selectionUpdate(event, SELECT_TEMPLATE.SKILL_TRIGGER);
+export function skillTriggerUpdate(selector, level) {
+	selectionUpdate(selector, SELECT_TEMPLATE.SKILL_TRIGGER);
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.SKILL_TRIGGER, level);
 }
 
-export function talentUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.TALENT);
+export function talentUpdate(selector, level) {
+	selectionUpdate(selector, SELECT_TEMPLATE.TALENT);
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.TALENT, level);
@@ -83,8 +79,8 @@ export function talentUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
-export function licenseUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.LICENSE);
+export function licenseUpdate(selector, level) {
+	selectionUpdate(selector, SELECT_TEMPLATE.LICENSE);
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.LICENSE, level);
@@ -93,8 +89,8 @@ export function licenseUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
-export function coreBonusUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.CORE_BONUS);
+export function coreBonusUpdate(selector, level) {
+	selectionUpdate(selector, SELECT_TEMPLATE.CORE_BONUS);
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
@@ -127,9 +123,7 @@ export function updateHASEWaterfall(level, id, doIncrement) {
  * @param {Event} event 
  * @param {number} level 
  */
-export function activeFrameWaterfall(event, level) {
-	const value = event.currentTarget.value;
-
+export function activeFrameWaterfall(selectValue, level) {
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		if (roadmap.ll[i].frameId === getEffectiveFrameId(i - 1))
 			roadmap.ll[i].frameId = null;
@@ -137,24 +131,32 @@ export function activeFrameWaterfall(event, level) {
 		if (i !== level && roadmap.ll[i].frameId)
 			break;
 
-		cumulativeCatalog.activeFrame[i] = value;
+		cumulativeCatalog.activeFrame[i] = selectValue;
 
 		// update frame image
 		const icon = document.getElementById(
 			`${SELECT_TEMPLATE.FRAME.type}-ll-${i}-icon`);
-		icon.src = getFrameImageSrc(value) ?? '';
+		icon.src = getFrameImageSrc(selectValue) ?? '';
 
-		const select = document.getElementById(
+		const selector = document.getElementById(
 			`${SELECT_TEMPLATE.FRAME.type}-ll-${i}`)
-			.querySelector('select');
-		setSelectorValue(select, value);
-		setSelectorClass(select, 'inherited', i !== level);
+			.querySelector('.custom-select');
+		selector.value = selectValue;
+
+		const label = selector.querySelector('.selector-value');
+		if (label) {
+			label.textContent =
+				SELECT_TEMPLATE.FRAME
+					.getLabel?.({ level, id: selectValue }) ?? '';
+		}
+
+		setSelectorClass(selector, 'inherited', i !== level);
 	}
 }
 
-export function frameUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.FRAME);
-	activeFrameWaterfall(event, level);
+export function frameUpdate(selector, level) {
+	selectionUpdate(selector, SELECT_TEMPLATE.FRAME);
+	activeFrameWaterfall(selector.value, level);
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
@@ -171,8 +173,8 @@ export function frameUpdate(event, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
-export function systemUpdate(event, level) {
-	selectionUpdate(event, SELECT_TEMPLATE.SYSTEM);
+export function systemUpdate(selector, level) {
+	selectionUpdate(selector, SELECT_TEMPLATE.SYSTEM);
 
 	// update stats and budget pill
 	refreshStats(level);
@@ -181,5 +183,4 @@ export function systemUpdate(event, level) {
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level, level);
-	console.log(cumulativeCatalog.stats[level]);
 }

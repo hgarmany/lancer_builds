@@ -99,7 +99,8 @@ export function isSystemEligible(level, id, selectedId = null) {
 	// check for uniques, reject unique systems already installed
 	if (doesItemHaveTag(candidate, TAGS.UNIQUE) &&
 		id != selectedId &&
-		roadmap.ll[level].systems.find(system => system.id === id) !== undefined)
+		roadmap.ll[level].systems
+			.find(system => system?.id === id) !== undefined)
 		return false;
 
 	// talent-issued systems must match rank exactly

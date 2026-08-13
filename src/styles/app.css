@@ -117,7 +117,7 @@ select {
 	cursor: pointer;
 }
 
-.custom-select.occupied .selector-control {
+.selector-control.occupied {
 	background-color: transparent;
 	border-color: transparent;
 }
@@ -156,6 +156,7 @@ select {
 }
 
 .selector-option {
+	min-width: max-content;
 	padding: 0.25rem 1.25rem 0.25rem 0.5rem;
 	cursor: pointer;
 }
@@ -172,7 +173,11 @@ select {
 /* end new custom selector */
 
 .error {
-	background-color: red;
+	background-color: red !important;
+}
+
+.hazard {
+	color: red !important;
 }
 
 .roadmap-table .level-up {

@@ -78,9 +78,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 		getSrcItems: () => srcData.skillTriggers,
 		readLevel: (level) => roadmap.ll[level].skillTriggerIds,
 		write: ({ level, idx, id }) => {
-			console.log(level);
-			console.log(idx);
-			console.log(id);
 			const oldId = roadmap.ll[level].skillTriggerIds[idx];
 			roadmap.ll[level].skillTriggerIds[idx] = id;
 			incrementFromLevel(cumulativeCatalog.skillTriggers, id, level);
@@ -90,7 +87,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 		getDescription: ({ id }) => srcData.skillTriggers.get(id)?.description,
 		getEligibility: ({ level, id, selectedId }) =>
 			isSkillTriggerEligible(level, id, selectedId),
-		changeEvent: (event, level) => skillTriggerUpdate(event, level)
+		changeEvent: (selector, level) => skillTriggerUpdate(selector, level)
 	},
 	TALENT: {
 		type: 'talent',
@@ -118,7 +115,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
 		getEligibility: ({ level, id, selectedId }) =>
 			isTalentEligible(level, id, selectedId),
-		changeEvent: (event, level) => talentUpdate(event, level)
+		changeEvent: (selector, level) => talentUpdate(selector, level)
 	},
 	LICENSE: {
 		type: 'license',
@@ -144,7 +141,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 		},
 		getEligibility: ({ level, id, selectedId }) =>
 			isLicenseEligible(level, id, selectedId),
-		changeEvent: (event, level) => licenseUpdate(event, level)
+		changeEvent: (selector, level) => licenseUpdate(selector, level)
 	},
 	CORE_BONUS: {
 		type: 'core-bonus',
@@ -162,12 +159,12 @@ export const SELECT_TEMPLATE = Object.freeze({
 		getDescription: ({ id }) => srcData.coreBonuses.get(id)?.description,
 		getEligibility: ({ level, id, selectedId }) =>
 			isCoreBonusEligible(level, id, selectedId),
-		changeEvent: (event, level) => coreBonusUpdate(event, level)
+		changeEvent: (selector, level) => coreBonusUpdate(selector, level)
 	},
 	FRAME: {
 		type: 'frame',
 		getSrcItems: () => srcData.frames,
-		readLevel: (level) => roadmap.ll[level].frameId,
+		readLevel: (level) => getEffectiveFrameId(level),
 		write: ({ level, id }) => {
 			roadmap.ll[level].frameId =
 				(getEffectiveFrameId(level - 1) !== id) ? id : null;
@@ -179,7 +176,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
 		getEligibility: ({ level, id }) =>
 			isFrameEligible(level, id),
-		changeEvent: (event, level) => frameUpdate(event, level)
+		changeEvent: (selector, level) => frameUpdate(selector, level)
 	},
 	SYSTEM: {
 		type: 'system',
@@ -200,7 +197,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 		},
 		getEligibility: ({ level, id, selectedId }) =>
 			isSystemEligible(level, id, selectedId),
-		changeEvent: (event, level) => systemUpdate(event, level)
+		changeEvent: (selector, level) => systemUpdate(selector, level)
 	}
 });
 
@@ -208,28 +205,9 @@ export function getSelectorValue(selector) {
 	return selector.value === '' ? null : selector.value;
 }
 
-export function setSelectorValue(selector, value) {
-	selector.value = value;
-}
-
 export function setSelectorClass(selector, className, toggle = true) {
-	selector.classList.toggle(className, toggle);
-}
-
-export function getOptions(selector) {
-	return selector.options;
-}
-
-export function getOption(selector, optionId) {
-	return [...selector.options].find(option => option.value === optionId);
-}
-
-export function getOptionValue(option) {
-	return option.value === '' ? null : option.value;
-}
-
-export function setOptionValue(option, value) {
-	option.value = value;
+	selector.querySelector('.selector-control')
+		.classList.toggle(className, toggle);
 }
 
 export function setOptionHidden(option, hide = true) {
@@ -237,54 +215,24 @@ export function setOptionHidden(option, hide = true) {
 	option.hidden = hide;
 }
 
-export function renderOptionLabel(option, label) {
-	option.innerHTML = label;
-}
-
-function getSelectorOptions(template, level, selectedId) {
-	return [...template.getSrcItems().keys()].map(id => {
-		const context = { level, id, selectedId };
-
-		return {
-			id,
-			label: template.getLabel?.(context) ?? '',
-			description: template.getDescription?.(context) ?? '',
-			eligible: template.getEligibility?.(context) ?? false,
-			selected: id === selectedId
-		};
-	});
-}
-
-
-export function applySelection(level, select, id, template) {
-	// set class flags / selector value to indicate an active selection
-	setSelectorValue(select, id);
-	setSelectorClass(select, 'occupied');
-
-	const isEligible = template.getEligibility({ level, id, selectedId: id });
-	setSelectorClass(select, 'error', !isEligible);
-
-	if (isEligible) {
-		// find the selected option and force it to appear in the dropdown
-		const selectedOption = getOption(select, id);
-		if (selectedOption) {
-			renderOptionLabel(selectedOption,
-				template.getLabel({ level, id, selectedId: id }));
-			setOptionHidden(selectedOption, false);
-		}
-	}
-}
-
-export function renderSelectorNew(level, selectedId, template) {
+/**
+ * Creates a selector with default options configured
+ * 
+ * @param {number} level
+ * @param {string} selectedId
+ * @param {Object} template
+ * @returns {HTMLElement}
+ */
+export function renderSelector(level, selectedId, template) {
 	const selector = document.createElement('div');
 	selector.className = `custom-select ${template.type}-select`;
-	selector.classList.toggle('occupied', selectedId);
 	selector.dataset.ll = level;
 	selector.value = selectedId;
 
 	const control = document.createElement('button');
-	control.type = 'button';
 	control.className = 'selector-control';
+	control.classList.toggle('occupied', selectedId);
+	control.type = 'button';
 
 	const value = document.createElement('span');
 	value.className = 'selector-value';
@@ -296,7 +244,6 @@ export function renderSelectorNew(level, selectedId, template) {
 	arrow.className = 'selector-arrow';
 
 	control.append(value, arrow);
-
 
 	const menu = document.createElement('div');
 	menu.className = 'selector-menu';
@@ -333,7 +280,6 @@ export function renderSelectorNew(level, selectedId, template) {
 
 	// loss of focus simply closes the menu
 	control.addEventListener('blur', event => {
-		console.log('blur');
 		if (!selector.contains(event.relatedTarget))
 			selector.classList.remove('open');
 	});
@@ -341,41 +287,4 @@ export function renderSelectorNew(level, selectedId, template) {
 	selector.append(control, menu);
 
 	return selector;
-}
-
-/**
- * Creates an empty selector with default options configured
- * 
- * @param {number} level
- * @param {Object} template
- * @returns {HTMLElement}
- */
-export function renderSelector(level, template) {
-	const selectTemplate = document.createElement('select');
-	selectTemplate.className = `${template.type}-select`;
-	selectTemplate.dataset.ll = level;
-
-	// prepare a default pseudo-option for unfilled selectors
-	if (template.placeholderText) {
-		const placeholderOption = document.createElement('option');
-		placeholderOption.value = '';
-		placeholderOption.innerHTML = template.placeholderText;
-		selectTemplate.append(placeholderOption);
-	}
-
-	for (const id of template.getSrcItems().keys()) {
-		const context = { level, id, selectedId: null };
-
-		// prepare an option for each item
-		const option = document.createElement('option');
-		option.value = id;
-		option.innerHTML = template.getLabel?.(context) ?? '';
-		option.title = template.getDescription?.(context) ?? '';
-		if (!template.getEligibility?.(context) ?? false)
-			setOptionHidden(option, true);
-
-		selectTemplate.append(option);
-	}
-	
-	return selectTemplate;
 }

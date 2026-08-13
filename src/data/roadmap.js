@@ -58,7 +58,7 @@ function createDefaultRoadmapLevel(level) {
 		haseIds: createEmptySlots(limits.mechSkills),
 		licenseId: null,
 		coreBonusId: null,
-		systems: [],
+		systems: [ null ],
 
 		// null means "continue using the previously active frame"
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null,

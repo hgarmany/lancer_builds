@@ -199,7 +199,7 @@ function getSystemModifiers({ catalog, level }) {
 	let modifiers = [];
 
 	roadmap.ll[level].systems?.forEach(system => {
-		const sysSrc = srcData.systems.get(system.id);
+		const sysSrc = srcData.systems.get(system?.id);
 
 		if (sysSrc) {
 			// deduct sp cost from the budget

@@ -10,22 +10,24 @@ import {
 
 import {
 	SELECT_TEMPLATE,
-	renderSelector,
-	renderSelectorNew,
-	applySelection
+	renderSelector
 } from './selectors.js';
 
 import {
 	getEffectiveFrameId
 } from '../rules/frames.js';
 
-function renderMenuNew(level, template) {
+function renderMenu(level, template) {
 	const menu = document.createElement('div');
 	menu.className = 'menu';
 
-	const menuLabel = document.createElement('div');
-	menuLabel.className = 'menu-label';
-	menuLabel.textContent = template.title + (level === 0 ? 's' : '');
+	if (template.title) {
+		const menuLabel = document.createElement('div');
+		menuLabel.className = 'menu-label';
+		menuLabel.textContent = template.title + (level === 0 ? 's' : '');
+
+		menu.append(menuLabel);
+	}
 
 	const roadmapData = template.readLevel(level);
 
@@ -36,18 +38,19 @@ function renderMenuNew(level, template) {
 	// configure selectors for current user-selected value
 	if (roadmapData instanceof Array) {
 		roadmapData.forEach((id, idx) => {
-			const select = renderSelectorNew(level, id, template);
+			const select = renderSelector(level, id, template);
 			select.dataset.idx = idx;
 
 			selectGroup.append(select);
 		});
 	}
 	else {
-		const select = renderSelectorNew(level, roadmapData, template);
+		const select = renderSelector(level, roadmapData, template);
 
 		selectGroup.append(select);
 	}
 
+	// single manager for all menu selections
 	menu.addEventListener('click', event => {
 		const select = event.target.closest('.custom-select');
 
@@ -56,76 +59,18 @@ function renderMenuNew(level, template) {
 			const option = event.target.closest('.selector-option');
 
 			if (option) {
-				console.log(option.value);
 				select.value = option.value;
 				label.textContent = option.textContent;
-				select.classList.toggle('occupied', option.value !== '');
 
 				// wire selector to perform page updates when selection changes
-				template.changeEvent(event, level);
+				template.changeEvent(select, level);
 			}
 
 			select.classList.toggle('open');
 		}
-		// selector.value = id;
-		// value.textContent = option.textContent;
-		// selector.classList.add('occupied');
-		// control.focus();
 	});
 
-	menu.append(menuLabel, selectGroup);
-
-	return menu;
-}
-
-function renderMenu(level, template) {
-	const menu = document.createElement('div');
-	menu.className = 'menu';
-
-	const menuLabel = document.createElement('div');
-	menuLabel.className = 'menu-label';
-	menuLabel.textContent = template.title + (level === 0 ? 's' : '');
-
-	const roadmapData = template.readLevel(level);
-
-	// generate prototype selector
-	const selectTemplate =
-		renderSelector(level, template);
-
-	const selectGroup = document.createElement('div');
-	selectGroup.id = `${template.type}-ll-${level}`;
-	selectGroup.className = 'select-group';
-
-	// configure selectors for current user-selected value
-	if (roadmapData instanceof Array) {
-		roadmapData.forEach((id, idx) => {
-			const select = selectTemplate.cloneNode(true);
-			select.dataset.idx = idx;
-
-			if (id)
-				applySelection(level, select, id, template);
-
-			// wire selector to perform page updates when selection changes
-			select.addEventListener('change',
-				event => template.changeEvent(event, level));
-
-			selectGroup.append(select);
-		});
-	}
-	else {
-		// configure selector for current user-selected value
-		if (roadmapData)
-			applySelection(level, selectTemplate, roadmapData, template);
-
-		// wire selector to perform page updates when selection changes
-		selectTemplate.addEventListener('change', event =>
-			template.changeEvent(event, level)
-		);
-
-		selectGroup.append(selectTemplate);
-	}
-
-	menu.append(menuLabel, selectGroup);
+	menu.append(selectGroup);
 
 	return menu;
 }
@@ -178,11 +123,11 @@ function renderLevelUp(level) {
 	if (level === 0) {
 		appendIfPresent(
 			leftColumn,
-			renderMenuNew(level, SELECT_TEMPLATE.SKILL_TRIGGER)
+			renderMenu(level, SELECT_TEMPLATE.SKILL_TRIGGER)
 		);
 		appendIfPresent(
 			rightColumn,
-			renderMenuNew(level, SELECT_TEMPLATE.TALENT),
+			renderMenu(level, SELECT_TEMPLATE.TALENT),
 			renderHASEGroup(level)
 		);
 	}
@@ -216,27 +161,9 @@ function renderFrame(level) {
 	icon.id = `${SELECT_TEMPLATE.FRAME.type}-ll-${level}-icon`;
 	icon.src = getFrameImageSrc(activeFrameId) ?? '';
 
-	// generate prototype selector
-	const select =
-		renderSelector(level, SELECT_TEMPLATE.FRAME);
-
-	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.FRAME.type}-ll-${level}`;
-	selectGroup.className = 'select-group';
-
-	// configure selector for current user-selected value
-	if (activeFrameId)
-		applySelection(level, select, activeFrameId, SELECT_TEMPLATE.FRAME);
-	if (!SELECT_TEMPLATE.FRAME.readLevel(level))
-		select.classList.add('inherited');
-
-	// wire selector to perform page updates when selection changes
-	select.addEventListener('change', event =>
-		SELECT_TEMPLATE.FRAME.changeEvent(event, level));
-
-	selectGroup.append(select);
-
-	return [icon, selectGroup];
+	const menu = renderMenu(level, SELECT_TEMPLATE.FRAME);
+	
+	return [icon, menu];
 }
 
 function renderMounts(level) {
@@ -251,41 +178,11 @@ function renderIntegratedSystems(level) {
 }
 
 function renderSystems(level) {
-	const integratedSystems = renderIntegratedSystems(level);
-
-	const systems = SELECT_TEMPLATE.SYSTEM.readLevel(level);
-
-	const budgetPill = renderBudgetPill(level);
-
-	// generate prototype selector
-	const selectTemplate =
-		renderSelector(level, SELECT_TEMPLATE.SYSTEM);
-
-	const selectGroup = document.createElement('div');
-	selectGroup.id = `${SELECT_TEMPLATE.SYSTEM.type}-ll-${level}`;
-	selectGroup.className = 'select-group';
-
-	// configure selectors for current user-selected value
-	systems.forEach((system, idx) => {
-		const select = selectTemplate.cloneNode(true);
-		select.dataset.idx = idx;
-
-		if (system)
-			applySelection(level, select, system.id, SELECT_TEMPLATE.SYSTEM);
-
-		// wire selector to perform page updates when selection changes
-		select.addEventListener('change', event =>
-			SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
-
-		selectGroup.append(select);
-	});
-
-	selectTemplate.dataset.idx = systems.length;
-	selectTemplate.addEventListener('change', event =>
-		SELECT_TEMPLATE.SYSTEM.changeEvent(event, level));
-	selectGroup.append(selectTemplate);
-
-	return [budgetPill, integratedSystems, selectGroup];
+	return [
+		renderBudgetPill(level),
+		renderIntegratedSystems(level),
+		renderMenu(level, SELECT_TEMPLATE.SYSTEM)
+	];
 }
 
 const CELL = {
