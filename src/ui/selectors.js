@@ -74,7 +74,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 	SKILL_TRIGGER: {
 		type: 'skill-trigger',
 		title: 'Skill Trigger',
-		placeholderText: 'Select a skill trigger',
 		getSrcItems: () => srcData.skillTriggers,
 		readLevel: (level) => roadmap.ll[level].skillTriggerIds,
 		write: ({ level, idx, id }) => {
@@ -83,7 +82,10 @@ export const SELECT_TEMPLATE = Object.freeze({
 			incrementFromLevel(cumulativeCatalog.skillTriggers, id, level);
 			decrementFromLevel(cumulativeCatalog.skillTriggers, oldId, level);
 		},
-		getLabel: ({ id }) => srcData.skillTriggers.get(id)?.name,
+		getLabel: ({ id }) => {
+			return id ? (srcData.skillTriggers.get(id)?.name ?? '') :
+				'Select a skill trigger';
+		},
 		getDescription: ({ id }) => srcData.skillTriggers.get(id)?.description,
 		getEligibility: ({ level, id, selectedId }) =>
 			isSkillTriggerEligible(level, id, selectedId),
@@ -92,7 +94,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 	TALENT: {
 		type: 'talent',
 		title: 'Talent',
-		placeholderText: 'Select a talent',
 		getSrcItems: () => srcData.talents,
 		readLevel: (level) => roadmap.ll[level].talentIds,
 		write: ({ level, idx, id }) => {
@@ -101,9 +102,10 @@ export const SELECT_TEMPLATE = Object.freeze({
 			incrementFromLevel(cumulativeCatalog.talents, id, level);
 			decrementFromLevel(cumulativeCatalog.talents, oldId, level);
 		},
-		getLabel: ({ level, id }) => {
-			const selectedId =
-				roadmap.ll[level].talentIds.includes(id) ? id : null;
+		getLabel: ({ level, id, selectedId }) => {
+			if (!id)
+				return 'Select a talent';
+
 			const rank = getTalentRank(level, id, selectedId);
 			const showRank = rank < MAX_TALENT_RANK;
 
@@ -120,7 +122,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 	LICENSE: {
 		type: 'license',
 		title: 'License',
-		placeholderText: 'Select a license',
 		getSrcItems: () => srcData.licenses,
 		readLevel: (level) => roadmap.ll[level].licenseId,
 		write: ({ level, id }) => {
@@ -129,10 +130,10 @@ export const SELECT_TEMPLATE = Object.freeze({
 			incrementFromLevel(cumulativeCatalog.licenses, id, level);
 			decrementFromLevel(cumulativeCatalog.licenses, oldId, level);
 		},
-		getLabel: ({ level, id }) => {
-			const licenseId = roadmap.ll[level].licenseId;
-			const selectedId =
-				id === licenseId ? licenseId : null;
+		getLabel: ({ level, id, selectedId }) => {
+			if (!id)
+				return 'Select a license';
+
 			const rank = getLicenseRank(level, id, selectedId);
 			const showRank = rank < MAX_LICENSE_RANK;
 
@@ -146,7 +147,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 	CORE_BONUS: {
 		type: 'core-bonus',
 		title: 'Core Bonus',
-		placeholderText: 'Select a core bonus',
 		getSrcItems: () => srcData.coreBonuses,
 		readLevel: (level) => roadmap.ll[level].coreBonusId,
 		write: ({ level, id }) => {
@@ -155,7 +155,10 @@ export const SELECT_TEMPLATE = Object.freeze({
 			incrementFromLevel(cumulativeCatalog.coreBonuses, id, level);
 			decrementFromLevel(cumulativeCatalog.coreBonuses, oldId, level);
 		},
-		getLabel: ({ id }) => srcData.coreBonuses.get(id)?.name,
+		getLabel: ({ id }) => {
+			return id ? (srcData.coreBonuses.get(id)?.name ?? '') :
+				'Select a core bonus';
+		},
 		getDescription: ({ id }) => srcData.coreBonuses.get(id)?.description,
 		getEligibility: ({ level, id, selectedId }) =>
 			isCoreBonusEligible(level, id, selectedId),
@@ -170,7 +173,9 @@ export const SELECT_TEMPLATE = Object.freeze({
 				(getEffectiveFrameId(level - 1) !== id) ? id : null;
 			cumulativeCatalog.activeFrame[level] = id;
 		},
-		getLabel: ({ id }) => srcData.frames.get(id)?.name,
+		getLabel: ({ id }) => {
+			return id ? srcData.frames.get(id)?.name : null;
+		}				,
 		getDescription: ({ id }) =>
 			srcData.frames.get(id)?.description
 				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
@@ -180,7 +185,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 	},
 	SYSTEM: {
 		type: 'system',
-		placeholderText: 'Select a system',
 		getSrcItems: () => srcData.systems,
 		readLevel: (level) => {
 			for (let i = level; i >= 0; i--) {
@@ -195,11 +199,14 @@ export const SELECT_TEMPLATE = Object.freeze({
 				roadmap.ll[level].systems.splice(idx, 1);
 			else
 				roadmap.ll[level].systems[idx] = { id, data };
-		}				,
-		getLabel: ({ id }) => srcData.systems.get(id)?.name,
+		},
+		getLabel: ({ id }) => {
+			return id ? (srcData.systems.get(id)?.name ?? '') :
+				'Select a system';
+		},
 		getDescription: ({ id }) => {
 			const item = srcData.systems.get(id);
-			(item?.description ?? item?.effect)
+			return (item?.description ?? item?.effect)
 				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n')
 		},
 		getEligibility: ({ level, id, selectedId }) =>
@@ -210,6 +217,19 @@ export const SELECT_TEMPLATE = Object.freeze({
 
 export function getSelectorValue(selector) {
 	return selector.value === '' ? null : selector.value;
+}
+
+export function setSelectorValue(selector, id, template) {
+	const context = { level: selector.dataset.ll, id, selectedId: id };
+	const label = selector.querySelector('.selector-value');
+	const control = selector.querySelector('.selector-control');
+
+	selector.value = id;
+
+	if (label)
+		label.textContent = template.getLabel?.(context) ?? '';
+	if (control)
+		control.title = template.getDescription?.(context) ?? '';
 }
 
 export function setSelectorClass(selector, className, toggle = true) {
@@ -231,6 +251,8 @@ export function setOptionHidden(option, hide = true) {
  * @returns {HTMLElement}
  */
 export function renderSelector(level, selectedId, template) {
+	const context = { level, id: selectedId, selectedId };
+
 	const selector = document.createElement('div');
 	selector.className = `custom-select ${template.type}-select`;
 	selector.dataset.ll = level;
@@ -240,12 +262,11 @@ export function renderSelector(level, selectedId, template) {
 	control.className = 'selector-control';
 	control.classList.toggle('occupied', selectedId);
 	control.type = 'button';
+	control.title = template.getDescription?.(context) ?? '';
 
 	const value = document.createElement('span');
 	value.className = 'selector-value';
-	value.textContent = selectedId ?
-		(template.getLabel?.({ level, id: selectedId }) ?? '') :
-		(template.placeholderText ?? '');
+	value.textContent = template.getLabel?.(context) ?? '';
 
 	const arrow = document.createElement('span');
 	arrow.className = 'selector-arrow';
@@ -293,7 +314,7 @@ export function renderSelector(level, selectedId, template) {
 
 	selector.append(control);
 
-	if (template.placeholderText) {
+	if (template.getLabel({})) {
 		control.classList.add('clearable');
 		const clear = document.createElement('button');
 		clear.className = 'selector-clear';

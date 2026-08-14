@@ -20,6 +20,10 @@ import {
 } from '../constants.js';
 
 import {
+	SELECT_TEMPLATE
+} from './selectors.js';
+
+import {
 	updateHASEWaterfall
 } from './updates.js';
 
@@ -32,6 +36,11 @@ import {
 import {
 	didStatWorsen
 } from '../rules/stats.js';
+
+import {
+	getIntegratedSystemIds
+} from '../rules/systems.js';
+
 
 export const roadmapName = document.getElementById('roadmap-name');
 export const maxLevelInput = document.getElementById('roadmap-max-level');
@@ -198,6 +207,30 @@ export function renderStats(level) {
 	return DISPLAYED_MECH_STAT_IDS.map(statId =>
 		renderStatBubble(level, statId)
 	);
+}
+
+export function renderIntegratedSystems(level) {
+	const integratedSystems = document.createElement('div');
+	integratedSystems.className = 'systems-integrated';
+	integratedSystems.hidden = true;
+
+	// get integrated systems from frame, if any
+	const systemIds = getIntegratedSystemIds(level);
+
+	for (const systemId of systemIds) {
+		const system = srcData.systems.get(systemId);
+		if (system) {
+			integratedSystems.hidden = false;
+			const systemLabel = document.createElement('span');
+			systemLabel.textContent = system.name ?? '';
+			systemLabel.title =	SELECT_TEMPLATE.SYSTEM
+				.getDescription({ id: integratedId }) ?? '';
+
+			integratedSystems.append(systemLabel);
+		}
+	}
+
+	return integratedSystems;
 }
 
 /**

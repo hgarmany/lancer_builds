@@ -22,6 +22,7 @@ import {
 	SELECT_TEMPLATE,
 	renderSelector,
 	getSelectorValue,
+	setSelectorValue,
 	setSelectorClass,
 	setOptionHidden
 } from './selectors.js';
@@ -75,7 +76,6 @@ export function refreshSelectors(
 			// selector adopts roadmap values
 			const selector = selectGroup.children[idx];
 			const selectedId = roadmapData[idx] ?? null;
-			selector.value = selectedId;
 			setSelectorClass(selector, 'occupied', selectedId);
 
 			const options = selector.querySelector('.selector-menu').children;
@@ -86,7 +86,7 @@ export function refreshSelectors(
 					continue;
 
 				const context = { level: i, id, selectedId };
-				option.innerHTML = template.getLabel?.(context);
+				option.innerHTML = template.getLabel?.(context) ?? '';
 
 				const disable = !template.getEligibility(context);
 				setOptionHidden(option, disable);
@@ -94,11 +94,8 @@ export function refreshSelectors(
 					selectionIsInvalid = true;
 			}
 
-			const label = selector.querySelector('.selector-value');
-			if (label)
-				label.textContent = selectedId
-					? template.getLabel?.({ level: i, id: selectedId })
-					: template.placeholderText ?? '';
+			const context = { level: i, id: selectedId, selectedId };
+			setSelectorValue(selector, selectedId, template);
 			setSelectorClass(selector, 'error', selectionIsInvalid);
 		}
 	}
@@ -153,7 +150,6 @@ export function refreshStats(level) {
 				didStatWorsen(cumulativeCatalog, level, id));
 		}
 	}
-	console.log(stats);
 }
 
 /**

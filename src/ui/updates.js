@@ -159,7 +159,11 @@ export function frameUpdate(selector, level) {
 	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
 
 	// update stats and budget pill in waterfall
-	for (let i = level; i <= roadmap.maxLevel; i++) {
+	for (
+		let i = level;
+		i <= roadmap.maxLevel && (i === level || !roadmap.ll[i].frameId);
+		i++
+	) {
 		refreshStats(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);

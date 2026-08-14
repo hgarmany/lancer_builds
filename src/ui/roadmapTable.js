@@ -5,6 +5,7 @@ import {
 	renderHASETooltip,
 	getFrameImageSrc,
 	renderStats,
+	renderIntegratedSystems,
 	renderBudgetPill
 } from './renderModules.js';
 
@@ -14,8 +15,13 @@ import {
 } from './selectors.js';
 
 import {
-	getEffectiveFrameId
+	getEffectiveFrameId,
+	getActiveFrameMountTypes
 } from '../rules/frames.js';
+
+import {
+	getMountSlots
+} from '../rules/weapons.js';
 
 function renderMenu(level, template) {
 	const menu = document.createElement('div');
@@ -70,7 +76,7 @@ function renderMenu(level, template) {
 			else if (clear) {
 				// clear through the same write/refresh path as a selection
 				select.value = null;
-				label.textContent = template.placeholderText ?? '';
+				label.textContent = template.getLabel({}) ?? '';
 				select.classList.remove('open');
 
 				template.changeEvent(select, level);
@@ -178,14 +184,30 @@ function renderFrame(level) {
 }
 
 function renderMounts(level) {
-	return [];
-}
+	const mounts = [];
 
-function renderIntegratedSystems(level) {
-	const integratedSystems = document.createElement('div');
-	integratedSystems.className = 'systems-integrated';
+	const mountTypes = getActiveFrameMountTypes(level);
 
-	return integratedSystems;
+	for (let i = 0; i < mountTypes.length; i++) {
+		const mount = document.createElement('div');
+		mount.className = 'mount';
+
+		const label = document.createElement('span');
+		label.className = 'mount-label';
+		label.textContent = mountTypes[i];
+
+		const roadmapData = null;// roadmap.ll[level].mounts[i];
+		const slotList = getMountSlots(mountTypes[i], roadmapData);
+
+		const slots = document.createElement('div');
+		slots.className = 'select-group';
+
+		mount.append(label, slots);
+
+		mounts.push(mount);
+	}
+
+	return mounts;
 }
 
 function renderSystems(level) {

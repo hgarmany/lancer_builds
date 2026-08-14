@@ -446,10 +446,7 @@ select {
 	border: 1px solid black;
 	border-radius: 1rem;
 	padding: 0.1rem 0.5rem;
+	margin-bottom: 0.5rem;
 
 	white-space: nowrap;
-}
-
-.roadmap-table .systems .select-group {
-	display: grid;
 }

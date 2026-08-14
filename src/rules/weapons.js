@@ -90,7 +90,7 @@ export function getMountSlots(mountType, selectedIds) {
 
 	// flex mount expands to include a second aux slot
 	// if the first weapon is aux
-	return srcData.weapons.get(selectedIds[0])?.mount === 'Auxiliary' ?
+	return srcData.weapons.get(selectedIds?.[0])?.mount === 'Auxiliary' ?
 		[MAIN_SLOT, AUXILIARY_SLOT] :
 		[MAIN_SLOT];
 }
@@ -176,21 +176,21 @@ export function isWeaponEligible(
  * @returns {Array<string>}
  * 
  */
-export function getStaticWeaponIds(level) {
+export function getIntegratedWeaponIds(level) {
 	const frame = srcData.frames.get(activeFrame[level]);
-	const staticWeaponIds = [];
+	const weaponIds = [];
 
 	// get integrated weapons from frame
 	frame?.core_system?.integrated?.forEach(id => {
-		staticWeaponIds.push(id);
+		weaponIds.push(id);
 	});
 
 	// get integrated weapons from talents
 	talents[level]?.forEach((talentId, val) => {
 		srcData.talents.get(talentId)?.ranks[val]?.integrated?.forEach(id => {
-			staticWeaponIds.push(id);
+			weaponIds.push(id);
 		})
 	});
 
-	return staticWeaponIds;
+	return weaponIds;
 }

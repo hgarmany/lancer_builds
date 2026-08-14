@@ -22,6 +22,7 @@ import {
 
 const talents = cumulativeCatalog.talents;
 const licenses = cumulativeCatalog.licenses;
+const activeFrame = cumulativeCatalog.activeFrame;
 const stats = cumulativeCatalog.stats;
 
 /**
@@ -132,4 +133,12 @@ export function hasEligibleSystem(level) {
 	}
 
 	return false;
+}
+
+export function getIntegratedSystemIds(level) {
+	const frame = srcData.frames.get(activeFrame[level]);
+	const integratedId = frame.core_system.integrated ?? null;
+
+	return (integratedId && integratedId.substring(0, 3) === 'ms_') ?
+		[ integratedId ] : [];
 }
