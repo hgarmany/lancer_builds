@@ -175,6 +175,10 @@ export function frameUpdate(selector, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
+export function weaponUpdate(selector, level) {
+	console.log('no weapon update');
+}
+
 export function systemUpdate(selector, level) {
 	/**
 	 * systems menus quietly inherit configurations from previous levels

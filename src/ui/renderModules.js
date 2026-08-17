@@ -9,6 +9,10 @@ import {
 } from '../data/loader.js';
 
 import {
+	roadmap
+} from '../data/roadmap.js';
+
+import {
 	cumulativeCatalog
 } from '../data/cumulativeCatalog.js';
 
@@ -20,7 +24,8 @@ import {
 } from '../constants.js';
 
 import {
-	SELECT_TEMPLATE
+	SELECT_TEMPLATE,
+	renderSelector
 } from './selectors.js';
 
 import {
@@ -36,6 +41,10 @@ import {
 import {
 	didStatWorsen
 } from '../rules/stats.js';
+
+import {
+	getMountSlots
+} from '../rules/weapons.js';
 
 import {
 	getIntegratedSystemIds
@@ -207,6 +216,40 @@ export function renderStats(level) {
 	return DISPLAYED_MECH_STAT_IDS.map(statId =>
 		renderStatBubble(level, statId)
 	);
+}
+
+export function renderMount(level, idx, type) {
+	const mount = document.createElement('div');
+	mount.className = 'mount menu';
+
+	const label = document.createElement('div');
+	label.className = 'menu-label';
+	label.textContent = type;
+
+	const mountedWeapons = roadmap.ll[level].weapons
+		.filter(weapon => weapon.mountIdx === idx);
+	const slotList = getMountSlots(type, mountedWeapons);
+
+	const slots = document.createElement('div');
+	slots.id = `mount-${idx}-ll-${level}`;
+	slots.className = 'select-group';
+
+	console.log(slotList);
+	for (const slotData of slotList) {
+	console.log(slotData);
+		const slot = renderSelector(level, null, SELECT_TEMPLATE.WEAPON);
+		// const slot = document.createElement('div');
+		// slot.className = 'custom-select';
+		
+		// placeholder
+		// slot.textContent = slotData.label;
+
+		slots.append(slot);
+	}
+
+	mount.append(label, slots);
+
+	return mount;
 }
 
 export function renderIntegratedSystems(level) {

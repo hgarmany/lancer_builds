@@ -35,6 +35,7 @@ import {
 	licenseUpdate,
 	coreBonusUpdate,
 	frameUpdate,
+	weaponUpdate,
 	systemUpdate
 } from './updates.js';
 
@@ -60,6 +61,10 @@ import {
 	getEffectiveFrameId,
 	isFrameEligible
 } from '../rules/frames.js';
+
+import {
+	isWeaponEligible
+} from '../rules/weapons.js';
 
 import {
 	isSystemEligible,
@@ -183,6 +188,34 @@ export const SELECT_TEMPLATE = Object.freeze({
 			isFrameEligible(level, id),
 		changeEvent: (selector, level) => frameUpdate(selector, level)
 	},
+	WEAPON: {
+		type: 'weapon',
+		getSrcItems: () => srcData.weapons,
+		readLevel: (level) => {
+			for (let i = level; i >= 0; i--) {
+				if (roadmap.ll[i].weapons[0])
+					return roadmap.ll[i].weapons;
+			}
+
+			return null;
+		},
+		write: ({ level, idx, id, data }) => {
+			if (!id)
+				roadmap.ll[level].weapons.splice(idx, 1);
+			else
+				roadmap.ll[level].weapons[idx] = { id, data };
+		},
+		getLabel: ({ id }) => {
+			return id ? (srcData.weapons.get(id)?.name ?? '') :
+				'Select a weapon';
+		},
+		getDescription: ({ id }) =>
+			srcData.weapons.get(id)?.description
+				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
+		getEligibility: ({ level, id, selectedId, mount }) =>
+			isWeaponEligible(level, id, selectedId, mount),
+		changeEvent: (selector, level) => weaponUpdate(selector, level)
+	},
 	SYSTEM: {
 		type: 'system',
 		getSrcItems: () => srcData.systems,
@@ -251,6 +284,9 @@ export function setOptionHidden(option, hide = true) {
  * @returns {HTMLElement}
  */
 export function renderSelector(level, selectedId, template) {
+	if (!template)
+		return;
+
 	const context = { level, id: selectedId, selectedId };
 
 	const selector = document.createElement('div');

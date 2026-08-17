@@ -22,7 +22,7 @@ import {
 const talents = cumulativeCatalog.talents;
 const licenses = cumulativeCatalog.licenses;
 const activeFrame = cumulativeCatalog.activeFrame;
-const budgets = cumulativeCatalog.budgets;
+const stats = cumulativeCatalog.stats;
 
 const AUXILIARY_SLOT = Object.freeze({
 	label: 'Aux',
@@ -161,12 +161,12 @@ export function isWeaponEligible(
 		return candidate.talent_rank == talents[level].get(candidate.talent_id);
 
 	// gms weapons are always eligible
-	if (!weapon.license_id)
+	if (!candidate.license_id)
 		return true;
 
 	// allow weapons at or below the level's license rank
-	return weapon.license_level <=
-		licenses[level].get(weapon.license_id);
+	return candidate.license_level <=
+		licenses[level].get(candidate.license_id);
 }
 
 /**

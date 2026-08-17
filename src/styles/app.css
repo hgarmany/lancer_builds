@@ -102,10 +102,6 @@ select {
 	border-color: transparent;
 }
 
-select {
-	padding: 0.1rem 0.25rem 0.1rem 0.5rem;
-}
-
 /* new custom selector */
 .selector-control {
 	display: grid;
@@ -140,6 +136,7 @@ select {
 
 .custom-select {
 	position: relative;
+	min-width: 9rem;
 }
 
 .selector-clear {
@@ -434,6 +431,16 @@ select {
 .stat-value {
 	font-size: medium;
 	font-weight: 900;
+}
+
+.mounts {
+	gap: 0.5rem;
+}
+
+.mount {
+	border: 1px solid black;
+	border-radius: 0.5rem;
+	padding: 0.5rem;
 }
 
 .roadmap-table .systems {
