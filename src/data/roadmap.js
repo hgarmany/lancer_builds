@@ -62,7 +62,11 @@ function createDefaultRoadmapLevel(level) {
 
 		// null means "continue using the previously active frame"
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null,
-		weapons: []
+		mounts: [
+			{ type: 'Flex', weapons: [ { id: 'mw_pistol', tags: [] } ], tags: [] },
+			{ type: 'Main', weapons: [ { id: 'mw_shotgun', tags: [] } ], tags: [] },
+			{ type: 'Heavy', weapons: [ { id: 'mw_howitzer', tags: [] } ], tags: [] }
+		]
 	};
 }
 
@@ -80,6 +84,9 @@ export function createDefaultRoadmap() {
 		)
 	};
 
+	roadmap.ll[0].skillTriggerIds[0] = 'sk_assault';
+	roadmap.ll[0].skillTriggerIds[1] = 'sk_spot';
+	roadmap.ll[1].skillTriggerIds[0] = 'sk_spot';
 	roadmap.ll[1].licenseId = 'mf_hydra';
 	roadmap.ll[2].licenseId = 'mf_hydra';
 	roadmap.ll[3].licenseId = 'mf_hydra';
@@ -91,7 +98,16 @@ export function createDefaultRoadmap() {
 	roadmap.ll[0].haseIds[0] = 'hull';
 	roadmap.ll[0].haseIds[1] = 'hull';
 	roadmap.ll[1].haseIds[0] = 'agility';
-
+	roadmap.ll[3].mounts = [
+		{ type: 'Flex', weapons: [], tags: [] },
+		{ type: 'Main', weapons: [], tags: [] },
+		{ type: 'Heavy', weapons: [{ id: 'mw_ghast_nexus', tags: [] }], tags: [] }
+	];
+	roadmap.ll[4].mounts = [
+		{ type: 'Flex', weapons: [], tags: [] },
+		{ type: 'Main', weapons: [], tags: [] },
+		{ type: 'Heavy', weapons: [{ id: 'mw_autopod', tags: [] }], tags: [] }
+	];
 	console.log(roadmap);
 }
 

@@ -5,7 +5,7 @@ import {
 	renderHASETooltip,
 	getFrameImageSrc,
 	renderStats,
-	renderMount,
+	renderMounts,
 	renderIntegratedSystems,
 	renderBudgetPill
 } from './renderModules.js';
@@ -16,8 +16,7 @@ import {
 } from './selectors.js';
 
 import {
-	getEffectiveFrameId,
-	getActiveFrameMountTypes
+	getEffectiveFrameId
 } from '../rules/frames.js';
 
 function renderMenu(level, template) {
@@ -178,50 +177,6 @@ function renderFrame(level) {
 	const menu = renderMenu(level, SELECT_TEMPLATE.FRAME);
 	
 	return [icon, menu];
-}
-
-function renderMounts(level) {
-	const mounts = [];
-
-	const mountTypes = getActiveFrameMountTypes(level);
-
-	for (let i = 0; i < mountTypes.length; i++) {
-		const mount = renderMount(level, i, mountTypes[i]);
-
-		// single manager for all menu selections
-		mount.addEventListener('click', event => {
-			const select = event.target.closest('.custom-select');
-
-			if (select) {
-				const label = select.querySelector('.selector-value');
-				const option = event.target.closest('.selector-option');
-				const clear = event.target.closest('.selector-clear');
-
-				if (option) {
-					select.value = option.value;
-					label.textContent = option.textContent;
-
-					// wire selector to perform page updates when selection changes
-					template.changeEvent(select, level);
-				}
-				else if (clear) {
-					// clear through the same write/refresh path as a selection
-					select.value = null;
-					label.textContent = template.getLabel({}) ?? '';
-					select.classList.remove('open');
-
-					template.changeEvent(select, level);
-					return;
-				}
-
-				select.classList.toggle('open');
-			}
-		});
-
-		mounts.push(mount);
-	}
-
-	return mounts;
 }
 
 function renderSystems(level) {

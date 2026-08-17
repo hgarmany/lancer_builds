@@ -6,6 +6,7 @@ export const MAX_LICENSE_RANK = 3;
 export const MAX_HASE_RANK = 6;
 
 export const MAX_FRAME_SIZE = 3;
+export const MAX_MOUNT_COUNT = 3;
 
 export const STAT_DEFINITIONS = {
 	hp: {

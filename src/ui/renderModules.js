@@ -25,7 +25,8 @@ import {
 
 import {
 	SELECT_TEMPLATE,
-	renderSelector
+	renderSelector,
+	renderWeaponSelector
 } from './selectors.js';
 
 import {
@@ -218,38 +219,73 @@ export function renderStats(level) {
 	);
 }
 
-export function renderMount(level, idx, type) {
+function renderMount(level, idx, data) {
 	const mount = document.createElement('div');
 	mount.className = 'mount menu';
 
 	const label = document.createElement('div');
 	label.className = 'menu-label';
-	label.textContent = type;
+	label.textContent = data.type;
 
-	const mountedWeapons = roadmap.ll[level].weapons
-		.filter(weapon => weapon.mountIdx === idx);
-	const slotList = getMountSlots(type, mountedWeapons);
+	const weapons = data.weapons;
+	const slotDefinitions = getMountSlots(data);
 
 	const slots = document.createElement('div');
 	slots.id = `mount-${idx}-ll-${level}`;
 	slots.className = 'select-group';
 
-	console.log(slotList);
-	for (const slotData of slotList) {
-	console.log(slotData);
-		const slot = renderSelector(level, null, SELECT_TEMPLATE.WEAPON);
-		// const slot = document.createElement('div');
-		// slot.className = 'custom-select';
-		
-		// placeholder
-		// slot.textContent = slotData.label;
+	for (let i = 0; i < slotDefinitions.length; i++) {
 
-		slots.append(slot);
+
+
+		slots.append(renderWeaponSelector(
+			level, idx, slotDefinitions[i], weapons[i]?.id));
 	}
 
 	mount.append(label, slots);
 
+	// single manager for all menu selections
+	mount.addEventListener('click', event => {
+		const select = event.target.closest('.custom-select');
+
+		if (select) {
+			const label = select.querySelector('.selector-value');
+			const option = event.target.closest('.selector-option');
+			const clear = event.target.closest('.selector-clear');
+
+			if (option) {
+				select.value = option.value;
+				label.textContent = option.textContent;
+
+				// wire selector to perform page updates when selection changes
+				SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
+			}
+			else if (clear) {
+				// clear through the same write/refresh path as a selection
+				select.value = null;
+				label.textContent = SELECT_TEMPLATE.WEAPON.getLabel({}) ?? '';
+				select.classList.remove('open');
+
+				SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
+				return;
+			}
+
+			select.classList.toggle('open');
+		}
+	});
+
 	return mount;
+}
+
+export function renderMounts(level) {
+	const mounts = [];
+
+	const mountData = roadmap.ll[level].mounts;
+
+	for (let i = 0; i < mountData.length; i++)
+		mounts.push(renderMount(level, i, mountData[i]));
+
+	return mounts;
 }
 
 export function renderIntegratedSystems(level) {

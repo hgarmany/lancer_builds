@@ -70,6 +70,8 @@ export function getSystemNumUses(id) {
  * @returns {boolean}
  */
 export function isSystemEligible(level, id, selectedId = null) {
+	if (!id)
+		return true;
 	const candidate = srcData.systems.get(id);
 	
 	// reject invalid systems, unpermitted exotics, integrated systems

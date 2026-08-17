@@ -19,8 +19,13 @@ import {
 	isFrameIntegratedItem
 } from './installsCommon.js';
 
+import {
+	getEffectiveFrameId
+} from './frames.js';
+
 const talents = cumulativeCatalog.talents;
 const licenses = cumulativeCatalog.licenses;
+const coreBonuses = cumulativeCatalog.coreBonuses;
 const activeFrame = cumulativeCatalog.activeFrame;
 const stats = cumulativeCatalog.stats;
 
@@ -84,13 +89,13 @@ export function getWeaponNumUses(id) {
  * @returns {Array<Object>}
  * 
  */
-export function getMountSlots(mountType, selectedIds) {
-	if (mountType !== 'Flex')
-		return MOUNT_SLOTS[mountType] ?? [];
+export function getMountSlots(mount) {
+	if (mount.type !== 'Flex')
+		return MOUNT_SLOTS[mount.type] ?? [];
 
 	// flex mount expands to include a second aux slot
 	// if the first weapon is aux
-	return srcData.weapons.get(selectedIds?.[0])?.mount === 'Auxiliary' ?
+	return srcData.weapons.get(mount.weapons[0]?.id)?.mount === 'Auxiliary' ?
 		[MAIN_SLOT, AUXILIARY_SLOT] :
 		[MAIN_SLOT];
 }
@@ -105,6 +110,10 @@ export function getMountSlots(mountType, selectedIds) {
  */
 function weaponFitsSlot(slotDefinition, weapon) {
 	return slotDefinition.allowedWeaponMounts.includes(weapon.mount);
+}
+
+function getNumMounts(level) {
+	return srcData.frames.get(getEffectiveFrameId(level)).mounts.length;
 }
 
 /**
@@ -122,6 +131,9 @@ export function isWeaponEligible(
 	selectedId = null,
 	slotDefinition = null
 ) {
+	if (!id)
+		return true;
+
 	const candidate = srcData.weapons.get(id);
 
 	// reject invalid weapons, unpermitted exotics, integrated weapons
@@ -134,10 +146,8 @@ export function isWeaponEligible(
 		return false;
 
 	// superheavy weapons require two mounts
-	if (candidate.mount === 'Superheavy' &&
-		Number(slotDefinition?.mountCount ?? 0) < 2) {
+	if (candidate.mount === 'Superheavy' && getNumMounts(level) < 2)
 		return false;
-	}
 
 	// determine whether adding/swapping weapons is within the level's budget
 	if (candidate.sp) {
@@ -153,7 +163,8 @@ export function isWeaponEligible(
 	// check for uniques, reject unique weapons already installed
 	if (doesWeaponHaveTag(id, TAGS.UNIQUE) &&
 		id != selectedId &&
-		roadmap.ll[level].weapons.find(weapon => weapon.id === id) !== null)
+		roadmap.ll[level].mounts.flatMap(mount => mount.weapons)
+			.find(weapon => weapon.id === id) !== null)
 		return false;
 
 	// talent-issued weapons must match rank exactly

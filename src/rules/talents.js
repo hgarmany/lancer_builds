@@ -37,9 +37,13 @@ export function getTalentRank(level, id, selectedId = null) {
  * @returns {boolean}
  */
 export function isTalentEligible(level, id, selectedId = null) {
+	if (!id)
+		return true;
+
 	// all ll0 talents must be different
 	if (level === 0)
-		return id === selectedId || !roadmap.ll[0].talentIds.includes(id);
+		return (id === selectedId && talents[0].get(id) === 1) ||
+			!roadmap.ll[0].talentIds.includes(id);
 	// talents limited by total rank
 	else
 		return getTalentRank(level, id, selectedId) < MAX_TALENT_RANK;

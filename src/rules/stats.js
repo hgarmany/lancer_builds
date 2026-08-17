@@ -181,10 +181,22 @@ function getCoreBonusModifiers({ catalog, level }) {
  * @param {{Object, number}} {catalog, level} 
  * @returns stat modifier Array
  */
-function getWeaponModifiers({ catalog, level }) {
+function getWeaponModifiers({ level }) {
 	let modifiers = [];
 
+	const weapons = roadmap.ll[level].mounts.flatMap(mount => mount.weapons);
+	for (const weapon of weapons) {
+		const wpnSrc = srcData.weapons.get(weapon?.id);
 
+		if (wpnSrc) {
+			if (wpnSrc.sp) {
+				modifiers.push({
+					stat: 'sp_budget',
+					value: -wpnSrc.sp
+				});
+			}
+		}
+	}
 
 	return modifiers;
 }

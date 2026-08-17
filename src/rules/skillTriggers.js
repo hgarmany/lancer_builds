@@ -24,9 +24,12 @@ const skillTriggers = cumulativeCatalog.skillTriggers;
  * @returns {boolean}
  */
 export function isSkillTriggerEligible(level, id, selectedId = null) {
+	if (!id)
+		return true;
+
 	// all ll0 skills must be different
 	if (level === 0)
-		return (id === selectedId) ||
+		return (id === selectedId && skillTriggers[0].get(id) === 1) ||
 			!roadmap.ll[0].skillTriggerIds.includes(id);
 	// skills limited by total rank
 	else

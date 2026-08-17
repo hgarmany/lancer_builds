@@ -191,29 +191,21 @@ export const SELECT_TEMPLATE = Object.freeze({
 	WEAPON: {
 		type: 'weapon',
 		getSrcItems: () => srcData.weapons,
-		readLevel: (level) => {
-			for (let i = level; i >= 0; i--) {
-				if (roadmap.ll[i].weapons[0])
-					return roadmap.ll[i].weapons;
-			}
-
-			return null;
-		},
 		write: ({ level, idx, id, data }) => {
 			if (!id)
 				roadmap.ll[level].weapons.splice(idx, 1);
 			else
 				roadmap.ll[level].weapons[idx] = { id, data };
 		},
-		getLabel: ({ id }) => {
+		getLabel: ({ id, slot }) => {
 			return id ? (srcData.weapons.get(id)?.name ?? '') :
-				'Select a weapon';
+				slot.label;
 		},
 		getDescription: ({ id }) =>
 			srcData.weapons.get(id)?.description
 				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
-		getEligibility: ({ level, id, selectedId, mount }) =>
-			isWeaponEligible(level, id, selectedId, mount),
+		getEligibility: ({ level, id, selectedId, slot }) =>
+			isWeaponEligible(level, id, selectedId, slot),
 		changeEvent: (selector, level) => weaponUpdate(selector, level)
 	},
 	SYSTEM: {
@@ -311,7 +303,6 @@ export function renderSelector(level, selectedId, template) {
 
 	const menu = document.createElement('div');
 	menu.className = 'selector-menu';
-	menu.id = `${template.type}-options-ll-${level}`;
 
 	// suppress default-close behavior when menu option is clicked
 	menu.addEventListener('mousedown', event => event.preventDefault());
@@ -332,6 +323,9 @@ export function renderSelector(level, selectedId, template) {
 		menu.append(option);
 	}
 
+	if (!template.getEligibility?.(context) ?? false)
+		control.classList.add('error');
+
 	control.addEventListener('keydown', event => {
 		switch (event.key) {
 			case 'Escape':
@@ -350,6 +344,7 @@ export function renderSelector(level, selectedId, template) {
 
 	selector.append(control);
 
+	// remove/clear selector button
 	if (template.getLabel({})) {
 		control.classList.add('clearable');
 		const clear = document.createElement('button');
@@ -359,6 +354,91 @@ export function renderSelector(level, selectedId, template) {
 	}
 
 	selector.append(menu);
+
+	return selector;
+}
+
+/**
+ * Creates a weapon selector with default options configured
+ * 
+ * @param {number} level
+ * @param {string} selectedId
+ * @param {Object} template
+ * @returns {HTMLElement}
+ */
+export function renderWeaponSelector(level, idx, slot, selectedId) {
+	const template = SELECT_TEMPLATE.WEAPON;
+
+	const context = {
+		level,
+		id: selectedId,
+		selectedId,
+		slot
+	};
+
+	const selector = document.createElement('div');
+	selector.className = `custom-select weapon-select`;
+	selector.dataset.ll = level;
+	selector.dataset.mountIdx = idx;
+	selector.value = selectedId;
+
+	const control = document.createElement('button');
+	control.className = 'selector-control';
+	control.classList.toggle('occupied', selectedId);
+	control.type = 'button';
+	control.title = template.getDescription?.(context) ?? '';
+
+	const value = document.createElement('span');
+	value.className = 'selector-value';
+	value.textContent = template.getLabel?.(context) ?? '';
+
+	const arrow = document.createElement('span');
+	arrow.className = 'selector-arrow';
+
+	control.append(value, arrow);
+
+	const menu = document.createElement('div');
+	menu.className = 'selector-menu';
+
+	// suppress default-close behavior when menu option is clicked
+	menu.addEventListener('mousedown', event => event.preventDefault());
+
+	for (const [id, item] of template.getSrcItems()) {
+		const context = { level, id, selectedId, slot };
+
+		// prepare an option for each item
+		const option = document.createElement('div');
+		option.className = 'selector-option';
+		option.value = id;
+
+		option.textContent = template.getLabel?.(context) ?? '';
+		option.title = template.getDescription?.(context) ?? '';
+		if (!template.getEligibility?.(context) ?? false)
+			setOptionHidden(option, true);
+
+		menu.append(option);
+	}
+
+	if (!template.getEligibility?.(context) ?? false)
+		control.classList.add('error');
+
+	control.addEventListener('keydown', event => {
+		switch (event.key) {
+			case 'Escape':
+				selector.classList.remove('open');
+				break;
+			default:
+				break;
+		}
+	});
+
+	// loss of focus simply closes the menu
+	control.addEventListener('blur', event => {
+		if (!selector.contains(event.relatedTarget))
+			selector.classList.remove('open');
+	});
+
+	selector.append(control, menu);
 
 	return selector;
 }

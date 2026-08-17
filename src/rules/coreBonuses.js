@@ -35,6 +35,9 @@ export function hasCoreBonus(level, id) {
  * @returns {boolean}
  */
 export function isCoreBonusEligible(level, id, selectedId = null) {
+	if (!id)
+		return true;
+
 	// forbid repeat selections
 	if (hasCoreBonus(level - 1, id))
 		return false;
