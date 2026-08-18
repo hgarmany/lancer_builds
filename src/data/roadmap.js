@@ -63,9 +63,9 @@ function createDefaultRoadmapLevel(level) {
 		// null means "continue using the previously active frame"
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null,
 		mounts: [
-			{ type: 'Flex', weapons: [ { id: 'mw_pistol', tags: [] } ], tags: [] },
-			{ type: 'Main', weapons: [ { id: 'mw_shotgun', tags: [] } ], tags: [] },
-			{ type: 'Heavy', weapons: [ { id: 'mw_howitzer', tags: [] } ], tags: [] }
+			{ type: 'Flex', weapons: [ { id: null, tags: [] } ], tags: [] },
+			{ type: 'Main', weapons: [ { id: null, tags: [] } ], tags: [] },
+			{ type: 'Heavy', weapons: [ { id: null, tags: [] } ], tags: [] }
 		]
 	};
 }

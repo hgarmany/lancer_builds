@@ -17,6 +17,8 @@ import {
 import {
 	getSelectorValue,
 	setSelectorClass,
+	setSelectorValue,
+	setOptionHidden,
 	SELECT_TEMPLATE
 } from './selectors.js';
 
@@ -29,6 +31,7 @@ import {
 	refreshHexes,
 	refreshHASETooltip,
 	refreshStats,
+	redrawMount,
 	refreshBudgetPill,
 	refreshElectiveSystemList
 } from './refreshRenderModules.js';
@@ -176,7 +179,66 @@ export function frameUpdate(selector, level) {
 }
 
 export function weaponUpdate(selector, level) {
-	console.log('no weapon update');
+	const template = SELECT_TEMPLATE.WEAPON;
+
+	// selection update
+	const currentLevel = Number(selector.dataset.ll);
+	const mountIdx = Number(selector.dataset.mountIdx);
+	const slotIdx = Number(selector.dataset.slotIdx);
+
+	const newId = selector.value;
+
+	// update roadmap and cumulative catalog
+	template.write(
+		{ level: currentLevel, mountIdx, slotIdx, id: newId }
+	);
+
+
+
+	// redraw flex mount
+	if (roadmap.ll[currentLevel].mounts[mountIdx].type === 'Flex')
+		redrawMount(currentLevel, mountIdx);
+
+	// refresh selectors
+
+	// all selectors of a given type and level belong to the same group
+	const selectGroup = document.getElementById(
+		`mount-${mountIdx}-ll-${currentLevel}`);
+
+	if (!selectGroup)
+		return;
+
+	// roadmap is source of truth for all selector refreshes
+	let roadmapData = roadmap.ll[currentLevel].mounts[mountIdx].weapons;
+
+	for (let idx = 0; idx < selectGroup.children.length; idx++) {
+		let selectionIsInvalid = false;
+
+		// selector adopts roadmap values
+		const selector = selectGroup.children[idx];
+		const selectedId = roadmapData[idx].id ?? null;
+		setSelectorClass(selector, 'occupied', selectedId);
+
+		const options = selector.querySelector('.selector-menu').children;
+		for (const option of options) {
+			// update visibility and, where appropriate, rank #
+			const id = option.value;
+			if (!id)
+				continue;
+
+			const context = { level: currentLevel, id, selectedId };
+			option.innerHTML = template.getLabel?.(context) ?? '';
+
+			const disable = !template.getEligibility(context);
+			setOptionHidden(option, disable);
+			if (disable && id === selectedId)
+				selectionIsInvalid = true;
+		}
+
+		const context = { level: currentLevel, id: selectedId, selectedId };
+		setSelectorValue(selector, selectedId, template);
+		setSelectorClass(selector, 'error', selectionIsInvalid);
+	}
 }
 
 export function systemUpdate(selector, level) {

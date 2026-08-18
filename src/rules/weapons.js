@@ -95,7 +95,7 @@ export function getMountSlots(mount) {
 
 	// flex mount expands to include a second aux slot
 	// if the first weapon is aux
-	return srcData.weapons.get(mount.weapons[0]?.id)?.mount === 'Auxiliary' ?
+	return mount.weapons.length === 2 ?
 		[MAIN_SLOT, AUXILIARY_SLOT] :
 		[MAIN_SLOT];
 }

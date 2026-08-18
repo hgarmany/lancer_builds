@@ -219,7 +219,7 @@ export function renderStats(level) {
 	);
 }
 
-function renderMount(level, idx, data) {
+export function renderMount(level, idx, data) {
 	const mount = document.createElement('div');
 	mount.className = 'mount menu';
 
@@ -235,57 +235,56 @@ function renderMount(level, idx, data) {
 	slots.className = 'select-group';
 
 	for (let i = 0; i < slotDefinitions.length; i++) {
-
-
-
 		slots.append(renderWeaponSelector(
-			level, idx, slotDefinitions[i], weapons[i]?.id));
+			level, idx, i, slotDefinitions[i], weapons[i]?.id));
 	}
-
-	mount.append(label, slots);
 
 	// single manager for all menu selections
 	mount.addEventListener('click', event => {
 		const select = event.target.closest('.custom-select');
 
-		if (select) {
-			const label = select.querySelector('.selector-value');
-			const option = event.target.closest('.selector-option');
-			const clear = event.target.closest('.selector-clear');
+		if (!select)
+			return;
 
-			if (option) {
-				select.value = option.value;
-				label.textContent = option.textContent;
+		const label = select.querySelector('.selector-value');
+		const option = event.target.closest('.selector-option');
+		const clear = event.target.closest('.selector-clear');
 
-				// wire selector to perform page updates when selection changes
-				SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
-			}
-			else if (clear) {
-				// clear through the same write/refresh path as a selection
-				select.value = null;
-				label.textContent = SELECT_TEMPLATE.WEAPON.getLabel({}) ?? '';
-				select.classList.remove('open');
+		if (option) {
+			select.value = option.value;
+			label.textContent = option.textContent;
 
-				SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
-				return;
-			}
-
-			select.classList.toggle('open');
+			// wire selector to perform page updates when selection changes
+			SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
 		}
+		else if (clear) {
+			// clear through the same write/refresh path as a selection
+			select.value = null;
+
+			const newMountData = roadmap.ll[level]
+				.mounts[select.dataset.mountIdx];
+			const slot = getMountSlots(newMountData)[0];
+
+			label.textContent =
+				SELECT_TEMPLATE.WEAPON.getLabel({ slot }) ?? '';
+			select.classList.remove('open');
+
+			SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
+			return;
+		}
+
+		select.classList.toggle('open');
 	});
+
+	mount.append(label, slots);
 
 	return mount;
 }
 
 export function renderMounts(level) {
-	const mounts = [];
-
-	const mountData = roadmap.ll[level].mounts;
-
-	for (let i = 0; i < mountData.length; i++)
-		mounts.push(renderMount(level, i, mountData[i]));
-
-	return mounts;
+	return roadmap.ll[level].mounts.map((mount, index) =>
+		renderMount(level, index, mount)
+	);
 }
 
 export function renderIntegratedSystems(level) {

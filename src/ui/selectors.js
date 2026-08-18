@@ -191,11 +191,24 @@ export const SELECT_TEMPLATE = Object.freeze({
 	WEAPON: {
 		type: 'weapon',
 		getSrcItems: () => srcData.weapons,
-		write: ({ level, idx, id, data }) => {
-			if (!id)
-				roadmap.ll[level].weapons.splice(idx, 1);
-			else
-				roadmap.ll[level].weapons[idx] = { id, data };
+		write: ({ level, mountIdx, slotIdx, id }) => {
+			const mount = roadmap.ll[level].mounts[mountIdx];
+
+			if (mount.type === 'Flex') {
+				if (mount.weapons.length === 1 &&
+					slotIdx === 0 &&
+					srcData.weapons.get(id)?.mount === 'Auxiliary')
+				{
+					mount.weapons.push({ id: null, tags: [] });
+				}
+				else if (mount.weapons.length === 2 &&
+					srcData.weapons.get(id)?.mount === 'Main')
+				{
+					mount.weapons.pop();
+				}
+			}
+
+			mount.weapons[slotIdx].id = id;
 		},
 		getLabel: ({ id, slot }) => {
 			return id ? (srcData.weapons.get(id)?.name ?? '') :
@@ -366,7 +379,13 @@ export function renderSelector(level, selectedId, template) {
  * @param {Object} template
  * @returns {HTMLElement}
  */
-export function renderWeaponSelector(level, idx, slot, selectedId) {
+export function renderWeaponSelector(
+	level,
+	mountIdx,
+	slotIdx,
+	slot,
+	selectedId
+) {
 	const template = SELECT_TEMPLATE.WEAPON;
 
 	const context = {
@@ -379,11 +398,12 @@ export function renderWeaponSelector(level, idx, slot, selectedId) {
 	const selector = document.createElement('div');
 	selector.className = `custom-select weapon-select`;
 	selector.dataset.ll = level;
-	selector.dataset.mountIdx = idx;
+	selector.dataset.mountIdx = mountIdx;
+	selector.dataset.slotIdx = slotIdx;
 	selector.value = selectedId;
 
 	const control = document.createElement('button');
-	control.className = 'selector-control';
+	control.className = 'selector-control clearable';
 	control.classList.toggle('occupied', selectedId);
 	control.type = 'button';
 	control.title = template.getDescription?.(context) ?? '';
@@ -419,6 +439,11 @@ export function renderWeaponSelector(level, idx, slot, selectedId) {
 		menu.append(option);
 	}
 
+	// clear weapon button
+	const clear = document.createElement('button');
+	clear.className = 'selector-clear';
+	clear.title = 'Clear selection';
+
 	if (!template.getEligibility?.(context) ?? false)
 		control.classList.add('error');
 
@@ -438,7 +463,7 @@ export function renderWeaponSelector(level, idx, slot, selectedId) {
 			selector.classList.remove('open');
 	});
 
-	selector.append(control, menu);
+	selector.append(control, clear, menu);
 
 	return selector;
 }

@@ -57,30 +57,31 @@ function renderMenu(level, template) {
 	menu.addEventListener('click', event => {
 		const select = event.target.closest('.custom-select');
 
-		if (select) {
-			const label = select.querySelector('.selector-value');
-			const option = event.target.closest('.selector-option');
-			const clear = event.target.closest('.selector-clear');
+		if (!select)
+			return;
 
-			if (option) {
-				select.value = option.value;
-				label.textContent = option.textContent;
+		const label = select.querySelector('.selector-value');
+		const option = event.target.closest('.selector-option');
+		const clear = event.target.closest('.selector-clear');
 
-				// wire selector to perform page updates when selection changes
-				template.changeEvent(select, level);
-			}
-			else if (clear) {
-				// clear through the same write/refresh path as a selection
-				select.value = null;
-				label.textContent = template.getLabel({}) ?? '';
-				select.classList.remove('open');
+		if (option) {
+			select.value = option.value;
+			label.textContent = option.textContent;
 
-				template.changeEvent(select, level);
-				return;
-			}
-
-			select.classList.toggle('open');
+			// wire selector to perform page updates when selection changes
+			template.changeEvent(select, level);
 		}
+		else if (clear) {
+			// clear through the same write/refresh path as a selection
+			select.value = null;
+			label.textContent = template.getLabel({}) ?? '';
+			select.classList.remove('open');
+
+			template.changeEvent(select, level);
+			return;
+		}
+
+		select.classList.toggle('open');
 	});
 
 	menu.append(selectGroup);

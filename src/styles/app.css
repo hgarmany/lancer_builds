@@ -136,7 +136,6 @@ select {
 
 .custom-select {
 	position: relative;
-	min-width: 9rem;
 }
 
 .selector-clear {
@@ -234,7 +233,7 @@ select {
 .hase-group {
 	--hex-width: 35px;
 	--hex-height: 40px;
-	--hex-gap: 0.3rem;
+	--hex-gap: 0.2rem;
 	--label-gap: 0.3rem;
 	--label-width: 2rem;
 	--label-space: calc(var(--label-width) + var(--label-gap));

@@ -19,6 +19,10 @@ import {
 } from '../constants.js';
 
 import {
+	renderMount
+} from './renderModules.js';
+
+import {
 	SELECT_TEMPLATE,
 	renderSelector,
 	getSelectorValue,
@@ -150,6 +154,13 @@ export function refreshStats(level) {
 				didStatWorsen(cumulativeCatalog, level, id));
 		}
 	}
+}
+
+export function redrawMount(level, mountIdx) {
+	const mount = document.getElementById(`row-ll-${level}`)
+		.querySelector('.mounts').children[mountIdx];
+	mount.replaceWith(
+		renderMount(level, mountIdx, roadmap.ll[level].mounts[mountIdx]));
 }
 
 /**
