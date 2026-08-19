@@ -232,12 +232,14 @@ export function redrawMount(level, mountIdx) {
 }
 
 /**
- * Reconcile only mount elements whose type or slot count changed.
- * Existing compatible mount controls remain in place.
+ * Full refresh of mounts cell at a given level
+ * Adds mounts that cannot be matched to previous layout
+ * Removes mounts not present on new layout
+ * Preserves in place all other mounts
  *
  * @param {number} level
  */
-export function reconcileMountElements(level) {
+export function redrawMounts(level) {
 	const container = document.getElementById(`row-ll-${level}`)
 		.querySelector('.mounts');
 	const mounting = getEffectiveMounting(level);
@@ -250,32 +252,23 @@ export function reconcileMountElements(level) {
 		const requiredSlots = getMountSlots(data).length;
 
 		if (!current) {
+			// if the current mount list is exhausted, add a new mount
 			container.append(renderMount(level, idx, data));
 		}
 		else if (current.dataset.mountType !== data.type ||
+			// if the current mount doesn't match the new type, replace
 			currentSlots !== requiredSlots) {
 			current.replaceWith(renderMount(level, idx, data));
 		}
 	}
 
+	// remove any excess mounts that are not in use
 	while (container.children.length > mounting.length)
 		container.lastElementChild.remove();
 
+	// single-level selector refresh
 	refreshWeaponSelectors(level, level);
 }
-
-/**
- * Full refresh of mounts cell at a given level
- *
- * @param {number} level
- */
-export function refreshAllMounts(level) {
-	const mounts = document.getElementById(`row-ll-${level}`)
-		.querySelector('.mounts');
-
-	mounts.replaceChildren(...renderMounts(level));
-}
-
 
 /**
  * Targeted replacement of free and total SP counts

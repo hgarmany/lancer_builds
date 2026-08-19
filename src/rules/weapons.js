@@ -13,18 +13,19 @@ import {
 } from '../data/loader.js';
 
 import {
+	MAX_MOUNT_COUNT
+} from '../constants.js';
+
+import {
 	TAGS,
 	doesItemHaveTag,
 	getItemNumUses,
 	isFrameIntegratedItem
 } from './installsCommon.js';
 
-import {
-	getMountTypes
-} from './frames.js';
-
 const talents = cumulativeCatalog.talents;
 const licenses = cumulativeCatalog.licenses;
+const coreBonuses = cumulativeCatalog.coreBonuses;
 const activeFrame = cumulativeCatalog.activeFrame;
 const stats = cumulativeCatalog.stats;
 
@@ -99,6 +100,39 @@ export function getMountSlots(mount) {
 		[MAIN_SLOT];
 }
 
+/**
+ * Get the list of mount sizes that come with the active frame
+ * and any other user selections
+ * 
+ * @param {number} level 
+ * @returns {Array<string>}
+ */
+function getMountTypes(level) {
+	const frameMounts = srcData.frames.get(activeFrame[level])?.mounts ?? [];
+	let numMounts = frameMounts.length;
+
+	let mountsOut = [];
+
+	for (const coreBonus of coreBonuses[level] ?? []) {
+		const srcCB = srcData.coreBonuses.get(coreBonus);
+
+		if (!srcCB?.bonuses)
+			continue;
+
+		for (const bonus of srcCB?.bonuses) {
+			if (bonus.id === 'add_mount' &&
+				(!bonus.max || bonus.max > numMounts)
+			) {
+				const mountName = bonus.val.charAt(0).toUpperCase() +
+					bonus.val.slice(1);
+				mountsOut.push(mountName);
+			}
+		}
+	}
+
+	return mountsOut.concat(frameMounts);
+}
+
 function cloneWeaponSlot(weapon = null) {
 	return {
 		...(weapon ?? {}),
@@ -139,6 +173,8 @@ export function normalizeMount(type, savedMount = null) {
  * @returns {Array<Object>}
  */
 export function normalizeMounting(level, savedMounts = []) {
+	console.log(getMountTypes(level));
+
 	const unmatchedMounts = [...savedMounts];
 
 	return getMountTypes(level).map(type => {
@@ -175,7 +211,7 @@ export function getEffectiveMounting(level) {
 			return roadmap.ll[i].mounts;
 	}
 
-	return normalizeMounting(level);
+	return normalizeMounting(0);
 }
 
 /**
@@ -187,23 +223,25 @@ export function getEffectiveMounting(level) {
  */
 export function reconfigureMounting(level) {
 	const currentMounts = getEffectiveMounting(level);
+	console.log([...currentMounts]);
 	const normalizedMounts = normalizeMounting(level, currentMounts);
+	console.log([...normalizedMounts]);
 	roadmap.ll[level].mounts = normalizedMounts;
+	console.log(normalizedMounts);
 	return normalizedMounts;
 }
 
 /**
- * Apply a weapon selection and then restore the mount's slot invariant.
+ * Apply a weapon selection to an existing mount
+ * Where a level's loadout is inherited, create a new roadmap entry
  *
  * @param {number} level
  * @param {number} mountIdx
  * @param {number} slotIdx
- * @param {string|null} id
+ * @param {string} id
  */
 export function setWeaponSelection(level, mountIdx, slotIdx, id) {
-	const mounts = roadmap.ll[level].mounts ?
-		normalizeMounting(level, roadmap.ll[level].mounts) :
-		reconfigureMounting(level);
+	const mounts = getEffectiveMounting(level);
 	roadmap.ll[level].mounts = mounts;
 	const mount = mounts[mountIdx];
 	if (!mount)

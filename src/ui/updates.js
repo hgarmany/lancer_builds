@@ -31,8 +31,8 @@ import {
 	refreshBudgetPill,
 	refreshElectiveSystemList,
 	refreshWeaponSelectors,
-	reconcileMountElements,
-	refreshAllMounts
+	redrawMount,
+	redrawMounts
 } from './refreshRenderModules.js';
 
 import {
@@ -71,22 +71,6 @@ export function skillTriggerUpdate(selector, level) {
 	refreshSelectors(SELECT_TEMPLATE.SKILL_TRIGGER, level);
 }
 
-/**
- * Reconcile mount topology without replacing compatible mount elements.
- * Merely displaying an inherited level must not create mount state there.
- *
- * @param {number} level
- */
-function reconcileMountsFrom(level) {
-	for (let i = level; i <= roadmap.maxLevel; i++) {
-		if (roadmap.ll[i].mounts)
-			roadmap.ll[i].mounts =
-				normalizeMounting(i, roadmap.ll[i].mounts);
-
-		reconcileMountElements(i);
-	}
-}
-
 export function talentUpdate(selector, level) {
 	selectionUpdate(selector, SELECT_TEMPLATE.TALENT);
 
@@ -119,7 +103,14 @@ export function coreBonusUpdate(selector, level) {
 
 	// update stats and all mounts
 	refreshStats(level);
-	reconcileMountsFrom(level);
+
+	// update mount cells to accomodate cb-based mount changes
+	for (let i = level; i <= roadmap.maxLevel; i++) {
+		if (i === level || roadmap.ll[i].mounts)
+			reconfigureMounting(i);
+		redrawMounts(i);
+	}
+
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
@@ -179,7 +170,7 @@ export function activeFrameWaterfall(selectValue, level) {
 
 		setSelectorClass(selector, 'inherited', i !== level);
 
-		// add or rewrite mounts at the roadmap to meet frame specifications
+		// add or rewrite mounts on the roadmap to meet frame specifications
 		if (i === level || roadmap.ll[i].mounts)
 			reconfigureMounting(i);
 	}
@@ -198,7 +189,7 @@ export function frameUpdate(selector, level) {
 		i++
 	) {
 		refreshStats(i);
-		refreshAllMounts(i);
+		redrawMounts(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
 	}
@@ -230,7 +221,7 @@ export function weaponUpdate(selector, level) {
 		if (i > currentLevel && roadmap.ll[i].mounts)
 			break;
 
-		reconcileMountElements(i);
+		redrawMount(i, mountIdx);
 		refreshStats(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);

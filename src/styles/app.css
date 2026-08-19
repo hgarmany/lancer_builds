@@ -136,6 +136,7 @@ select {
 
 .custom-select {
 	position: relative;
+	max-width: max-content;
 }
 
 .selector-clear {
@@ -224,7 +225,7 @@ select {
 
 .roadmap-table .level-up {
 	display: grid;
-	grid-template-columns: repeat(2, max-content);
+	grid-template-columns: repeat(2, auto);
 	column-gap: 1rem;
 }
 
