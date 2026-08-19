@@ -32,7 +32,7 @@ import {
 	refreshElectiveSystemList,
 	refreshWeaponSelectors,
 	reconcileMountElements,
-	replaceAllMounts
+	refreshAllMounts
 } from './refreshRenderModules.js';
 
 import {
@@ -44,6 +44,7 @@ import {
 } from '../rules/frames.js';
 
 import {
+	reconfigureMounting,
 	normalizeMounting
 } from '../rules/weapons.js';
 
@@ -139,17 +140,20 @@ export function updateHASEWaterfall(level, id, doIncrement) {
 }
 
 /**
- * Frame cells default to mimic the last cell where the user
- * specified a particular frame
+ * Frame and frame-dependent data is updated from the given level
+ * up to the first later level where a different frame is selected
  * 
  * @param {Event} event 
  * @param {number} level 
  */
 export function activeFrameWaterfall(selectValue, level) {
 	for (let i = level; i <= roadmap.maxLevel; i++) {
+		// clear the current level's frame id if it matches the new id
+		// this level becomes an inheritor of the starting level's frame
 		if (roadmap.ll[i].frameId === getEffectiveFrameId(i - 1))
 			roadmap.ll[i].frameId = null;
 
+		// end whenever the current level already has a specified frame id
 		if (i !== level && roadmap.ll[i].frameId)
 			break;
 
@@ -175,21 +179,17 @@ export function activeFrameWaterfall(selectValue, level) {
 
 		setSelectorClass(selector, 'inherited', i !== level);
 
-		// Explicit loadout boundaries retain their selections, reconciled to
-		// the new frame's mount and slot topology. Inherited displays remain
-		// derived and do not create roadmap state merely by being redrawn.
-		if (roadmap.ll[i].mounts)
-			roadmap.ll[i].mounts =
-				normalizeMounting(i, roadmap.ll[i].mounts);
+		// add or rewrite mounts at the roadmap to meet frame specifications
+		if (i === level || roadmap.ll[i].mounts)
+			reconfigureMounting(i);
 	}
 }
 
 export function frameUpdate(selector, level) {
 	selectionUpdate(selector, SELECT_TEMPLATE.FRAME);
-	activeFrameWaterfall(selector.value, level);
 
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
+	// 
+	activeFrameWaterfall(selector.value, level);
 
 	// update stats and budget pill in waterfall
 	for (
@@ -198,12 +198,13 @@ export function frameUpdate(selector, level) {
 		i++
 	) {
 		refreshStats(i);
-		replaceAllMounts(i);
+		refreshAllMounts(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
 	}
 
-	// full cell replacement for mounts
+	// update all attached selectors at this and later levels
+	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
 	// update integrated systems
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }

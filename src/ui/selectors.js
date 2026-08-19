@@ -102,6 +102,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 		type: 'talent',
 		title: 'Talent',
 		allowClear: true,
+		redrawLabels: true,
 		getSrcItems: () => srcData.talents,
 		readLevel: (level) => roadmap.ll[level].talentIds,
 		write: ({ level, idx, id }) => {
@@ -131,6 +132,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 		type: 'license',
 		title: 'License',
 		allowClear: true,
+		redrawLabels: true,
 		getSrcItems: () => srcData.licenses,
 		readLevel: (level) => roadmap.ll[level].licenseId,
 		write: ({ level, id }) => {
@@ -213,6 +215,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 	SYSTEM: {
 		type: 'system',
 		allowClear: true,
+		redrawLabels: true,
 		getSrcItems: () => srcData.systems,
 		readLevel: (level) => {
 			for (let i = level; i >= 0; i--) {
@@ -259,7 +262,7 @@ export function setSelectorValue(selector, id, template, extraContext = {}) {
 
 	selector.value = id;
 
-	if (label)
+	if (label && template.redrawLabels)
 		label.textContent = template.getLabel?.(context) ?? '';
 	if (control)
 		control.title = template.getDescription?.(context) ?? '';

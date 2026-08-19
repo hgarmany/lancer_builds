@@ -69,7 +69,6 @@ function refreshSelector(
 	extraContext = {}
 ) {
 	let selectionIsInvalid = false;
-	setSelectorClass(selector, 'occupied', selectedId);
 
 	const options = selector.querySelector('.selector-menu')?.children ?? [];
 	for (const option of options) {
@@ -83,15 +82,21 @@ function refreshSelector(
 			id,
 			selectedId
 		};
-		option.textContent = template.getLabel?.(context) ?? '';
 
+		// some selections change their listed name depending on other factors
+		if (template.redrawLabels)
+			option.textContent = template.getLabel?.(context) ?? '';
+
+		// drop-down lists are adjusted by hiding invalid options
 		const disable = !template.getEligibility?.(context);
 		setOptionHidden(option, disable);
 		if (disable && id === selectedId)
 			selectionIsInvalid = true;
 	}
 
+	// update the selector's appearance and listed value
 	setSelectorValue(selector, selectedId, template, extraContext);
+	setSelectorClass(selector, 'occupied', selectedId);
 	setSelectorClass(selector, 'error', selectionIsInvalid);
 }
 
@@ -132,8 +137,8 @@ export function refreshSelectors(
 }
 
 /**
- * Reassess the values and option eligibility of existing weapon selectors.
- * This does not change mount or selector topology.
+ * Update option visibility within a weapon selector
+ * at all levels starting from the given one
  *
  * @param {number} level
  * @param {number} maxLevel
@@ -260,11 +265,11 @@ export function reconcileMountElements(level) {
 }
 
 /**
- * Full replacement of mounts cell at a given level
+ * Full refresh of mounts cell at a given level
  *
  * @param {number} level
  */
-export function replaceAllMounts(level) {
+export function refreshAllMounts(level) {
 	const mounts = document.getElementById(`row-ll-${level}`)
 		.querySelector('.mounts');
 

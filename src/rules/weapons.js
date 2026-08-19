@@ -163,16 +163,19 @@ function weaponFitsSlot(slotDefinition, weapon) {
 	return slotDefinition.allowedWeaponMounts.includes(weapon.mount);
 }
 
+/**
+ * Get the last populated weapon loadout up to this level
+ * 
+ * @param {number} level
+ * @returns {Array<Object>}
+ */
 export function getEffectiveMounting(level) {
-	let savedMounts = [];
 	for (let i = level; i >= 0; i--) {
-		if (roadmap.ll[i].mounts) {
-			savedMounts = roadmap.ll[i].mounts;
-			break;
-		}
+		if (roadmap.ll[i].mounts)
+			return roadmap.ll[i].mounts;
 	}
 
-	return normalizeMounting(level, savedMounts);
+	return normalizeMounting(level);
 }
 
 /**
@@ -182,10 +185,11 @@ export function getEffectiveMounting(level) {
  * @param {number} level
  * @returns {Array<Object>}
  */
-export function materializeMounting(level) {
-	const mounts = getEffectiveMounting(level);
-	roadmap.ll[level].mounts = mounts;
-	return mounts;
+export function reconfigureMounting(level) {
+	const currentMounts = getEffectiveMounting(level);
+	const normalizedMounts = normalizeMounting(level, currentMounts);
+	roadmap.ll[level].mounts = normalizedMounts;
+	return normalizedMounts;
 }
 
 /**
@@ -199,7 +203,7 @@ export function materializeMounting(level) {
 export function setWeaponSelection(level, mountIdx, slotIdx, id) {
 	const mounts = roadmap.ll[level].mounts ?
 		normalizeMounting(level, roadmap.ll[level].mounts) :
-		materializeMounting(level);
+		reconfigureMounting(level);
 	roadmap.ll[level].mounts = mounts;
 	const mount = mounts[mountIdx];
 	if (!mount)
