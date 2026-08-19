@@ -225,6 +225,9 @@ export function renderMount(level, idx, data) {
 	mount.className = 'mount menu';
 	mount.dataset.mountType = data.type;
 
+	if (data.tags?.integrated)
+		mount.classList.add('error');
+
 	const label = document.createElement('div');
 	label.className = 'menu-label';
 	label.textContent = data.type;

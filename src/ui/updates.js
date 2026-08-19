@@ -44,8 +44,7 @@ import {
 } from '../rules/frames.js';
 
 import {
-	reconfigureMounting,
-	normalizeMounting
+	reconfigureMounting
 } from '../rules/weapons.js';
 
 /**

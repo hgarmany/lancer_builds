@@ -81,8 +81,8 @@ export function createDefaultRoadmap() {
 	};
 
 	roadmap.ll[0].mounts = [
-		{ type: 'Flex', weapons: [{ id: null, tags: [] }], tags: [] },
 		{ type: 'Main', weapons: [{ id: null, tags: [] }], tags: [] },
+		{ type: 'Flex', weapons: [{ id: null, tags: [] }], tags: [] },
 		{ type: 'Heavy', weapons: [{ id: null, tags: [] }], tags: [] }
 	];
 

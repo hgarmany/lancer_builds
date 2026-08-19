@@ -53,6 +53,7 @@ export const MOUNT_SLOTS = Object.freeze({
 	'Superheavy': Object.freeze([HEAVY_SLOT]),
 	'Heavy': Object.freeze([HEAVY_SLOT]),
 	'Main': Object.freeze([MAIN_SLOT]),
+	'Flex': Object.freeze([MAIN_SLOT]),
 	'Main/Aux': Object.freeze([MAIN_SLOT, AUXILIARY_SLOT]),
 	'Aux/Aux': Object.freeze([AUXILIARY_SLOT, AUXILIARY_SLOT]),
 	'Aux': Object.freeze([AUXILIARY_SLOT])
@@ -133,6 +134,44 @@ function getMountTypes(level) {
 	return mountsOut.concat(frameMounts);
 }
 
+function createEmptyMount(type, tags) {
+	const weapons = MOUNT_SLOTS[type].map(() => ({ id: null, tags: [] }));
+	return { type, weapons, tags };
+}
+
+/**
+ * Builds a list of weaponless mounts from scratch
+ * 
+ * @param {number} level
+ * @returns
+ */
+function buildMountConfiguration(level) {
+	const frameMounts = srcData.frames.get(activeFrame[level])?.mounts
+		?.map(mount => createEmptyMount(mount, [])) ?? [];
+	let numMounts = frameMounts.length;
+	let mountsOut = [];
+
+	for (const coreBonus of coreBonuses[level] ?? []) {
+		const srcCB = srcData.coreBonuses.get(coreBonus);
+
+		if (!srcCB?.bonuses)
+			continue;
+
+		for (const bonus of srcCB?.bonuses) {
+			if (bonus.id === 'add_mount' &&
+				(!bonus.max || bonus.max > numMounts)
+			) {
+				const mountName = bonus.val.charAt(0).toUpperCase() +
+					bonus.val.slice(1);
+				mountsOut.push(createEmptyMount(mountName, [ coreBonus ]));
+				numMounts++;
+			}
+		}
+	}
+
+	return mountsOut.concat(frameMounts);
+}
+
 function cloneWeaponSlot(weapon = null) {
 	return {
 		...(weapon ?? {}),
@@ -142,14 +181,14 @@ function cloneWeaponSlot(weapon = null) {
 }
 
 /**
- * Reconcile one saved mount with the slot topology required by its type.
- * Existing selections are preserved by slot where possible.
+ * Reconcile one saved mount with the slot topology required by its type
+ * Existing selections are preserved by slot where possible
  *
  * @param {string} type
  * @param {Object} savedMount
  * @returns {Object}
  */
-export function normalizeMount(type, savedMount = null) {
+function normalizeMount(type, savedMount = null) {
 	const savedWeapons = savedMount?.weapons ?? [];
 	const mount = {
 		...(savedMount ?? {}),
@@ -166,37 +205,24 @@ export function normalizeMount(type, savedMount = null) {
 }
 
 /**
- * Reconcile saved selections with all mounts currently granted at a level.
+ * Reconcile saved selections with all mounts currently granted at a level
  *
  * @param {number} level
  * @param {Array<Object>} savedMounts
  * @returns {Array<Object>}
  */
 export function normalizeMounting(level, savedMounts = []) {
-	console.log(getMountTypes(level));
-
 	const unmatchedMounts = [...savedMounts];
+	const newMounts = buildMountConfiguration(level);
 
-	return getMountTypes(level).map(type => {
-		const savedIdx = unmatchedMounts.findIndex(
-			mount => mount?.type === type);
-		const savedMount = savedIdx < 0 ? null :
-			unmatchedMounts.splice(savedIdx, 1)[0];
+	for (let i = 0; i < newMounts.length; i++) {
+		const matchingMountIdx = unmatchedMounts
+			.findIndex(mount => mount.type === newMounts[i].type);
+		if (matchingMountIdx >= 0)
+			newMounts[i] = unmatchedMounts.splice(matchingMountIdx, 1)[0];
+	}
 
-		return normalizeMount(type, savedMount);
-	});
-}
-
-/**
- * Checks if a given weapon can fit on a given mount slot
- * 
- * @param {Object} slotDefinition
- * @param {Object} weapon
- * @returns {boolean}
- * 
- */
-function weaponFitsSlot(slotDefinition, weapon) {
-	return slotDefinition.allowedWeaponMounts.includes(weapon.mount);
+	return newMounts;
 }
 
 /**
@@ -223,11 +249,8 @@ export function getEffectiveMounting(level) {
  */
 export function reconfigureMounting(level) {
 	const currentMounts = getEffectiveMounting(level);
-	console.log([...currentMounts]);
 	const normalizedMounts = normalizeMounting(level, currentMounts);
-	console.log([...normalizedMounts]);
 	roadmap.ll[level].mounts = normalizedMounts;
-	console.log(normalizedMounts);
 	return normalizedMounts;
 }
 
@@ -275,6 +298,7 @@ export function isWeaponEligible(
 		return true;
 
 	const candidate = srcData.weapons.get(id);
+	const mounts = getEffectiveMounting(level);
 
 	// reject invalid weapons, unpermitted exotics, integrated weapons
 	if (!candidate ||
@@ -282,11 +306,12 @@ export function isWeaponEligible(
 		isFrameIntegratedItem(id))
 		return false;
 
-	if (slotDefinition && !weaponFitsSlot(slotDefinition, candidate))
+	// reject weapons that cannot fit on the target slot
+	if (!slotDefinition?.allowedWeaponMounts.includes(candidate.mount))
 		return false;
 
 	// superheavy weapons require two mounts
-	if (candidate.mount === 'Superheavy' && getMountTypes(level).length < 2)
+	if (candidate.mount === 'Superheavy' && mounts.length < 2)
 		return false;
 
 	// determine whether adding/swapping weapons is within the level's budget
@@ -303,7 +328,7 @@ export function isWeaponEligible(
 	// check for uniques, reject unique weapons already installed
 	if (doesWeaponHaveTag(id, TAGS.UNIQUE) &&
 		id != selectedId &&
-		getEffectiveMounting(level).flatMap(mount => mount.weapons)
+		mounts.flatMap(mount => mount.weapons)
 			.some(weapon => weapon.id === id))
 		return false;
 
