@@ -1,6 +1,6 @@
 /** 
  * ui/refreshRenderModules.js
- * 
+ *
  * a library of render modules that perform specific visual updates
  * in response to user input
  */
@@ -19,7 +19,8 @@ import {
 } from '../constants.js';
 
 import {
-	renderMount
+	renderMount,
+	renderMounts
 } from './renderModules.js';
 
 import {
@@ -45,6 +46,54 @@ import {
 import {
 	hasEligibleSystem
 } from '../rules/systems.js';
+
+import {
+	getEffectiveMounting,
+	getMountSlots
+} from '../rules/weapons.js';
+
+/**
+ * Reassess one existing selector without replacing its DOM.
+ *
+ * @param {HTMLElement} selector
+ * @param {number} level
+ * @param {string|null} selectedId
+ * @param {Object} template
+ * @param {Object} extraContext
+ */
+function refreshSelector(
+	selector,
+	level,
+	selectedId,
+	template,
+	extraContext = {}
+) {
+	let selectionIsInvalid = false;
+	setSelectorClass(selector, 'occupied', selectedId);
+
+	const options = selector.querySelector('.selector-menu')?.children ?? [];
+	for (const option of options) {
+		const id = option.value;
+		if (!id)
+			continue;
+
+		const context = {
+			...extraContext,
+			level,
+			id,
+			selectedId
+		};
+		option.textContent = template.getLabel?.(context) ?? '';
+
+		const disable = !template.getEligibility?.(context);
+		setOptionHidden(option, disable);
+		if (disable && id === selectedId)
+			selectionIsInvalid = true;
+	}
+
+	setSelectorValue(selector, selectedId, template, extraContext);
+	setSelectorClass(selector, 'error', selectionIsInvalid);
+}
 
 /**
  * Update option visibility within a selector class
@@ -75,32 +124,45 @@ export function refreshSelectors(
 			roadmapData = roadmapData.map(item => item?.id ?? null);
 
 		for (let idx = 0; idx < selectGroup.children.length; idx++) {
-			let selectionIsInvalid = false;
-
-			// selector adopts roadmap values
 			const selector = selectGroup.children[idx];
 			const selectedId = roadmapData[idx] ?? null;
-			setSelectorClass(selector, 'occupied', selectedId);
+			refreshSelector(selector, i, selectedId, template);
+		}
+	}
+}
 
-			const options = selector.querySelector('.selector-menu').children;
-			for (const option of options) {
-				// update visibility and, where appropriate, rank #
-				const id = option.value;
-				if (!id)
-					continue;
+/**
+ * Reassess the values and option eligibility of existing weapon selectors.
+ * This does not change mount or selector topology.
+ *
+ * @param {number} level
+ * @param {number} maxLevel
+ */
+export function refreshWeaponSelectors(
+	level,
+	maxLevel = roadmap.maxLevel
+) {
+	for (let i = level; i <= maxLevel; i++) {
+		const mounting = getEffectiveMounting(i);
+		const selectors = document.querySelectorAll(
+			`#row-ll-${i} .mounts .weapon-select`);
 
-				const context = { level: i, id, selectedId };
-				option.innerHTML = template.getLabel?.(context) ?? '';
+		for (const selector of selectors) {
+			const mountIdx = Number(selector.dataset.mountIdx);
+			const slotIdx = Number(selector.dataset.slotIdx);
+			const mount = mounting[mountIdx];
+			const slot = mount ? getMountSlots(mount)[slotIdx] : null;
+			if (!mount || !slot)
+				continue;
 
-				const disable = !template.getEligibility(context);
-				setOptionHidden(option, disable);
-				if (disable && id === selectedId)
-					selectionIsInvalid = true;
-			}
-
-			const context = { level: i, id: selectedId, selectedId };
-			setSelectorValue(selector, selectedId, template);
-			setSelectorClass(selector, 'error', selectionIsInvalid);
+			const selectedId = mount.weapons[slotIdx]?.id ?? null;
+			refreshSelector(
+				selector,
+				i,
+				selectedId,
+				SELECT_TEMPLATE.WEAPON,
+				{ slot }
+			);
 		}
 	}
 }
@@ -157,11 +219,58 @@ export function refreshStats(level) {
 }
 
 export function redrawMount(level, mountIdx) {
+	const mounting = getEffectiveMounting(level);
 	const mount = document.getElementById(`row-ll-${level}`)
 		.querySelector('.mounts').children[mountIdx];
 	mount.replaceWith(
-		renderMount(level, mountIdx, roadmap.ll[level].mounts[mountIdx]));
+		renderMount(level, mountIdx, mounting[mountIdx]));
 }
+
+/**
+ * Reconcile only mount elements whose type or slot count changed.
+ * Existing compatible mount controls remain in place.
+ *
+ * @param {number} level
+ */
+export function reconcileMountElements(level) {
+	const container = document.getElementById(`row-ll-${level}`)
+		.querySelector('.mounts');
+	const mounting = getEffectiveMounting(level);
+
+	for (let idx = 0; idx < mounting.length; idx++) {
+		const data = mounting[idx];
+		const current = container.children[idx];
+		const currentSlots = current
+			?.querySelector('.select-group')?.children.length;
+		const requiredSlots = getMountSlots(data).length;
+
+		if (!current) {
+			container.append(renderMount(level, idx, data));
+		}
+		else if (current.dataset.mountType !== data.type ||
+			currentSlots !== requiredSlots) {
+			current.replaceWith(renderMount(level, idx, data));
+		}
+	}
+
+	while (container.children.length > mounting.length)
+		container.lastElementChild.remove();
+
+	refreshWeaponSelectors(level, level);
+}
+
+/**
+ * Full replacement of mounts cell at a given level
+ *
+ * @param {number} level
+ */
+export function replaceAllMounts(level) {
+	const mounts = document.getElementById(`row-ll-${level}`)
+		.querySelector('.mounts');
+
+	mounts.replaceChildren(...renderMounts(level));
+}
+
 
 /**
  * Targeted replacement of free and total SP counts

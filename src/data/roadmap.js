@@ -58,15 +58,11 @@ function createDefaultRoadmapLevel(level) {
 		haseIds: createEmptySlots(limits.mechSkills),
 		licenseId: null,
 		coreBonusId: null,
+		mounts: null,
 		systems: [ null ],
 
 		// null means "continue using the previously active frame"
-		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null,
-		mounts: [
-			{ type: 'Flex', weapons: [ { id: null, tags: [] } ], tags: [] },
-			{ type: 'Main', weapons: [ { id: null, tags: [] } ], tags: [] },
-			{ type: 'Heavy', weapons: [ { id: null, tags: [] } ], tags: [] }
-		]
+		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null
 	};
 }
 
@@ -84,13 +80,18 @@ export function createDefaultRoadmap() {
 		)
 	};
 
+	roadmap.ll[0].mounts = [
+		{ type: 'Flex', weapons: [{ id: null, tags: [] }], tags: [] },
+		{ type: 'Main', weapons: [{ id: null, tags: [] }], tags: [] },
+		{ type: 'Heavy', weapons: [{ id: null, tags: [] }], tags: [] }
+	];
+
 	roadmap.ll[0].skillTriggerIds[0] = 'sk_assault';
 	roadmap.ll[0].skillTriggerIds[1] = 'sk_spot';
 	roadmap.ll[1].skillTriggerIds[0] = 'sk_spot';
 	roadmap.ll[1].licenseId = 'mf_hydra';
 	roadmap.ll[2].licenseId = 'mf_hydra';
 	roadmap.ll[3].licenseId = 'mf_hydra';
-	roadmap.ll[2].frameId = 'mf_hydra';
 	roadmap.ll[4].licenseId = 'mf_balor';
 	roadmap.ll[3].coreBonusId = 'cb_the_lesson_of_the_held_image';
 	roadmap.ll[0].talentIds[1] = 't_ace';
@@ -98,16 +99,6 @@ export function createDefaultRoadmap() {
 	roadmap.ll[0].haseIds[0] = 'hull';
 	roadmap.ll[0].haseIds[1] = 'hull';
 	roadmap.ll[1].haseIds[0] = 'agility';
-	roadmap.ll[3].mounts = [
-		{ type: 'Flex', weapons: [], tags: [] },
-		{ type: 'Main', weapons: [], tags: [] },
-		{ type: 'Heavy', weapons: [{ id: 'mw_ghast_nexus', tags: [] }], tags: [] }
-	];
-	roadmap.ll[4].mounts = [
-		{ type: 'Flex', weapons: [], tags: [] },
-		{ type: 'Main', weapons: [], tags: [] },
-		{ type: 'Heavy', weapons: [{ id: 'mw_autopod', tags: [] }], tags: [] }
-	];
 	console.log(roadmap);
 }
 

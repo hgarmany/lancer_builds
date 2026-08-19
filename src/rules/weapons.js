@@ -20,12 +20,11 @@ import {
 } from './installsCommon.js';
 
 import {
-	getEffectiveFrameId
+	getMountTypes
 } from './frames.js';
 
 const talents = cumulativeCatalog.talents;
 const licenses = cumulativeCatalog.licenses;
-const coreBonuses = cumulativeCatalog.coreBonuses;
 const activeFrame = cumulativeCatalog.activeFrame;
 const stats = cumulativeCatalog.stats;
 
@@ -49,7 +48,7 @@ const HEAVY_SLOT = Object.freeze({
 	])
 });
 
-const MOUNT_SLOTS = Object.freeze({
+export const MOUNT_SLOTS = Object.freeze({
 	'Superheavy': Object.freeze([HEAVY_SLOT]),
 	'Heavy': Object.freeze([HEAVY_SLOT]),
 	'Main': Object.freeze([MAIN_SLOT]),
@@ -84,8 +83,7 @@ export function getWeaponNumUses(id) {
  * Get essential slot information for a given mount
  * Configuration responds to installed weapons
  * 
- * @param {string} mountType
- * @param {Array<string>} selectedIds
+ * @param {Object} mount
  * @returns {Array<Object>}
  * 
  */
@@ -94,10 +92,63 @@ export function getMountSlots(mount) {
 		return MOUNT_SLOTS[mount.type] ?? [];
 
 	// flex mount expands to include a second aux slot
-	// if the first weapon is aux
-	return mount.weapons.length === 2 ?
+	// if the first weapon is actually an auxiliary weapon
+	const firstWeapon = srcData.weapons.get(mount.weapons?.[0]?.id);
+	return firstWeapon?.mount === 'Auxiliary' ?
 		[MAIN_SLOT, AUXILIARY_SLOT] :
 		[MAIN_SLOT];
+}
+
+function cloneWeaponSlot(weapon = null) {
+	return {
+		...(weapon ?? {}),
+		id: weapon?.id ?? null,
+		tags: [...(weapon?.tags ?? [])]
+	};
+}
+
+/**
+ * Reconcile one saved mount with the slot topology required by its type.
+ * Existing selections are preserved by slot where possible.
+ *
+ * @param {string} type
+ * @param {Object} savedMount
+ * @returns {Object}
+ */
+export function normalizeMount(type, savedMount = null) {
+	const savedWeapons = savedMount?.weapons ?? [];
+	const mount = {
+		...(savedMount ?? {}),
+		type,
+		weapons: savedWeapons.map(cloneWeaponSlot),
+		tags: [...(savedMount?.tags ?? [])]
+	};
+
+	const slots = getMountSlots(mount);
+	mount.weapons = slots.map((_, idx) =>
+		cloneWeaponSlot(savedWeapons[idx]));
+
+	return mount;
+}
+
+/**
+ * Reconcile saved selections with all mounts currently granted at a level.
+ *
+ * @param {number} level
+ * @param {Array<Object>} savedMounts
+ * @returns {Array<Object>}
+ */
+export function normalizeMounting(level, savedMounts = []) {
+	const unmatchedMounts = [...savedMounts];
+
+	return getMountTypes(level).map(type => {
+		const savedIdx = unmatchedMounts.findIndex(
+			mount => mount?.type === type);
+		const savedMount = savedIdx < 0 ? null :
+			unmatchedMounts.splice(savedIdx, 1)[0];
+
+		return normalizeMount(type, savedMount);
+	});
 }
 
 /**
@@ -112,8 +163,55 @@ function weaponFitsSlot(slotDefinition, weapon) {
 	return slotDefinition.allowedWeaponMounts.includes(weapon.mount);
 }
 
-function getNumMounts(level) {
-	return srcData.frames.get(getEffectiveFrameId(level)).mounts.length;
+export function getEffectiveMounting(level) {
+	let savedMounts = [];
+	for (let i = level; i >= 0; i--) {
+		if (roadmap.ll[i].mounts) {
+			savedMounts = roadmap.ll[i].mounts;
+			break;
+		}
+	}
+
+	return normalizeMounting(level, savedMounts);
+}
+
+/**
+ * Create this level's own loadout before applying a user weapon selection.
+ * The derived configuration is cloned so prior levels remain unchanged.
+ *
+ * @param {number} level
+ * @returns {Array<Object>}
+ */
+export function materializeMounting(level) {
+	const mounts = getEffectiveMounting(level);
+	roadmap.ll[level].mounts = mounts;
+	return mounts;
+}
+
+/**
+ * Apply a weapon selection and then restore the mount's slot invariant.
+ *
+ * @param {number} level
+ * @param {number} mountIdx
+ * @param {number} slotIdx
+ * @param {string|null} id
+ */
+export function setWeaponSelection(level, mountIdx, slotIdx, id) {
+	const mounts = roadmap.ll[level].mounts ?
+		normalizeMounting(level, roadmap.ll[level].mounts) :
+		materializeMounting(level);
+	roadmap.ll[level].mounts = mounts;
+	const mount = mounts[mountIdx];
+	if (!mount)
+		return;
+
+	if (!mount.weapons[slotIdx])
+		mount.weapons[slotIdx] = cloneWeaponSlot();
+	mount.weapons[slotIdx].id = id ?? null;
+
+	// This expands a Flex mount after an Aux selection and collapses it after
+	// its first slot becomes Main or empty. It also fixes every static mount.
+	mounts[mountIdx] = normalizeMount(mount.type, mount);
 }
 
 /**
@@ -146,7 +244,7 @@ export function isWeaponEligible(
 		return false;
 
 	// superheavy weapons require two mounts
-	if (candidate.mount === 'Superheavy' && getNumMounts(level) < 2)
+	if (candidate.mount === 'Superheavy' && getMountTypes(level).length < 2)
 		return false;
 
 	// determine whether adding/swapping weapons is within the level's budget
@@ -163,8 +261,8 @@ export function isWeaponEligible(
 	// check for uniques, reject unique weapons already installed
 	if (doesWeaponHaveTag(id, TAGS.UNIQUE) &&
 		id != selectedId &&
-		roadmap.ll[level].mounts.flatMap(mount => mount.weapons)
-			.find(weapon => weapon.id === id) !== null)
+		getEffectiveMounting(level).flatMap(mount => mount.weapons)
+			.some(weapon => weapon.id === id))
 		return false;
 
 	// talent-issued weapons must match rank exactly

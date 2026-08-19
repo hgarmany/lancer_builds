@@ -44,7 +44,8 @@ import {
 } from '../rules/stats.js';
 
 import {
-	getMountSlots
+	getMountSlots,
+	getEffectiveMounting
 } from '../rules/weapons.js';
 
 import {
@@ -222,6 +223,7 @@ export function renderStats(level) {
 export function renderMount(level, idx, data) {
 	const mount = document.createElement('div');
 	mount.className = 'mount menu';
+	mount.dataset.mountType = data.type;
 
 	const label = document.createElement('div');
 	label.className = 'menu-label';
@@ -260,13 +262,6 @@ export function renderMount(level, idx, data) {
 		else if (clear) {
 			// clear through the same write/refresh path as a selection
 			select.value = null;
-
-			const newMountData = roadmap.ll[level]
-				.mounts[select.dataset.mountIdx];
-			const slot = getMountSlots(newMountData)[0];
-
-			label.textContent =
-				SELECT_TEMPLATE.WEAPON.getLabel({ slot }) ?? '';
 			select.classList.remove('open');
 
 			SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
@@ -282,7 +277,7 @@ export function renderMount(level, idx, data) {
 }
 
 export function renderMounts(level) {
-	return roadmap.ll[level].mounts.map((mount, index) =>
+	return getEffectiveMounting(level).map((mount, index) =>
 		renderMount(level, index, mount)
 	);
 }

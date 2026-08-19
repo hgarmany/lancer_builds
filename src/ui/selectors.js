@@ -63,7 +63,8 @@ import {
 } from '../rules/frames.js';
 
 import {
-	isWeaponEligible
+	isWeaponEligible,
+	setWeaponSelection
 } from '../rules/weapons.js';
 
 import {
@@ -79,6 +80,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 	SKILL_TRIGGER: {
 		type: 'skill-trigger',
 		title: 'Skill Trigger',
+		allowClear: true,
 		getSrcItems: () => srcData.skillTriggers,
 		readLevel: (level) => roadmap.ll[level].skillTriggerIds,
 		write: ({ level, idx, id }) => {
@@ -99,6 +101,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 	TALENT: {
 		type: 'talent',
 		title: 'Talent',
+		allowClear: true,
 		getSrcItems: () => srcData.talents,
 		readLevel: (level) => roadmap.ll[level].talentIds,
 		write: ({ level, idx, id }) => {
@@ -127,6 +130,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 	LICENSE: {
 		type: 'license',
 		title: 'License',
+		allowClear: true,
 		getSrcItems: () => srcData.licenses,
 		readLevel: (level) => roadmap.ll[level].licenseId,
 		write: ({ level, id }) => {
@@ -152,6 +156,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 	CORE_BONUS: {
 		type: 'core-bonus',
 		title: 'Core Bonus',
+		allowClear: true,
 		getSrcItems: () => srcData.coreBonuses,
 		readLevel: (level) => roadmap.ll[level].coreBonusId,
 		write: ({ level, id }) => {
@@ -190,26 +195,10 @@ export const SELECT_TEMPLATE = Object.freeze({
 	},
 	WEAPON: {
 		type: 'weapon',
+		allowClear: true,
 		getSrcItems: () => srcData.weapons,
-		write: ({ level, mountIdx, slotIdx, id }) => {
-			const mount = roadmap.ll[level].mounts[mountIdx];
-
-			if (mount.type === 'Flex') {
-				if (mount.weapons.length === 1 &&
-					slotIdx === 0 &&
-					srcData.weapons.get(id)?.mount === 'Auxiliary')
-				{
-					mount.weapons.push({ id: null, tags: [] });
-				}
-				else if (mount.weapons.length === 2 &&
-					srcData.weapons.get(id)?.mount === 'Main')
-				{
-					mount.weapons.pop();
-				}
-			}
-
-			mount.weapons[slotIdx].id = id;
-		},
+		write: ({ level, mountIdx, slotIdx, id }) =>
+			setWeaponSelection(level, mountIdx, slotIdx, id),
 		getLabel: ({ id, slot }) => {
 			return id ? (srcData.weapons.get(id)?.name ?? '') :
 				slot.label;
@@ -223,6 +212,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 	},
 	SYSTEM: {
 		type: 'system',
+		allowClear: true,
 		getSrcItems: () => srcData.systems,
 		readLevel: (level) => {
 			for (let i = level; i >= 0; i--) {
@@ -257,8 +247,13 @@ export function getSelectorValue(selector) {
 	return selector.value === '' ? null : selector.value;
 }
 
-export function setSelectorValue(selector, id, template) {
-	const context = { level: selector.dataset.ll, id, selectedId: id };
+export function setSelectorValue(selector, id, template, extraContext = {}) {
+	const context = {
+		...extraContext,
+		level: Number(selector.dataset.ll),
+		id,
+		selectedId: id
+	};
 	const label = selector.querySelector('.selector-value');
 	const control = selector.querySelector('.selector-control');
 
@@ -288,11 +283,16 @@ export function setOptionHidden(option, hide = true) {
  * @param {Object} template
  * @returns {HTMLElement}
  */
-export function renderSelector(level, selectedId, template) {
+export function renderSelector(
+	level,
+	selectedId,
+	template,
+	extraContext = {}
+) {
 	if (!template)
 		return;
 
-	const context = { level, id: selectedId, selectedId };
+	const context = { ...extraContext, level, id: selectedId, selectedId };
 
 	const selector = document.createElement('div');
 	selector.className = `custom-select ${template.type}-select`;
@@ -321,7 +321,7 @@ export function renderSelector(level, selectedId, template) {
 	menu.addEventListener('mousedown', event => event.preventDefault());
 
 	for (const [id, item] of template.getSrcItems()) {
-		const context = { level, id, selectedId };
+		const context = { ...extraContext, level, id, selectedId };
 
 		// prepare an option for each item
 		const option = document.createElement('div');
@@ -358,11 +358,13 @@ export function renderSelector(level, selectedId, template) {
 	selector.append(control);
 
 	// remove/clear selector button
-	if (template.getLabel({})) {
+	if (template.allowClear) {
 		control.classList.add('clearable');
 		const clear = document.createElement('button');
 		clear.className = 'selector-clear';
+		clear.type = 'button';
 		clear.title = 'Clear selection';
+		clear.setAttribute('aria-label', 'Clear selection');
 		selector.append(clear);
 	}
 
@@ -386,84 +388,14 @@ export function renderWeaponSelector(
 	slot,
 	selectedId
 ) {
-	const template = SELECT_TEMPLATE.WEAPON;
-
-	const context = {
+	const selector = renderSelector(
 		level,
-		id: selectedId,
 		selectedId,
-		slot
-	};
-
-	const selector = document.createElement('div');
-	selector.className = `custom-select weapon-select`;
-	selector.dataset.ll = level;
+		SELECT_TEMPLATE.WEAPON,
+		{ slot }
+	);
 	selector.dataset.mountIdx = mountIdx;
 	selector.dataset.slotIdx = slotIdx;
-	selector.value = selectedId;
-
-	const control = document.createElement('button');
-	control.className = 'selector-control clearable';
-	control.classList.toggle('occupied', selectedId);
-	control.type = 'button';
-	control.title = template.getDescription?.(context) ?? '';
-
-	const value = document.createElement('span');
-	value.className = 'selector-value';
-	value.textContent = template.getLabel?.(context) ?? '';
-
-	const arrow = document.createElement('span');
-	arrow.className = 'selector-arrow';
-
-	control.append(value, arrow);
-
-	const menu = document.createElement('div');
-	menu.className = 'selector-menu';
-
-	// suppress default-close behavior when menu option is clicked
-	menu.addEventListener('mousedown', event => event.preventDefault());
-
-	for (const [id, item] of template.getSrcItems()) {
-		const context = { level, id, selectedId, slot };
-
-		// prepare an option for each item
-		const option = document.createElement('div');
-		option.className = 'selector-option';
-		option.value = id;
-
-		option.textContent = template.getLabel?.(context) ?? '';
-		option.title = template.getDescription?.(context) ?? '';
-		if (!template.getEligibility?.(context) ?? false)
-			setOptionHidden(option, true);
-
-		menu.append(option);
-	}
-
-	// clear weapon button
-	const clear = document.createElement('button');
-	clear.className = 'selector-clear';
-	clear.title = 'Clear selection';
-
-	if (!template.getEligibility?.(context) ?? false)
-		control.classList.add('error');
-
-	control.addEventListener('keydown', event => {
-		switch (event.key) {
-			case 'Escape':
-				selector.classList.remove('open');
-				break;
-			default:
-				break;
-		}
-	});
-
-	// loss of focus simply closes the menu
-	control.addEventListener('blur', event => {
-		if (!selector.contains(event.relatedTarget))
-			selector.classList.remove('open');
-	});
-
-	selector.append(control, clear, menu);
 
 	return selector;
 }

@@ -15,10 +15,7 @@ import {
 } from '../data/cumulativeCatalog.js';
 
 import {
-	getSelectorValue,
 	setSelectorClass,
-	setSelectorValue,
-	setOptionHidden,
 	SELECT_TEMPLATE
 } from './selectors.js';
 
@@ -31,9 +28,11 @@ import {
 	refreshHexes,
 	refreshHASETooltip,
 	refreshStats,
-	redrawMount,
 	refreshBudgetPill,
-	refreshElectiveSystemList
+	refreshElectiveSystemList,
+	refreshWeaponSelectors,
+	reconcileMountElements,
+	replaceAllMounts
 } from './refreshRenderModules.js';
 
 import {
@@ -43,6 +42,10 @@ import {
 import {
 	getEffectiveFrameId
 } from '../rules/frames.js';
+
+import {
+	normalizeMounting
+} from '../rules/weapons.js';
 
 /**
  * Write to the roadmap and cumulative catalog a user selection
@@ -67,11 +70,28 @@ export function skillTriggerUpdate(selector, level) {
 	refreshSelectors(SELECT_TEMPLATE.SKILL_TRIGGER, level);
 }
 
+/**
+ * Reconcile mount topology without replacing compatible mount elements.
+ * Merely displaying an inherited level must not create mount state there.
+ *
+ * @param {number} level
+ */
+function reconcileMountsFrom(level) {
+	for (let i = level; i <= roadmap.maxLevel; i++) {
+		if (roadmap.ll[i].mounts)
+			roadmap.ll[i].mounts =
+				normalizeMounting(i, roadmap.ll[i].mounts);
+
+		reconcileMountElements(i);
+	}
+}
+
 export function talentUpdate(selector, level) {
 	selectionUpdate(selector, SELECT_TEMPLATE.TALENT);
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.TALENT, level);
+	refreshWeaponSelectors(level);
 
 	// update integrated mounts and systems
 	for (let i = 0; i <= roadmap.maxLevel; i++)
@@ -86,6 +106,7 @@ export function licenseUpdate(selector, level) {
 	refreshSelectors(SELECT_TEMPLATE.LICENSE, level);
 	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
 	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
+	refreshWeaponSelectors(level);
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
@@ -97,6 +118,7 @@ export function coreBonusUpdate(selector, level) {
 
 	// update stats and all mounts
 	refreshStats(level);
+	reconcileMountsFrom(level);
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
@@ -138,6 +160,7 @@ export function activeFrameWaterfall(selectValue, level) {
 			`${SELECT_TEMPLATE.FRAME.type}-ll-${i}-icon`);
 		icon.src = getFrameImageSrc(selectValue) ?? '';
 
+		// update frame selector
 		const selector = document.getElementById(
 			`${SELECT_TEMPLATE.FRAME.type}-ll-${i}`)
 			.querySelector('.custom-select');
@@ -151,6 +174,13 @@ export function activeFrameWaterfall(selectValue, level) {
 		}
 
 		setSelectorClass(selector, 'inherited', i !== level);
+
+		// Explicit loadout boundaries retain their selections, reconciled to
+		// the new frame's mount and slot topology. Inherited displays remain
+		// derived and do not create roadmap state merely by being redrawn.
+		if (roadmap.ll[i].mounts)
+			roadmap.ll[i].mounts =
+				normalizeMounting(i, roadmap.ll[i].mounts);
 	}
 }
 
@@ -168,13 +198,13 @@ export function frameUpdate(selector, level) {
 		i++
 	) {
 		refreshStats(i);
+		replaceAllMounts(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
 	}
 
 	// full cell replacement for mounts
 	// update integrated systems
-
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
@@ -193,51 +223,16 @@ export function weaponUpdate(selector, level) {
 		{ level: currentLevel, mountIdx, slotIdx, id: newId }
 	);
 
+	// This level becomes a loadout boundary. Later levels inherit it until
+	// another level explicitly defines its own mounts.
+	for (let i = currentLevel; i <= roadmap.maxLevel; i++) {
+		if (i > currentLevel && roadmap.ll[i].mounts)
+			break;
 
-
-	// redraw flex mount
-	if (roadmap.ll[currentLevel].mounts[mountIdx].type === 'Flex')
-		redrawMount(currentLevel, mountIdx);
-
-	// refresh selectors
-
-	// all selectors of a given type and level belong to the same group
-	const selectGroup = document.getElementById(
-		`mount-${mountIdx}-ll-${currentLevel}`);
-
-	if (!selectGroup)
-		return;
-
-	// roadmap is source of truth for all selector refreshes
-	let roadmapData = roadmap.ll[currentLevel].mounts[mountIdx].weapons;
-
-	for (let idx = 0; idx < selectGroup.children.length; idx++) {
-		let selectionIsInvalid = false;
-
-		// selector adopts roadmap values
-		const selector = selectGroup.children[idx];
-		const selectedId = roadmapData[idx].id ?? null;
-		setSelectorClass(selector, 'occupied', selectedId);
-
-		const options = selector.querySelector('.selector-menu').children;
-		for (const option of options) {
-			// update visibility and, where appropriate, rank #
-			const id = option.value;
-			if (!id)
-				continue;
-
-			const context = { level: currentLevel, id, selectedId };
-			option.innerHTML = template.getLabel?.(context) ?? '';
-
-			const disable = !template.getEligibility(context);
-			setOptionHidden(option, disable);
-			if (disable && id === selectedId)
-				selectionIsInvalid = true;
-		}
-
-		const context = { level: currentLevel, id: selectedId, selectedId };
-		setSelectorValue(selector, selectedId, template);
-		setSelectorClass(selector, 'error', selectionIsInvalid);
+		reconcileMountElements(i);
+		refreshStats(i);
+		refreshBudgetPill(i);
+		refreshElectiveSystemList(i);
 	}
 }
 

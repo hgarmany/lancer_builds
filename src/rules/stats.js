@@ -184,7 +184,14 @@ function getCoreBonusModifiers({ catalog, level }) {
 function getWeaponModifiers({ level }) {
 	let modifiers = [];
 
-	const weapons = roadmap.ll[level].mounts.flatMap(mount => mount.weapons);
+	let mounts = [];
+	for (let i = level; i >= 0; i--) {
+		if (roadmap.ll[i].mounts) {
+			mounts = roadmap.ll[i].mounts;
+			break;
+		}
+	}
+	const weapons = mounts.flatMap(mount => mount.weapons);
 	for (const weapon of weapons) {
 		const wpnSrc = srcData.weapons.get(weapon?.id);
 
