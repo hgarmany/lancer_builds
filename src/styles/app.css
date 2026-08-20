@@ -103,6 +103,18 @@ select {
 }
 
 /* new custom selector */
+.custom-select {
+	position: relative;
+	max-width: max-content;
+}
+
+.custom-select-mimic {
+	max-width: 12rem;
+	padding: 0.1rem 0.5rem;
+	line-height: 1.2;
+	border: 1px solid transparent;
+}
+
 .selector-control {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) auto;
@@ -132,11 +144,6 @@ select {
 
 .selector-control.clearable.occupied .selector-arrow {
 	visibility: hidden;
-}
-
-.custom-select {
-	position: relative;
-	max-width: max-content;
 }
 
 .selector-clear {
@@ -447,6 +454,10 @@ select {
 	border: 1px solid black;
 	border-radius: 0.5rem;
 	padding: 0.5rem;
+}
+
+.mount.integrated {
+	border: 1px dashed black;
 }
 
 .systems {

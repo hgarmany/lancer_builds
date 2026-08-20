@@ -201,13 +201,15 @@ export const SELECT_TEMPLATE = Object.freeze({
 		getSrcItems: () => srcData.weapons,
 		write: ({ level, mountIdx, slotIdx, id }) =>
 			setWeaponSelection(level, mountIdx, slotIdx, id),
-		getLabel: ({ id, slot }) => {
+		getLabel: ({ id, slot = null }) => {
 			return id ? (srcData.weapons.get(id)?.name ?? '') :
-				slot.label;
+				slot?.label;
 		},
-		getDescription: ({ id }) =>
-			srcData.weapons.get(id)?.description
-				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n'),
+		getDescription: ({ id }) => {
+			const item = srcData.weapons.get(id);
+			return (item?.description ?? item?.effect)
+				?.replace(/<\s*\/?br\s*[\/]?>/gi, '\n\n')
+		},
 		getEligibility: ({ level, id, selectedId, slot }) =>
 			isWeaponEligible(level, id, selectedId, slot),
 		changeEvent: (selector, level) => weaponUpdate(selector, level)

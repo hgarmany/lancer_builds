@@ -45,7 +45,7 @@ import {
 
 import {
 	getMountSlots,
-	getEffectiveMounting
+	getEffectiveMounts
 } from '../rules/weapons.js';
 
 import {
@@ -220,13 +220,34 @@ export function renderStats(level) {
 	);
 }
 
+/**
+ * Create a stand-in element that resembles
+ * but does not function as a weapons selector
+ * 
+ * @param {string} id
+ * @returns {HTMLDivElement}
+ */
+function renderIntegratedWeaponLabel(id) {
+	const label = document.createElement('div');
+	label.className = 'custom-select-mimic';
+	label.textContent = SELECT_TEMPLATE.WEAPON.getLabel({ id });
+	label.title = SELECT_TEMPLATE.WEAPON.getDescription({ id });
+	return label;
+}
+
+/**
+ * Draw a mount box and all contents requested in the input data object
+ * Wire the mount to listen for any interactions with its weapon selectors
+ * 
+ * @param {number} level
+ * @param {number} idx
+ * @param {Object} data
+ * @returns {HTMLDivElement}
+ */
 export function renderMount(level, idx, data) {
 	const mount = document.createElement('div');
 	mount.className = 'mount menu';
 	mount.dataset.mountType = data.type;
-
-	if (data.tags?.integrated)
-		mount.classList.add('error');
 
 	const label = document.createElement('div');
 	label.className = 'menu-label';
@@ -239,9 +260,17 @@ export function renderMount(level, idx, data) {
 	slots.id = `mount-${idx}-ll-${level}`;
 	slots.className = 'select-group';
 
+	// add all weapons to the mount
 	for (let i = 0; i < slotDefinitions.length; i++) {
-		slots.append(renderWeaponSelector(
-			level, idx, i, slotDefinitions[i], weapons[i]?.id));
+		if (data.tags?.integrated) {
+			mount.classList.add('integrated');
+			mount.dataset.integrated = weapons[i]?.id;
+			slots.append(renderIntegratedWeaponLabel(weapons[i]?.id));
+		}
+		else {
+			slots.append(renderWeaponSelector(
+				level, idx, i, slotDefinitions[i], weapons[i]?.id));
+		}
 	}
 
 	// single manager for all menu selections
@@ -279,8 +308,14 @@ export function renderMount(level, idx, data) {
 	return mount;
 }
 
+/**
+ * Get a list of render-ready elements representing all mounts at this level
+ * 
+ * @param {number} level
+ * @returns {Array<HTMLDivElement>}
+ */
 export function renderMounts(level) {
-	return getEffectiveMounting(level).map((mount, index) =>
+	return getEffectiveMounts(level).map((mount, index) =>
 		renderMount(level, index, mount)
 	);
 }

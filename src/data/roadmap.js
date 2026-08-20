@@ -81,9 +81,9 @@ export function createDefaultRoadmap() {
 	};
 
 	roadmap.ll[0].mounts = [
-		{ type: 'Main', weapons: [{ id: null, tags: [] }], tags: [] },
-		{ type: 'Flex', weapons: [{ id: null, tags: [] }], tags: [] },
-		{ type: 'Heavy', weapons: [{ id: null, tags: [] }], tags: [] }
+		{ type: 'Main', weapons: [{ id: null, tags: {} }], tags: {} },
+		{ type: 'Flex', weapons: [{ id: null, tags: {} }], tags: {} },
+		{ type: 'Heavy', weapons: [{ id: null, tags: {} }], tags: {} }
 	];
 
 	roadmap.ll[0].skillTriggerIds[0] = 'sk_assault';

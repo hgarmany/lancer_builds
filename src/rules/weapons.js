@@ -49,7 +49,13 @@ const HEAVY_SLOT = Object.freeze({
 	])
 });
 
+const SHIP_CLASS = Object.freeze({
+	label: 'Ship-Class',
+	allowedWeaponMounts: Object.freeze(['Ship-class'])
+});
+
 export const MOUNT_SLOTS = Object.freeze({
+	'Ship-class': Object.freeze([SHIP_CLASS]),
 	'Superheavy': Object.freeze([HEAVY_SLOT]),
 	'Heavy': Object.freeze([HEAVY_SLOT]),
 	'Main': Object.freeze([MAIN_SLOT]),
@@ -93,49 +99,17 @@ export function getMountSlots(mount) {
 	if (mount.type !== 'Flex')
 		return MOUNT_SLOTS[mount.type] ?? [];
 
-	// flex mount expands to include a second aux slot
-	// if the first weapon is actually an auxiliary weapon
+	// flex mount acts like an aux/aux mount
+	// if either slot has an aux weapon
 	const firstWeapon = srcData.weapons.get(mount.weapons?.[0]?.id);
-	return firstWeapon?.mount === 'Auxiliary' ?
-		[MAIN_SLOT, AUXILIARY_SLOT] :
-		[MAIN_SLOT];
-}
-
-/**
- * Get the list of mount sizes that come with the active frame
- * and any other user selections
- * 
- * @param {number} level 
- * @returns {Array<string>}
- */
-function getMountTypes(level) {
-	const frameMounts = srcData.frames.get(activeFrame[level])?.mounts ?? [];
-	let numMounts = frameMounts.length;
-
-	let mountsOut = [];
-
-	for (const coreBonus of coreBonuses[level] ?? []) {
-		const srcCB = srcData.coreBonuses.get(coreBonus);
-
-		if (!srcCB?.bonuses)
-			continue;
-
-		for (const bonus of srcCB?.bonuses) {
-			if (bonus.id === 'add_mount' &&
-				(!bonus.max || bonus.max > numMounts)
-			) {
-				const mountName = bonus.val.charAt(0).toUpperCase() +
-					bonus.val.slice(1);
-				mountsOut.push(mountName);
-			}
-		}
-	}
-
-	return mountsOut.concat(frameMounts);
+	const secondWeapon = srcData.weapons.get(mount.weapons?.[1]?.id);
+	const doTwoSlots = firstWeapon?.mount === 'Auxiliary' ||
+		!firstWeapon && secondWeapon?.mount === 'Auxiliary';
+	return doTwoSlots ? [MAIN_SLOT, AUXILIARY_SLOT] : [MAIN_SLOT];
 }
 
 function createEmptyMount(type, tags) {
-	const weapons = MOUNT_SLOTS[type].map(() => ({ id: null, tags: [] }));
+	const weapons = MOUNT_SLOTS[type].map(() => ({ id: null, tags: {} }));
 	return { type, weapons, tags };
 }
 
@@ -146,11 +120,34 @@ function createEmptyMount(type, tags) {
  * @returns
  */
 function buildMountConfiguration(level) {
-	const frameMounts = srcData.frames.get(activeFrame[level])?.mounts
-		?.map(mount => createEmptyMount(mount, [])) ?? [];
+	const frame = srcData.frames.get(activeFrame[level]);
+	const frameMounts = frame?.mounts
+		?.map(mount => createEmptyMount(mount, {})) ?? [];
 	let numMounts = frameMounts.length;
 	let mountsOut = [];
 
+	// integrated mount changes
+	const frameIntegrations = frame?.core_system?.integrated ?? [];
+	const talentIntegrations = [...talents[level]].flatMap(([id, rank]) =>
+		srcData.talents.get(id)?.ranks[rank - 1]?.integrated ?? []);
+	const integratedElements = [
+		...frameIntegrations,
+		...talentIntegrations
+	];
+
+	for (const integration of integratedElements ?? []) {
+		const weapon = srcData.weapons.get(integration);
+		if (weapon) {
+			const newMount = {
+				type: weapon.mount,
+				weapons: [{ id: integration, tags: {} }],
+				tags: { integrated: integration }
+			};
+			mountsOut.push(newMount);
+		}
+	}
+
+	// source bonus mounts from core bonuses
 	for (const coreBonus of coreBonuses[level] ?? []) {
 		const srcCB = srcData.coreBonuses.get(coreBonus);
 
@@ -163,45 +160,14 @@ function buildMountConfiguration(level) {
 			) {
 				const mountName = bonus.val.charAt(0).toUpperCase() +
 					bonus.val.slice(1);
-				mountsOut.push(createEmptyMount(mountName, [ coreBonus ]));
+				mountsOut.push(
+					createEmptyMount(mountName, { source: coreBonus }));
 				numMounts++;
 			}
 		}
 	}
 
 	return mountsOut.concat(frameMounts);
-}
-
-function cloneWeaponSlot(weapon = null) {
-	return {
-		...(weapon ?? {}),
-		id: weapon?.id ?? null,
-		tags: [...(weapon?.tags ?? [])]
-	};
-}
-
-/**
- * Reconcile one saved mount with the slot topology required by its type
- * Existing selections are preserved by slot where possible
- *
- * @param {string} type
- * @param {Object} savedMount
- * @returns {Object}
- */
-function normalizeMount(type, savedMount = null) {
-	const savedWeapons = savedMount?.weapons ?? [];
-	const mount = {
-		...(savedMount ?? {}),
-		type,
-		weapons: savedWeapons.map(cloneWeaponSlot),
-		tags: [...(savedMount?.tags ?? [])]
-	};
-
-	const slots = getMountSlots(mount);
-	mount.weapons = slots.map((_, idx) =>
-		cloneWeaponSlot(savedWeapons[idx]));
-
-	return mount;
 }
 
 /**
@@ -211,13 +177,15 @@ function normalizeMount(type, savedMount = null) {
  * @param {Array<Object>} savedMounts
  * @returns {Array<Object>}
  */
-export function normalizeMounting(level, savedMounts = []) {
+export function normalizeMounts(level, savedMounts = []) {
 	const unmatchedMounts = [...savedMounts];
 	const newMounts = buildMountConfiguration(level);
 
 	for (let i = 0; i < newMounts.length; i++) {
-		const matchingMountIdx = unmatchedMounts
-			.findIndex(mount => mount.type === newMounts[i].type);
+		const matchingMountIdx = unmatchedMounts.findIndex(
+			mount => mount.type === newMounts[i].type &&
+			mount.tags?.integrated === newMounts[i].tags?.integrated
+		);
 		if (matchingMountIdx >= 0)
 			newMounts[i] = unmatchedMounts.splice(matchingMountIdx, 1)[0];
 	}
@@ -231,13 +199,13 @@ export function normalizeMounting(level, savedMounts = []) {
  * @param {number} level
  * @returns {Array<Object>}
  */
-export function getEffectiveMounting(level) {
+export function getEffectiveMounts(level) {
 	for (let i = level; i >= 0; i--) {
 		if (roadmap.ll[i].mounts)
 			return roadmap.ll[i].mounts;
 	}
 
-	return normalizeMounting(0);
+	return normalizeMounts(0);
 }
 
 /**
@@ -247,9 +215,9 @@ export function getEffectiveMounting(level) {
  * @param {number} level
  * @returns {Array<Object>}
  */
-export function reconfigureMounting(level) {
-	const currentMounts = getEffectiveMounting(level);
-	const normalizedMounts = normalizeMounting(level, currentMounts);
+export function reconfigureMounts(level) {
+	const currentMounts = getEffectiveMounts(level);
+	const normalizedMounts = normalizeMounts(level, currentMounts);
 	roadmap.ll[level].mounts = normalizedMounts;
 	return normalizedMounts;
 }
@@ -264,19 +232,23 @@ export function reconfigureMounting(level) {
  * @param {string} id
  */
 export function setWeaponSelection(level, mountIdx, slotIdx, id) {
-	const mounts = getEffectiveMounting(level);
-	roadmap.ll[level].mounts = mounts;
+	const mounts = getEffectiveMounts(level);
 	const mount = mounts[mountIdx];
 	if (!mount)
 		return;
 
-	if (!mount.weapons[slotIdx])
-		mount.weapons[slotIdx] = cloneWeaponSlot();
+	// set loadout at this level, with updated weapon slot
+	roadmap.ll[level].mounts = mounts;
 	mount.weapons[slotIdx].id = id ?? null;
 
-	// This expands a Flex mount after an Aux selection and collapses it after
-	// its first slot becomes Main or empty. It also fixes every static mount.
-	mounts[mountIdx] = normalizeMount(mount.type, mount);
+	// dynamic weapon slots for flex mounts
+	if (mount.type === 'Flex') {
+		mount.weapons = getMountSlots(mount).map((slot, idx) => {
+			if (idx >= mount.weapons.length)
+				return { id: null, tags: {} };
+			return mount.weapons[idx];
+		});
+	}
 }
 
 /**
@@ -298,7 +270,7 @@ export function isWeaponEligible(
 		return true;
 
 	const candidate = srcData.weapons.get(id);
-	const mounts = getEffectiveMounting(level);
+	const mounts = getEffectiveMounts(level);
 
 	// reject invalid weapons, unpermitted exotics, integrated weapons
 	if (!candidate ||
@@ -343,30 +315,4 @@ export function isWeaponEligible(
 	// allow weapons at or below the level's license rank
 	return candidate.license_level <=
 		licenses[level].get(candidate.license_id);
-}
-
-/**
- * Gets a list of weapon ids for all integrated weapons
- * 
- * @param {number} level
- * @returns {Array<string>}
- * 
- */
-export function getIntegratedWeaponIds(level) {
-	const frame = srcData.frames.get(activeFrame[level]);
-	const weaponIds = [];
-
-	// get integrated weapons from frame
-	frame?.core_system?.integrated?.forEach(id => {
-		weaponIds.push(id);
-	});
-
-	// get integrated weapons from talents
-	talents[level]?.forEach((talentId, val) => {
-		srcData.talents.get(talentId)?.ranks[val]?.integrated?.forEach(id => {
-			weaponIds.push(id);
-		})
-	});
-
-	return weaponIds;
 }

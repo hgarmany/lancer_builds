@@ -44,7 +44,7 @@ import {
 } from '../rules/frames.js';
 
 import {
-	reconfigureMounting
+	reconfigureMounts
 } from '../rules/weapons.js';
 
 /**
@@ -76,10 +76,13 @@ export function talentUpdate(selector, level) {
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.TALENT, level);
 	refreshWeaponSelectors(level);
+	reconfigureMounts(level);
 
 	// update integrated mounts and systems
-	for (let i = 0; i <= roadmap.maxLevel; i++)
+	for (let i = 0; i <= roadmap.maxLevel; i++) {
+		redrawMounts(i);
 		refreshElectiveSystemList(i);
+	}
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
@@ -106,7 +109,7 @@ export function coreBonusUpdate(selector, level) {
 	// update mount cells to accomodate cb-based mount changes
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		if (i === level || roadmap.ll[i].mounts)
-			reconfigureMounting(i);
+			reconfigureMounts(i);
 		redrawMounts(i);
 	}
 
@@ -171,14 +174,13 @@ export function activeFrameWaterfall(selectValue, level) {
 
 		// add or rewrite mounts on the roadmap to meet frame specifications
 		if (i === level || roadmap.ll[i].mounts)
-			reconfigureMounting(i);
+			reconfigureMounts(i);
 	}
 }
 
 export function frameUpdate(selector, level) {
 	selectionUpdate(selector, SELECT_TEMPLATE.FRAME);
 
-	// 
 	activeFrameWaterfall(selector.value, level);
 
 	// update stats and budget pill in waterfall

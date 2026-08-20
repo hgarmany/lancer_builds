@@ -48,7 +48,7 @@ import {
 } from '../rules/systems.js';
 
 import {
-	getEffectiveMounting,
+	getEffectiveMounts,
 	getMountSlots
 } from '../rules/weapons.js';
 
@@ -148,14 +148,14 @@ export function refreshWeaponSelectors(
 	maxLevel = roadmap.maxLevel
 ) {
 	for (let i = level; i <= maxLevel; i++) {
-		const mounting = getEffectiveMounting(i);
+		const mounts = getEffectiveMounts(i);
 		const selectors = document.querySelectorAll(
 			`#row-ll-${i} .mounts .weapon-select`);
 
 		for (const selector of selectors) {
 			const mountIdx = Number(selector.dataset.mountIdx);
 			const slotIdx = Number(selector.dataset.slotIdx);
-			const mount = mounting[mountIdx];
+			const mount = mounts[mountIdx];
 			const slot = mount ? getMountSlots(mount)[slotIdx] : null;
 			if (!mount || !slot)
 				continue;
@@ -224,11 +224,11 @@ export function refreshStats(level) {
 }
 
 export function redrawMount(level, mountIdx) {
-	const mounting = getEffectiveMounting(level);
+	const mounts = getEffectiveMounts(level);
 	const mount = document.getElementById(`row-ll-${level}`)
 		.querySelector('.mounts').children[mountIdx];
 	mount.replaceWith(
-		renderMount(level, mountIdx, mounting[mountIdx]));
+		renderMount(level, mountIdx, mounts[mountIdx]));
 }
 
 /**
@@ -242,28 +242,22 @@ export function redrawMount(level, mountIdx) {
 export function redrawMounts(level) {
 	const container = document.getElementById(`row-ll-${level}`)
 		.querySelector('.mounts');
-	const mounting = getEffectiveMounting(level);
+	const mounts = getEffectiveMounts(level);
 
-	for (let idx = 0; idx < mounting.length; idx++) {
-		const data = mounting[idx];
+	for (let idx = 0; idx < mounts.length; idx++) {
+		const data = mounts[idx];
 		const current = container.children[idx];
-		const currentSlots = current
-			?.querySelector('.select-group')?.children.length;
-		const requiredSlots = getMountSlots(data).length;
 
-		if (!current) {
+		if (!current)
 			// if the current mount list is exhausted, add a new mount
 			container.append(renderMount(level, idx, data));
-		}
-		else if (current.dataset.mountType !== data.type ||
-			// if the current mount doesn't match the new type, replace
-			currentSlots !== requiredSlots) {
+		else
+			// otherwise replace
 			current.replaceWith(renderMount(level, idx, data));
-		}
 	}
 
 	// remove any excess mounts that are not in use
-	while (container.children.length > mounting.length)
+	while (container.children.length > mounts.length)
 		container.lastElementChild.remove();
 
 	// single-level selector refresh
