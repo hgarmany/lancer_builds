@@ -75,14 +75,15 @@ export function talentUpdate(selector, level) {
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.TALENT, level);
-	refreshWeaponSelectors(level);
 	reconfigureMounts(level);
 
 	// update integrated mounts and systems
-	for (let i = 0; i <= roadmap.maxLevel; i++) {
+	for (let i = level; i <= roadmap.maxLevel; i++) {
 		redrawMounts(i);
 		refreshElectiveSystemList(i);
 	}
+
+	refreshWeaponSelectors(level);
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 

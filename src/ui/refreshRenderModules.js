@@ -243,17 +243,26 @@ export function redrawMounts(level) {
 	const container = document.getElementById(`row-ll-${level}`)
 		.querySelector('.mounts');
 	const mounts = getEffectiveMounts(level);
+	console.log(`redrawMounts ${level}`);
+	console.log(mounts);
 
 	for (let idx = 0; idx < mounts.length; idx++) {
 		const data = mounts[idx];
 		const current = container.children[idx];
+		const currentSlots = current
+			?.querySelector('.select-group')?.children.length;
+		const requiredSlots = getMountSlots(data).length;
 
-		if (!current)
+		if (!current) {
 			// if the current mount list is exhausted, add a new mount
 			container.append(renderMount(level, idx, data));
-		else
-			// otherwise replace
+		}
+		else if (current.dataset.mountType !== data.type ||
+			currentSlots !== requiredSlots ||
+			current.dataset.integrated !== data.tags.integrated) {
+			// if the current mount doesn't match the new type, replace
 			current.replaceWith(renderMount(level, idx, data));
+		}
 	}
 
 	// remove any excess mounts that are not in use

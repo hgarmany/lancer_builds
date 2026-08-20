@@ -259,12 +259,11 @@ export function renderMount(level, idx, data) {
 	const slots = document.createElement('div');
 	slots.id = `mount-${idx}-ll-${level}`;
 	slots.className = 'select-group';
-
 	// add all weapons to the mount
 	for (let i = 0; i < slotDefinitions.length; i++) {
-		if (data.tags?.integrated) {
+		if (data.tags?.source) {
 			mount.classList.add('integrated');
-			mount.dataset.integrated = weapons[i]?.id;
+			mount.dataset.integrated = data.tags.integrated;
 			slots.append(renderIntegratedWeaponLabel(weapons[i]?.id));
 		}
 		else {

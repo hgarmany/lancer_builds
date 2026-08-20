@@ -127,21 +127,26 @@ function buildMountConfiguration(level) {
 	let mountsOut = [];
 
 	// integrated mount changes
-	const frameIntegrations = frame?.core_system?.integrated ?? [];
+	const frameIntegrations = frame?.core_system?.integrated
+		?.map(weapon => ({ source: frame, weapon })) ?? [];
 	const talentIntegrations = [...talents[level]].flatMap(([id, rank]) =>
-		srcData.talents.get(id)?.ranks[rank - 1]?.integrated ?? []);
+		srcData.talents.get(id)?.ranks[rank - 1]?.integrated
+			?.map(weapon => ({ source: id, weapon })) ?? []);
 	const integratedElements = [
 		...frameIntegrations,
 		...talentIntegrations
 	];
 
 	for (const integration of integratedElements ?? []) {
-		const weapon = srcData.weapons.get(integration);
+		const weapon = srcData.weapons.get(integration.weapon);
 		if (weapon) {
 			const newMount = {
 				type: weapon.mount,
-				weapons: [{ id: integration, tags: {} }],
-				tags: { integrated: integration }
+				weapons: [{ id: integration.weapon, tags: {} }],
+				tags: {
+					source: integration.source,
+					integrated: integration.weapon
+				}
 			};
 			mountsOut.push(newMount);
 		}
@@ -180,6 +185,8 @@ function buildMountConfiguration(level) {
 export function normalizeMounts(level, savedMounts = []) {
 	const unmatchedMounts = [...savedMounts];
 	const newMounts = buildMountConfiguration(level);
+	console.log(`newMounts ${level}`);
+	console.log([...newMounts]);
 
 	for (let i = 0; i < newMounts.length; i++) {
 		const matchingMountIdx = unmatchedMounts.findIndex(
@@ -219,6 +226,8 @@ export function reconfigureMounts(level) {
 	const currentMounts = getEffectiveMounts(level);
 	const normalizedMounts = normalizeMounts(level, currentMounts);
 	roadmap.ll[level].mounts = normalizedMounts;
+	console.log(`reconfigureMounts ${level}`);
+	console.log(normalizedMounts);
 	return normalizedMounts;
 }
 
