@@ -75,10 +75,12 @@ export function talentUpdate(selector, level) {
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.TALENT, level);
-	reconfigureMounts(level);
 
 	// update integrated mounts and systems
 	for (let i = level; i <= roadmap.maxLevel; i++) {
+		// resolves existing hard-set integrated talent mounts
+		// TODO: need to configure s.t. mounts aren't hard-set at every level
+		reconfigureMounts(i);
 		redrawMounts(i);
 		refreshElectiveSystemList(i);
 	}

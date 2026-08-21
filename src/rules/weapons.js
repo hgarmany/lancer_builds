@@ -128,7 +128,7 @@ function buildMountConfiguration(level) {
 
 	// integrated mount changes
 	const frameIntegrations = frame?.core_system?.integrated
-		?.map(weapon => ({ source: frame, weapon })) ?? [];
+		?.map(weapon => ({ source: activeFrame[level], weapon })) ?? [];
 	const talentIntegrations = [...talents[level]].flatMap(([id, rank]) =>
 		srcData.talents.get(id)?.ranks[rank - 1]?.integrated
 			?.map(weapon => ({ source: id, weapon })) ?? []);
@@ -175,6 +175,30 @@ function buildMountConfiguration(level) {
 	return mountsOut.concat(frameMounts);
 }
 
+function cloneMount(mount, tags = mount.tags ?? {}) {
+	return {
+		...mount,
+		weapons: (mount.weapons ?? []).map(weapon => ({
+			...weapon,
+			tags: { ...(weapon.tags ?? {}) }
+		})),
+		tags: { ...tags }
+	};
+}
+
+function mountsHaveSameSource(savedMount, newMount) {
+	const savedIntegrated = savedMount.tags?.integrated;
+	const newIntegrated = newMount.tags?.integrated;
+
+	if (savedIntegrated || newIntegrated) {
+		return savedMount.type === newMount.type &&
+			savedIntegrated === newIntegrated;
+	}
+
+	return savedMount.type === newMount.type &&
+		savedMount.tags?.source === newMount.tags?.source;
+}
+
 /**
  * Reconcile saved selections with all mounts currently granted at a level
  *
@@ -185,16 +209,18 @@ function buildMountConfiguration(level) {
 export function normalizeMounts(level, savedMounts = []) {
 	const unmatchedMounts = [...savedMounts];
 	const newMounts = buildMountConfiguration(level);
-	console.log(`newMounts ${level}`);
-	console.log([...newMounts]);
 
 	for (let i = 0; i < newMounts.length; i++) {
 		const matchingMountIdx = unmatchedMounts.findIndex(
-			mount => mount.type === newMounts[i].type &&
-			mount.tags?.integrated === newMounts[i].tags?.integrated
-		);
-		if (matchingMountIdx >= 0)
-			newMounts[i] = unmatchedMounts.splice(matchingMountIdx, 1)[0];
+			mount => mountsHaveSameSource(mount, newMounts[i]));
+		if (matchingMountIdx < 0)
+			continue;
+
+		const savedMount = unmatchedMounts.splice(matchingMountIdx, 1)[0];
+
+		// integrated mounts handling
+		if (!newMounts[i].tags?.integrated)
+			newMounts[i] = cloneMount(savedMount, newMounts[i].tags);
 	}
 
 	return newMounts;
@@ -212,7 +238,7 @@ export function getEffectiveMounts(level) {
 			return roadmap.ll[i].mounts;
 	}
 
-	return normalizeMounts(0);
+	return [];
 }
 
 /**
@@ -223,11 +249,8 @@ export function getEffectiveMounts(level) {
  * @returns {Array<Object>}
  */
 export function reconfigureMounts(level) {
-	const currentMounts = getEffectiveMounts(level);
-	const normalizedMounts = normalizeMounts(level, currentMounts);
+	const normalizedMounts = normalizeMounts(level, getEffectiveMounts(level));
 	roadmap.ll[level].mounts = normalizedMounts;
-	console.log(`reconfigureMounts ${level}`);
-	console.log(normalizedMounts);
 	return normalizedMounts;
 }
 
@@ -241,7 +264,7 @@ export function reconfigureMounts(level) {
  * @param {string} id
  */
 export function setWeaponSelection(level, mountIdx, slotIdx, id) {
-	const mounts = getEffectiveMounts(level);
+	const mounts = normalizeMounts(level, getEffectiveMounts(level));
 	const mount = mounts[mountIdx];
 	if (!mount)
 		return;
