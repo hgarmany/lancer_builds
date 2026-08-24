@@ -55,8 +55,7 @@ import {
 
 export const roadmapName = document.getElementById('roadmap-name');
 export const maxLevelInput = document.getElementById('roadmap-max-level');
-const levelRail = document.querySelector(".level-rail");
-const levelTabs = document.getElementById("level-tabs");
+export const levelRail = document.querySelector(".level-rail");
 
 const roadmapShell = document.getElementById("roadmap-shell");
 const roadmapContainer = document.querySelector(".roadmap-container");

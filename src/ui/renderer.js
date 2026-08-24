@@ -10,14 +10,32 @@ import {
 } from '../data/cumulativeCatalog.js';
 
 import {
+	renderLevelLabel,
 	renderLevelRow
 } from './roadmapTable.js';
 
 import {
 	roadmapName,
 	maxLevelInput,
+	levelRail,
 	tableBody
 } from './renderModules.js';
+
+function positionLevelLabels() {
+	const railTop = levelRail.getBoundingClientRect().top;
+
+	for (const label of levelRail.querySelectorAll('.level-tab')) {
+		const row = document.getElementById(`row-ll-${label.dataset.ll}`);
+		if (!row)
+			continue;
+
+		const rowRect = row.getBoundingClientRect();
+		label.style.top = `${rowRect.top - railTop}px`;
+		label.style.height = `${rowRect.height}px`;
+	}
+}
+
+const levelRowResizeObserver = new ResizeObserver(positionLevelLabels);
 
 /**
  * Connect the roadmap name and max LL fields to table + roadmap data
@@ -33,12 +51,18 @@ export function configureHeader() {
 		resizeCatalog(newMaxLevel);
 		setMaxLevel(roadmap, newMaxLevel);
 		
-		if (currentMaxLevel > newMaxLevel)
+		if (currentMaxLevel > newMaxLevel) {
 			// remove extraneous row entirely
 			document.getElementById(`row-ll-${currentMaxLevel}`).remove();
-		else
+			document.getElementById(`label-ll-${currentMaxLevel}`).remove();
+		}
+		else {
 			// build new row at default settings
 			tableBody.append(renderLevelRow(newMaxLevel));
+			levelRail.append(renderLevelLabel(newMaxLevel));
+		}
+
+		positionLevelLabels();
 	});
 }
 
@@ -49,4 +73,13 @@ export function initializeRenderPipeline() {
 			(_, index) => renderLevelRow(index)
 		)
 	);
+	levelRail.append(
+		...Array.from(
+			{ length: roadmap.maxLevel + 1 },
+			(_, index) => renderLevelLabel(index)
+		)
+	);
+
+	positionLevelLabels();
+	levelRowResizeObserver.observe(tableBody);
 }

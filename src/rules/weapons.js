@@ -328,10 +328,10 @@ export function isWeaponEligible(
 		if (!withinBudget)
 			return false;
 	}
-
+	
 	// check for uniques, reject unique weapons already installed
 	if (doesWeaponHaveTag(id, TAGS.UNIQUE) &&
-		id != selectedId &&
+		id !== selectedId &&
 		mounts.flatMap(mount => mount.weapons)
 			.some(weapon => weapon.id === id))
 		return false;

@@ -229,6 +229,9 @@ export function redrawMount(level, mountIdx) {
 		.querySelector('.mounts').children[mountIdx];
 	mount.replaceWith(
 		renderMount(level, mountIdx, mounts[mountIdx]));
+
+	// single-level selector refresh
+	refreshWeaponSelectors(level, level);
 }
 
 /**
@@ -243,8 +246,6 @@ export function redrawMounts(level) {
 	const container = document.getElementById(`row-ll-${level}`)
 		.querySelector('.mounts');
 	const mounts = getEffectiveMounts(level);
-	console.log(`redrawMounts ${level}`);
-	console.log(mounts);
 
 	for (let idx = 0; idx < mounts.length; idx++) {
 		const data = mounts[idx];
@@ -268,9 +269,6 @@ export function redrawMounts(level) {
 	// remove any excess mounts that are not in use
 	while (container.children.length > mounts.length)
 		container.lastElementChild.remove();
-
-	// single-level selector refresh
-	refreshWeaponSelectors(level, level);
 }
 
 /**

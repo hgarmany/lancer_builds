@@ -19,6 +19,19 @@ import {
 	getEffectiveFrameId
 } from '../rules/frames.js';
 
+export function renderLevelLabel(level) {
+	const label = document.createElement('div');
+	label.id = `label-ll-${level}`;
+	label.className = 'level-tab';
+	label.dataset.ll = level;
+	label.textContent = `LL${level}`;
+
+	if (level != 0 && level % 3 == 0)
+		label.classList.add('cb-level');
+
+	return label;
+}
+
 function renderMenu(level, template) {
 	const menu = document.createElement('div');
 	menu.className = 'menu';
