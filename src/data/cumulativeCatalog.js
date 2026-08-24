@@ -103,7 +103,7 @@ function decrement(catalogLevel, id) {
 			catalogLevel.delete(id);
 	}
 	else {
-		const idx = catalogLevel.findIndex(item => item === id);
+		const idx = catalogLevel.indexOf(id);
 		catalogLevel.splice(idx, 1);
 	}
 }

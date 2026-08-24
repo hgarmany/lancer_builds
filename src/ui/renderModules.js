@@ -45,6 +45,7 @@ import {
 
 import {
 	getMountSlots,
+	getEffectiveMods,
 	getEffectiveMounts
 } from '../rules/weapons.js';
 
@@ -220,8 +221,29 @@ export function renderStats(level) {
 }
 
 export function renderModsMenu(level) {
+	console.log('try');
 	const menu = document.createElement('div');
-	menu.textContent = 'MODS';
+	menu.id = `mods-ll-${level}`;
+	menu.className = 'mod-menu';
+
+	const modList = getEffectiveMods(level);
+	console.log(modList);
+
+	// omit mod menu when no options are available
+	if ((modList.length ?? 0) == 0) {
+		menu.hidden = true;
+		return menu;
+	}
+
+	menu.hidden = false;
+	// populate mod menu
+	for (const id of modList) {
+		const mod = document.createElement('div');
+		mod.className = 'tag draggable';
+		mod.textContent = srcData.mods.get(id)?.name ?? '';
+
+		menu.append(mod);
+	}
 
 	return menu;
 }
@@ -276,6 +298,24 @@ export function renderMount(level, idx, data) {
 			slots.append(renderWeaponSelector(
 				level, idx, i, slotDefinitions[i], weapons[i]?.id));
 		}
+
+		// add weapon-specific tag (mod, ocal, limited)
+		const tags = document.createElement('span');
+		const modId = roadmap.ll[level].mounts?.[idx].weapons[i].tags?.mod;
+
+		if (modId) {
+			const mod = srcData.mods.get(modId);
+
+			if (mod) {
+				const tag = document.createElement('div');
+				tag.className = 'tag';
+				tag.textContent = mod.name;
+
+				tags.append(tag);
+			}
+		}
+
+		slots.append(tags);
 	}
 
 	mount.append(label, slots);

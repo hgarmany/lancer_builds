@@ -232,10 +232,20 @@ export const SELECT_TEMPLATE = Object.freeze({
 			return null;
 		},
 		write: ({ level, idx, id, data }) => {
-			if (!id)
-				roadmap.ll[level].systems.splice(idx, 1);
-			else
+			if (!id) {
+				id = roadmap.ll[level].systems.splice(idx, 1)[0]?.id;
+				// if a mod, remove system from mod list
+				const modIdx = roadmap.ll[level].unusedModIds.indexOf(id);
+				if (modIdx >= 0)
+					roadmap.ll[level].unusedModIds.splice(modIdx, 1);
+			}
+			else {
 				roadmap.ll[level].systems[idx] = { id, data };
+				// if a mod, add system to mod list
+				const modIdx = roadmap.ll[level].unusedModIds.indexOf(id);
+				if (id.substring(0, 3) === 'wm_' && modIdx == -1)
+					roadmap.ll[level].unusedModIds.push(id);
+			}
 		},
 		getLabel: ({ id }) => {
 			return id ? (srcData.systems.get(id)?.name ?? '') :
@@ -292,7 +302,7 @@ export function setOptionHidden(option, hide = true) {
  * @returns
  */
 function positionSelectorMenu(selector) {
-	const control = selector.querySelector('.selector-control');
+	const control = selector?.querySelector('.selector-control');
 	const menu = selectorMenus.get(selector);
 	if (!control || !menu)
 		return;

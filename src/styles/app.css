@@ -532,6 +532,11 @@ select {
 	gap: 0.5rem;
 }
 
+.mod-menu {
+	display: flex;
+	gap: 0.25rem;
+}
+
 .mounts-list {
 	display: grid !important;
 	grid-template-rows: repeat(2, auto);
@@ -573,4 +578,14 @@ select {
 	margin-bottom: 0.5rem;
 
 	white-space: nowrap;
+}
+
+.tag {
+	border: 1px solid black;
+	border-radius: 1rem;
+
+	font-size: x-small;
+
+	padding: 0.1rem 0.25rem;
+	user-select: none;
 }

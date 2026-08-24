@@ -20,7 +20,8 @@ import {
 } from './selectors.js';
 
 import {
-	getFrameImageSrc
+	getFrameImageSrc,
+	renderModsMenu
 } from './renderModules.js';
 
 import {
@@ -247,6 +248,8 @@ export function systemUpdate(selector, level) {
 
 	// update stats and budget pill
 	for (let i = level; i <= roadmap.maxLevel; i++) {
+		const modList = document.getElementById(`mods-ll-${i}`);
+		modList.replaceWith(renderModsMenu(i));
 		refreshStats(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);

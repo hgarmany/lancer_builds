@@ -227,6 +227,21 @@ export function normalizeMounts(level, savedMounts = []) {
 }
 
 /**
+ * Get the last populated mod list up to this level
+ * 
+ * @param {number} level
+ * @returns {Array<string>}
+ */
+export function getEffectiveMods(level) {
+	for (let i = level; i >= 0; i--) {
+		if (roadmap.ll[i].unusedModIds?.length > 0)
+			return roadmap.ll[i].unusedModIds;
+	}
+
+	return [];
+}
+
+/**
  * Get the last populated weapon loadout up to this level
  * 
  * @param {number} level
@@ -268,6 +283,14 @@ export function setWeaponSelection(level, mountIdx, slotIdx, id) {
 	const mount = mounts[mountIdx];
 	if (!mount)
 		return;
+
+	const weapon = mount.weapons[slotIdx];
+
+	// remove any mods on this weapon and return to the unused mod list
+	if (weapon?.tags?.mod) {
+		roadmap.ll[level].unusedModIds.push(weapon.tags.mod);
+		delete weapon.tags.mod;
+	}
 
 	// set loadout at this level, with updated weapon slot
 	roadmap.ll[level].mounts = mounts;
