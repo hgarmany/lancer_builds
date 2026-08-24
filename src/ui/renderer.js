@@ -29,7 +29,7 @@ function positionLevelLabels() {
 		if (!row)
 			continue;
 
-		const rowRect = row.getBoundingClientRect();
+		const rowRect = row.cells[0].getBoundingClientRect();
 		label.style.top = `${rowRect.top - railTop}px`;
 		label.style.height = `${rowRect.height}px`;
 	}

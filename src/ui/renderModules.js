@@ -219,6 +219,13 @@ export function renderStats(level) {
 	);
 }
 
+export function renderModsMenu(level) {
+	const menu = document.createElement('div');
+	menu.textContent = 'MODS';
+
+	return menu;
+}
+
 /**
  * Create a stand-in element that resembles
  * but does not function as a weapons selector
@@ -271,36 +278,6 @@ export function renderMount(level, idx, data) {
 		}
 	}
 
-	// single manager for all menu selections
-	mount.addEventListener('click', event => {
-		const select = event.target.closest('.custom-select');
-
-		if (!select)
-			return;
-
-		const label = select.querySelector('.selector-value');
-		const option = event.target.closest('.selector-option');
-		const clear = event.target.closest('.selector-clear');
-
-		if (option) {
-			select.value = option.value;
-			label.textContent = option.textContent;
-
-			// wire selector to perform page updates when selection changes
-			SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
-		}
-		else if (clear) {
-			// clear through the same write/refresh path as a selection
-			select.value = null;
-			select.classList.remove('open');
-
-			SELECT_TEMPLATE.WEAPON.changeEvent(select, level);
-			return;
-		}
-
-		select.classList.toggle('open');
-	});
-
 	mount.append(label, slots);
 
 	return mount;
@@ -313,9 +290,14 @@ export function renderMount(level, idx, data) {
  * @returns {Array<HTMLDivElement>}
  */
 export function renderMounts(level) {
-	return getEffectiveMounts(level).map((mount, index) =>
+	const mountsList = document.createElement('div');
+	mountsList.className = 'mounts-list';
+
+	mountsList.append(...getEffectiveMounts(level).map((mount, index) =>
 		renderMount(level, index, mount)
-	);
+	));
+
+	return mountsList;
 }
 
 export function renderIntegratedSystems(level) {

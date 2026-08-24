@@ -59,7 +59,8 @@ function createDefaultRoadmapLevel(level) {
 		licenseId: null,
 		coreBonusId: null,
 		mounts: null,
-		systems: [ null ],
+		systems: [],
+		unusedModsIds: [],
 
 		// null means "continue using the previously active frame"
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null

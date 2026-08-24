@@ -150,7 +150,7 @@ export function refreshWeaponSelectors(
 	for (let i = level; i <= maxLevel; i++) {
 		const mounts = getEffectiveMounts(i);
 		const selectors = document.querySelectorAll(
-			`#row-ll-${i} .mounts .weapon-select`);
+			`#row-ll-${i} .mounts-list .weapon-select`);
 
 		for (const selector of selectors) {
 			const mountIdx = Number(selector.dataset.mountIdx);
@@ -226,7 +226,7 @@ export function refreshStats(level) {
 export function redrawMount(level, mountIdx) {
 	const mounts = getEffectiveMounts(level);
 	const mount = document.getElementById(`row-ll-${level}`)
-		.querySelector('.mounts').children[mountIdx];
+		.querySelector('.mounts-list').children[mountIdx];
 	mount.replaceWith(
 		renderMount(level, mountIdx, mounts[mountIdx]));
 
@@ -244,7 +244,7 @@ export function redrawMount(level, mountIdx) {
  */
 export function redrawMounts(level) {
 	const container = document.getElementById(`row-ll-${level}`)
-		.querySelector('.mounts');
+		.querySelector('.mounts-list');
 	const mounts = getEffectiveMounts(level);
 
 	for (let idx = 0; idx < mounts.length; idx++) {

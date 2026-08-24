@@ -40,7 +40,7 @@ export function importCoreData() {
 	srcData.frames = normalizeById(mergedData.frames ?? []);
 	srcData.coreBonuses = normalizeById(mergedData.core_bonuses ?? []);
 	srcData.weapons = normalizeById(mergedData.weapons ?? []);
-	srcData.systems = normalizeById(mergedData.systems ?? []);
+	srcData.systems = normalizeById([...mergedData.systems, ...mergedData.mods]);
 	srcData.mods = normalizeById(mergedData.mods ?? []);
 
 	console.log(srcData);

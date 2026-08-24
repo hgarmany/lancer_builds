@@ -40,13 +40,14 @@ main {
 
 .roadmap-shell {
 	display: grid;
-	grid-template-columns: auto 1fr;
+	grid-template-columns: auto minmax(0, 1fr);
 }
 
 .roadmap-container {
 	border: 1px solid transparent;
 	border-radius: 1rem 1rem 0 0;
-	overflow: hidden;
+	padding-bottom: 1rem;
+	overflow-x: auto;
 }
 
 .level-rail {
@@ -79,7 +80,15 @@ main {
 	filter: drop-shadow(-0.35rem 0 0 gold);
 }
 
+.roadmap-table-track {
+	display: flow-root;
+	width: fit-content;
+	min-width: 100%;
+	overflow: clip;
+}
+
 .roadmap-table {
+	width: auto;
 	min-width: calc(100% + 2rem);
 	margin: -0.5rem -1rem;
 	border-collapse: separate;
@@ -260,10 +269,9 @@ select {
 }
 
 .selector-menu {
-	position: absolute;
-	top: calc(100% + 0.25rem);
-	left: 0;
-	z-index: 3;
+	display: block;
+	position: fixed;
+	z-index: 100;
 	max-height: 15rem;
 	overflow-y: auto;
 	border: 1px solid ButtonBorder;
@@ -272,7 +280,7 @@ select {
 	box-shadow: 0 0.35rem 0.8rem gray;
 }
 
-.custom-select:not(.open) .selector-menu {
+.custom-select .selector-menu {
 	display: none;
 }
 
@@ -520,6 +528,11 @@ select {
 }
 
 .mounts {
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.mounts-list {
 	display: grid !important;
 	grid-template-rows: repeat(2, auto);
 	grid-auto-flow: column;

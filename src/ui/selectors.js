@@ -72,6 +72,10 @@ import {
 	hasEligibleSystem
 } from '../rules/systems.js';
 
+const selectorMenus = new WeakMap();
+let activeSelector = null;
+const selectorOverlay = document.getElementById('selector-overlay');
+
 /**
  * Each type of selector requires several specific configurations
  * Separate read/write/render profiles are written here for each type
@@ -281,6 +285,66 @@ export function setOptionHidden(option, hide = true) {
 }
 
 /**
+ * Find the best location to place the selector menu
+ * Prefers under selector to over, takes the nearest possible x-pos
+ * 
+ * @param {any} selector
+ * @returns
+ */
+function positionSelectorMenu(selector) {
+	const control = selector.querySelector('.selector-control');
+	const menu = selectorMenus.get(selector);
+	if (!control || !menu)
+		return;
+
+	// get dimensions of working area
+	const gap = 4;
+	const viewportGap = 8;
+	const controlRect = control.getBoundingClientRect();
+
+	menu.style.minWidth = `${controlRect.width}px`;
+
+	const menuRect = menu.getBoundingClientRect();
+	const left = Math.min(
+		Math.max(viewportGap, controlRect.left),
+		Math.max(viewportGap, window.innerWidth - menuRect.width - viewportGap)
+	);
+	const spaceBelow = window.innerHeight - controlRect.bottom;
+	const spaceAbove = controlRect.top;
+
+	// choose the suitable region that can fit the menu
+	const top = menuRect.height + gap > spaceBelow && spaceAbove > spaceBelow ?
+		Math.max(viewportGap, controlRect.top - menuRect.height - gap) :
+		controlRect.bottom + gap;
+
+	menu.style.left = `${left}px`;
+	menu.style.top = `${top}px`;
+}
+
+/**
+ * Render selector menu on the menu overlay layer
+ * 
+ * @param {HTMLDivElement} selector
+ * @param {boolean} doOpen
+ */
+export function setSelectorOpen(selector, doOpen) {
+	if (!selector)
+		return;
+
+	selector.classList.toggle('open', doOpen);
+	const menu = selectorMenus.get(selector);
+	if (!doOpen) {
+		if (menu && menu.parentElement !== selector)
+			selector.append(menu);
+		return;
+	}
+
+	activeSelector = selector;
+	selectorOverlay.append(menu);
+	positionSelectorMenu(selector);
+}
+
+/**
  * Creates a selector with default options configured
  * 
  * @param {number} level
@@ -321,6 +385,7 @@ export function renderSelector(
 
 	const menu = document.createElement('div');
 	menu.className = 'selector-menu';
+	selectorMenus.set(selector, menu);
 
 	// suppress default-close behavior when menu option is clicked
 	menu.addEventListener('mousedown', event => event.preventDefault());
@@ -341,13 +406,25 @@ export function renderSelector(
 		menu.append(option);
 	}
 
+	// handle user making a new selection
+	menu.addEventListener('click', event => {
+		const option = event.target.closest('.selector-option');
+		if (!option)
+			return;
+
+		selector.value = option.value;
+		value.textContent = option.textContent;
+		setSelectorOpen(selector, false);
+		template.changeEvent(selector, level);
+	});
+
 	if (!template.getEligibility?.(context) ?? false)
 		control.classList.add('error');
 
 	control.addEventListener('keydown', event => {
 		switch (event.key) {
 			case 'Escape':
-				selector.classList.remove('open');
+				setSelectorOpen(selector, false);
 				break;
 			default:
 				break;
@@ -357,7 +434,7 @@ export function renderSelector(
 	// loss of focus simply closes the menu
 	control.addEventListener('blur', event => {
 		if (!selector.contains(event.relatedTarget))
-			selector.classList.remove('open');
+			setSelectorOpen(selector, false);
 	});
 
 	selector.append(control);
@@ -370,8 +447,22 @@ export function renderSelector(
 		clear.type = 'button';
 		clear.title = 'Clear selection';
 		clear.setAttribute('aria-label', 'Clear selection');
+		clear.addEventListener('click', () => {
+			selector.value = null;
+			value.textContent = template.getLabel?.({
+				...extraContext,
+				level,
+				id: null,
+				selectedId: null
+			}) ?? '';
+			setSelectorOpen(selector, false);
+			template.changeEvent(selector, level);
+		});
 		selector.append(clear);
 	}
+
+	control.addEventListener('click', () =>
+		setSelectorOpen(selector, !selector.classList.contains('open')));
 
 	selector.append(menu);
 
@@ -404,3 +495,8 @@ export function renderWeaponSelector(
 
 	return selector;
 }
+
+window.addEventListener('resize', () =>
+	positionSelectorMenu(activeSelector));
+window.addEventListener('scroll', () =>
+	positionSelectorMenu(activeSelector));

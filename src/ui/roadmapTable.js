@@ -5,6 +5,7 @@ import {
 	renderHASETooltip,
 	getFrameImageSrc,
 	renderStats,
+	renderModsMenu,
 	renderMounts,
 	renderIntegratedSystems,
 	renderBudgetPill
@@ -65,37 +66,6 @@ function renderMenu(level, template) {
 
 		selectGroup.append(selector);
 	}
-
-	// single manager for all menu selections
-	menu.addEventListener('click', event => {
-		const select = event.target.closest('.custom-select');
-
-		if (!select)
-			return;
-
-		const label = select.querySelector('.selector-value');
-		const option = event.target.closest('.selector-option');
-		const clear = event.target.closest('.selector-clear');
-
-		if (option) {
-			select.value = option.value;
-			label.textContent = option.textContent;
-
-			// wire selector to perform page updates when selection changes
-			template.changeEvent(select, level);
-		}
-		else if (clear) {
-			// clear through the same write/refresh path as a selection
-			select.value = null;
-			label.textContent = template.getLabel({}) ?? '';
-			select.classList.remove('open');
-
-			template.changeEvent(select, level);
-			return;
-		}
-
-		select.classList.toggle('open');
-	});
 
 	menu.append(selectGroup);
 
@@ -193,7 +163,14 @@ function renderFrame(level) {
 	return [icon, menu];
 }
 
-function renderSystems(level) {
+function renderMountsCell(level) {
+	return [
+		renderModsMenu(level),
+		renderMounts(level)
+	];
+}
+
+function renderSystemsCell(level) {
 	return [
 		renderBudgetPill(level),
 		renderIntegratedSystems(level),
@@ -216,11 +193,11 @@ const CELL = {
 	},
 	MOUNTS: {
 		name: 'mounts',
-		render: renderMounts
+		render: renderMountsCell
 	},
 	SYSTEMS: {
 		name: 'systems',
-		render: renderSystems
+		render: renderSystemsCell
 	}
 }
 
