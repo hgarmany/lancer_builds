@@ -278,7 +278,7 @@ export function reconfigureMounts(level) {
  * @param {number} slotIdx
  * @param {string} id
  */
-export function setWeaponSelection(level, mountIdx, slotIdx, id) {
+export function setWeaponSelection(level, mountIdx, slotIdx, id, data = null) {
 	const mounts = normalizeMounts(level, getEffectiveMounts(level));
 	const mount = mounts[mountIdx];
 	if (!mount)
@@ -286,11 +286,15 @@ export function setWeaponSelection(level, mountIdx, slotIdx, id) {
 
 	const weapon = mount.weapons[slotIdx];
 
-	// remove any mods on this weapon and return to the unused mod list
-	if (weapon?.tags?.mod) {
+	if (!id && weapon?.tags?.mod) {
+		// remove any mods on this weapon and return to the unused mod list
 		roadmap.ll[level].unusedModIds.push(weapon.tags.mod);
 		delete weapon.tags.mod;
 	}
+
+	if (weapon?.tags && data?.mod)
+		// add specified mod
+		weapon.tags.mod = data.mod;
 
 	// set loadout at this level, with updated weapon slot
 	roadmap.ll[level].mounts = mounts;

@@ -133,6 +133,7 @@ export function updateHASEWaterfall(level, id, doIncrement) {
 		refreshElectiveSystemList(i);
 	}
 
+	refreshWeaponSelectors(level);
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
@@ -216,9 +217,13 @@ export function weaponUpdate(selector, level) {
 	const newId = selector.value;
 
 	// update roadmap and cumulative catalog
-	template.write(
-		{ level: currentLevel, mountIdx, slotIdx, id: newId }
-	);
+	template.write({
+		level: currentLevel,
+		mountIdx,
+		slotIdx,
+		id: newId,
+		data: selector.dataset
+	});
 
 	// This level becomes a loadout boundary. Later levels inherit it until
 	// another level explicitly defines its own mounts.
@@ -226,10 +231,17 @@ export function weaponUpdate(selector, level) {
 		if (i > currentLevel && roadmap.ll[i].mounts)
 			break;
 
+		// replace mods
+		const modList = document.getElementById(`mods-ll-${i}`);
+		modList.replaceWith(renderModsMenu(i));
+
 		redrawMount(i, mountIdx);
 		refreshStats(i);
 		refreshBudgetPill(i);
-		refreshElectiveSystemList(i);
+
+		// update all attached selectors at this level
+		refreshWeaponSelectors(i, i);
+		refreshSelectors(SELECT_TEMPLATE.SYSTEM, i, i);
 	}
 }
 
@@ -248,13 +260,16 @@ export function systemUpdate(selector, level) {
 
 	// update stats and budget pill
 	for (let i = level; i <= roadmap.maxLevel; i++) {
+		// replace mods
 		const modList = document.getElementById(`mods-ll-${i}`);
 		modList.replaceWith(renderModsMenu(i));
+
 		refreshStats(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
-	}
 
-	// update all attached selectors at this and later levels
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
+		// update all attached selectors at this level
+		refreshWeaponSelectors(i, i);
+		refreshSelectors(SELECT_TEMPLATE.SYSTEM, i, i);
+	}
 }

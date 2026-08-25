@@ -84,10 +84,8 @@ export function isSystemEligible(level, id, selectedId = null) {
 
 	// determine whether adding/swapping systems is within the level's budget
 	const withinSPBudget =
-		(selectedId ?
-			Number(candidate.sp) - Number(selectedSystem.sp) :
-			Number(candidate.sp)) <=
-			stats[level].sp_budget;
+		Number(candidate.sp ?? 0) - Number(selectedSystem?.sp ?? 0) <=
+		stats[level].sp_budget;
 	
 	if (!withinSPBudget)
 		return false;

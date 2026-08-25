@@ -221,13 +221,11 @@ export function renderStats(level) {
 }
 
 export function renderModsMenu(level) {
-	console.log('try');
 	const menu = document.createElement('div');
 	menu.id = `mods-ll-${level}`;
 	menu.className = 'mod-menu';
 
 	const modList = getEffectiveMods(level);
-	console.log(modList);
 
 	// omit mod menu when no options are available
 	if ((modList.length ?? 0) == 0) {
@@ -237,10 +235,16 @@ export function renderModsMenu(level) {
 
 	menu.hidden = false;
 	// populate mod menu
-	for (const id of modList) {
+	for (let idx = 0; idx < modList.length; idx++) {
 		const mod = document.createElement('div');
-		mod.className = 'tag draggable';
-		mod.textContent = srcData.mods.get(id)?.name ?? '';
+		mod.className = 'tag';
+		mod.draggable = true;
+		mod.textContent = srcData.mods.get(modList[idx])?.name ?? '';
+
+		mod.addEventListener('dragstart', event => {
+			event.dataTransfer.setData('id', modList[idx]);
+			event.dataTransfer.setData('idx', idx);
+		});
 
 		menu.append(mod);
 	}

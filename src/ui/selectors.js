@@ -63,6 +63,9 @@ import {
 } from '../rules/frames.js';
 
 import {
+	getEffectiveMods,
+	getEffectiveMounts,
+	reconfigureMounts,
 	isWeaponEligible,
 	setWeaponSelection
 } from '../rules/weapons.js';
@@ -203,8 +206,8 @@ export const SELECT_TEMPLATE = Object.freeze({
 		type: 'weapon',
 		allowClear: true,
 		getSrcItems: () => srcData.weapons,
-		write: ({ level, mountIdx, slotIdx, id }) =>
-			setWeaponSelection(level, mountIdx, slotIdx, id),
+		write: ({ level, mountIdx, slotIdx, id, data }) =>
+			setWeaponSelection(level, mountIdx, slotIdx, id, data),
 		getLabel: ({ id, slot = null }) => {
 			return id ? (srcData.weapons.get(id)?.name ?? '') :
 				slot?.label;
@@ -502,6 +505,31 @@ export function renderWeaponSelector(
 	);
 	selector.dataset.mountIdx = mountIdx;
 	selector.dataset.slotIdx = slotIdx;
+
+	// drag-drop mods onto this weapon
+	selector.addEventListener('dragover', event => {
+		event.preventDefault();
+		selector.querySelector('.selector-control').focus();
+	});
+	selector.addEventListener('drop', event => {
+		event.preventDefault();
+
+		const currentWeapon = getEffectiveMounts(level)
+			?.[mountIdx]?.weapons[slotIdx];
+		const currentModIds = currentWeapon?.tags?.mod;
+		const draggedModId = event.dataTransfer.getData('id');
+		const draggedModIdx = Number(event.dataTransfer.getData('idx'));
+		console.log(currentModIds);
+		console.log(draggedModId);
+		if (currentModIds !== draggedModId) {
+			selector.dataset.mod = draggedModId;
+			roadmap.ll[level].unusedModIds = getEffectiveMods(level);
+			roadmap.ll[level].unusedModIds.splice(draggedModIdx, 1);
+
+			SELECT_TEMPLATE.WEAPON.changeEvent(selector, level);
+		}
+		console.log(roadmap.ll[level].mounts);
+	});
 
 	return selector;
 }
