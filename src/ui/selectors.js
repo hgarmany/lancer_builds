@@ -303,6 +303,13 @@ export function setOptionHidden(option, hide = true) {
 	option.hidden = hide;
 }
 
+export function setSelectorFocus(selector, doFocus) {
+	if (doFocus)
+		selector.querySelector('.selector-control').focus();
+	else
+		selector.querySelector('.selector-control').blur();
+}
+
 /**
  * Find the best location to place the selector menu
  * Prefers under selector to over, takes the nearest possible x-pos
@@ -361,6 +368,47 @@ export function setSelectorOpen(selector, doOpen) {
 	activeSelector = selector;
 	selectorOverlay.append(menu);
 	positionSelectorMenu(selector);
+}
+
+/**
+ * Assigns event listeners to a selector so that it can receive
+ * drag-and-drop mods
+ * 
+ * @param {number} level
+ * @param {HTMLDivElement} selector
+ */
+export function applyWeaponAttachmentManager(level, selector) {
+	// drag-drop mods onto this weapon
+	selector.addEventListener('dragover', event => {
+		event.preventDefault();
+		selector.querySelector('.selector-control').focus();
+	});
+	selector.addEventListener('dragleave', event => {
+		event.preventDefault();
+		selector.querySelector('.selector-control').blur();
+	});
+	selector.addEventListener('drop', event => {
+		event.preventDefault();
+
+		const currentWeapon = getEffectiveMounts(level)
+			?.[selector.dataset.mountIdx]?.weapons[selector.dataset.slotIdx];
+		const currentModIds = currentWeapon?.tags?.mod;
+		const draggedModId = event.dataTransfer.getData('id');
+		const draggedModIdx = Number(event.dataTransfer.getData('idx'));
+		console.log(currentModIds);
+		console.log(draggedModId);
+		if (currentModIds !== draggedModId) {
+			selector.dataset.mod = draggedModId;
+			roadmap.ll[level].unusedModIds = getEffectiveMods(level);
+			roadmap.ll[level].unusedModIds.splice(draggedModIdx, 1);
+
+			SELECT_TEMPLATE.WEAPON.changeEvent(selector, level);
+			setSelectorFocus(selector, false);
+		}
+		console.log(roadmap.ll[level].mounts);
+
+		selector.querySelector('.selector-control').blur();
+	});
 }
 
 /**
@@ -433,8 +481,9 @@ export function renderSelector(
 
 		selector.value = option.value;
 		value.textContent = option.textContent;
-		setSelectorOpen(selector, false);
 		template.changeEvent(selector, level);
+		setSelectorOpen(selector, false);
+		setSelectorFocus(selector, false);
 	});
 
 	if (!template.getEligibility?.(context) ?? false)
@@ -474,8 +523,9 @@ export function renderSelector(
 				id: null,
 				selectedId: null
 			}) ?? '';
-			setSelectorOpen(selector, false);
 			template.changeEvent(selector, level);
+			setSelectorOpen(selector, false);
+			setSelectorFocus(selector, false);
 		});
 		selector.append(clear);
 	}
@@ -512,30 +562,7 @@ export function renderWeaponSelector(
 	selector.dataset.mountIdx = mountIdx;
 	selector.dataset.slotIdx = slotIdx;
 
-	// drag-drop mods onto this weapon
-	selector.addEventListener('dragover', event => {
-		event.preventDefault();
-		selector.querySelector('.selector-control').focus();
-	});
-	selector.addEventListener('drop', event => {
-		event.preventDefault();
-
-		const currentWeapon = getEffectiveMounts(level)
-			?.[mountIdx]?.weapons[slotIdx];
-		const currentModIds = currentWeapon?.tags?.mod;
-		const draggedModId = event.dataTransfer.getData('id');
-		const draggedModIdx = Number(event.dataTransfer.getData('idx'));
-		console.log(currentModIds);
-		console.log(draggedModId);
-		if (currentModIds !== draggedModId) {
-			selector.dataset.mod = draggedModId;
-			roadmap.ll[level].unusedModIds = getEffectiveMods(level);
-			roadmap.ll[level].unusedModIds.splice(draggedModIdx, 1);
-
-			SELECT_TEMPLATE.WEAPON.changeEvent(selector, level);
-		}
-		console.log(roadmap.ll[level].mounts);
-	});
+	applyWeaponAttachmentManager(level, selector);
 
 	return selector;
 }

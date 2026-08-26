@@ -305,7 +305,7 @@ export function renderMount(level, idx, data) {
 
 		// add weapon-specific tag (mod, ocal, limited)
 		const tags = document.createElement('span');
-		const modId = roadmap.ll[level].mounts?.[idx].weapons[i].tags?.mod;
+		const modId = getEffectiveMounts(level)?.[idx].weapons[i].tags?.mod;
 
 		if (modId) {
 			const mod = srcData.mods.get(modId);

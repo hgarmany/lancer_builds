@@ -205,6 +205,11 @@ select {
 	cursor: pointer;
 }
 
+.selector-control:focus {
+	outline: 2px solid Highlight;
+	outline-offset: 1px;
+}
+
 .selector-control.occupied {
 	background-color: transparent;
 	border-color: transparent;

@@ -16,6 +16,7 @@ import {
 
 import {
 	setSelectorClass,
+	setSelectorFocus,
 	SELECT_TEMPLATE
 } from './selectors.js';
 
