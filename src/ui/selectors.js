@@ -243,6 +243,12 @@ export const SELECT_TEMPLATE = Object.freeze({
 					roadmap.ll[level].unusedModIds.splice(modIdx, 1);
 			}
 			else {
+				const oldId = roadmap.ll[level].systems[idx]?.id;
+				const oldModIdx = roadmap.ll[level].unusedModIds.indexOf(oldId);
+				console.log(oldId);
+				console.log(oldModIdx);
+				if (oldModIdx >= 0)
+					roadmap.ll[level].unusedModIds.splice(oldModIdx, 1);
 				roadmap.ll[level].systems[idx] = { id, data };
 				// if a mod, add system to mod list
 				const modIdx = roadmap.ll[level].unusedModIds.indexOf(id);

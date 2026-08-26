@@ -270,6 +270,29 @@ export function reconfigureMounts(level) {
 }
 
 /**
+ * Resize a Flex mount when its first weapon changes size
+ * Transfers mods to new mount type as necessary
+ *
+ * @param {number} level
+ * @param {Object} mount
+ */
+function resizeFlexMount(level, mount) {
+	const slotCount = getMountSlots(mount).length;
+
+	if (mount.weapons.length > slotCount) {
+		const removedWeapon = mount.weapons[1];
+		mount.weapons.length = 1;
+
+		const modId = removedWeapon.tags.mod;
+		if (modId)
+			mount.weapons[0].tags.mod = modId;
+	}
+	else if (mount.weapons.length < slotCount) {
+		mount.weapons.push({ id: null, tags: {} });
+	}
+}
+
+/**
  * Apply a weapon selection to an existing mount
  * Where a level's loadout is inherited, create a new roadmap entry
  *
@@ -301,13 +324,8 @@ export function setWeaponSelection(level, mountIdx, slotIdx, id, data = null) {
 	mount.weapons[slotIdx].id = id ?? null;
 
 	// dynamic weapon slots for flex mounts
-	if (mount.type === 'Flex') {
-		mount.weapons = getMountSlots(mount).map((slot, idx) => {
-			if (idx >= mount.weapons.length)
-				return { id: null, tags: {} };
-			return mount.weapons[idx];
-		});
-	}
+	if (mount.type === 'Flex')
+		resizeFlexMount(level, mount);
 }
 
 /**
