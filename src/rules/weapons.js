@@ -283,6 +283,7 @@ export function reconfigureMounts(level) {
 	const normalizedMounts = normalizeMounts(level, effectiveMounts);
 	if (getMountConfigurationKey(normalizedMounts) ===
 		getMountConfigurationKey(effectiveMounts))
+		return effectiveMounts;
 
 	roadmap.ll[level].mounts = normalizedMounts;
 
