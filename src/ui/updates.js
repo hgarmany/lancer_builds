@@ -81,7 +81,6 @@ export function talentUpdate(selector, level) {
 	// update integrated mounts and systems
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		// resolves existing hard-set integrated talent mounts
-		// TODO: need to configure s.t. mounts aren't hard-set at every level
 		reconfigureMounts(i);
 		redrawMounts(i);
 		refreshElectiveSystemList(i);

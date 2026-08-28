@@ -229,11 +229,11 @@ export function renderModsMenu(level) {
 
 	// omit mod menu when no options are available
 	if ((modList.length ?? 0) == 0) {
-		menu.hidden = true;
+		menu.style.display = 'none';
 		return menu;
 	}
 
-	menu.hidden = false;
+	menu.style.display = 'flex';
 	// populate mod menu
 	for (let idx = 0; idx < modList.length; idx++) {
 		const mod = document.createElement('div');

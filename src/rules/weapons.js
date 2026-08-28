@@ -257,6 +257,21 @@ export function getEffectiveMounts(level) {
 }
 
 /**
+ * Produces a string to uniquely identify mount configurations
+ * Is agnostic toward the actual contents of mounts: weapons, mods, etc.
+ * 
+ * @param {Array<Object>} mounts
+ * @returns {string}
+ */
+function getMountConfigurationKey(mounts) {
+	return JSON.stringify(mounts.map(mount => [
+		mount.type,
+		mount.tags?.source ?? null,
+		mount.tags?.integrated ?? null
+	]));
+}
+
+/**
  * Create this level's own loadout before applying a user weapon selection.
  * The derived configuration is cloned so prior levels remain unchanged.
  *
@@ -264,8 +279,13 @@ export function getEffectiveMounts(level) {
  * @returns {Array<Object>}
  */
 export function reconfigureMounts(level) {
-	const normalizedMounts = normalizeMounts(level, getEffectiveMounts(level));
+	const effectiveMounts = getEffectiveMounts(level);
+	const normalizedMounts = normalizeMounts(level, effectiveMounts);
+	if (getMountConfigurationKey(normalizedMounts) ===
+		getMountConfigurationKey(effectiveMounts))
+
 	roadmap.ll[level].mounts = normalizedMounts;
+
 	return normalizedMounts;
 }
 

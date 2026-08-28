@@ -115,10 +115,10 @@ export function refreshSelectors(
 ) {
 	for (let i = level; i <= maxLevel; i++) {
 		// all selectors of a given type and level belong to the same group
-		const selectGroup = document.getElementById(
-			`${template.type}-ll-${i}`);
+		const selectors = document.getElementById(
+			`${template.type}-ll-${i}`)?.querySelectorAll('.custom-select');
 
-		if (!selectGroup)
+		if (!selectors)
 			continue;
 
 		// roadmap is source of truth for all selector refreshes
@@ -128,10 +128,9 @@ export function refreshSelectors(
 		if (template === SELECT_TEMPLATE.SYSTEM)
 			roadmapData = roadmapData.map(item => item?.id ?? null);
 
-		for (let idx = 0; idx < selectGroup.children.length; idx++) {
-			const selector = selectGroup.children[idx];
+		for (let idx = 0; idx < selectors.length; idx++) {
 			const selectedId = roadmapData[idx] ?? null;
-			refreshSelector(selector, i, selectedId, template);
+			refreshSelector(selectors[idx], i, selectedId, template);
 		}
 	}
 }
@@ -249,20 +248,20 @@ export function redrawMounts(level) {
 
 	for (let idx = 0; idx < mounts.length; idx++) {
 		const data = mounts[idx];
-		const current = container.children[idx];
-		const currentSlots = current
-			?.querySelector('.select-group')?.children.length;
+		const currentMount = container.children[idx];
+		const currentSlots = currentMount
+			?.querySelectorAll('.custom-select').length;
 		const requiredSlots = getMountSlots(data).length;
 
-		if (!current) {
+		if (!currentMount) {
 			// if the current mount list is exhausted, add a new mount
 			container.append(renderMount(level, idx, data));
 		}
-		else if (current.dataset.mountType !== data.type ||
+		else if (currentMount.dataset.mountType !== data.type ||
 			currentSlots !== requiredSlots ||
-			current.dataset.integrated !== data.tags.integrated) {
+			currentMount.dataset.integrated !== data.tags.integrated) {
 			// if the current mount doesn't match the new type, replace
-			current.replaceWith(renderMount(level, idx, data));
+			currentMount.replaceWith(renderMount(level, idx, data));
 		}
 	}
 
