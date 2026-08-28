@@ -44,6 +44,7 @@ import {
 } from '../rules/stats.js';
 
 import {
+	getWeaponNumUses,
 	getMountSlots,
 	getEffectiveMods,
 	getEffectiveMounts
@@ -252,6 +253,40 @@ export function renderModsMenu(level) {
 	return menu;
 }
 
+export function renderWeaponTags(level, weapon) {
+	const tags = document.createElement('div');
+	tags.className = 'weapon-tags';
+
+	const modId = weapon?.tags?.mod;
+
+	if (modId) {
+		const mod = srcData.mods.get(modId);
+
+		if (mod) {
+			const tag = document.createElement('div');
+			tag.className = 'tag';
+			tag.textContent = mod.name;
+
+			tags.append(tag);
+		}
+	}
+	
+	if (weapon?.id) {
+		const limited = getWeaponNumUses(level, weapon.id);
+		
+		if (limited >= 0) {
+			// limited uses tag
+			const tag = document.createElement('div');
+			tag.className = 'tag limited';
+			tag.textContent = `Limited ${limited}`;
+
+			tags.append(tag);
+		}
+	}
+
+	return tags;
+}
+
 /**
  * Create a stand-in element that resembles
  * but does not function as a weapons selector
@@ -293,33 +328,23 @@ export function renderMount(level, idx, data) {
 	slots.className = 'select-group';
 	// add all weapons to the mount
 	for (let i = 0; i < slotDefinitions.length; i++) {
+		const slot = document.createElement('div');
+		slot.className = 'weapon-slot';
+
 		if (data.tags?.integrated) {
 			mount.classList.add('integrated');
 			mount.dataset.integrated = data.tags.integrated;
-			slots.append(renderIntegratedWeaponLabel(weapons[i]?.id));
+			slot.append(renderIntegratedWeaponLabel(weapons[i]?.id));
 		}
 		else {
-			slots.append(renderWeaponSelector(
+			slot.append(renderWeaponSelector(
 				level, idx, i, slotDefinitions[i], weapons[i]?.id));
 		}
 
 		// add weapon-specific tag (mod, ocal, limited)
-		const tags = document.createElement('span');
-		const modId = getEffectiveMounts(level)?.[idx].weapons[i].tags?.mod;
+		slot.append(renderWeaponTags(level, weapons[i]));
 
-		if (modId) {
-			const mod = srcData.mods.get(modId);
-
-			if (mod) {
-				const tag = document.createElement('div');
-				tag.className = 'tag';
-				tag.textContent = mod.name;
-
-				tags.append(tag);
-			}
-		}
-
-		slots.append(tags);
+		slots.append(slot);
 	}
 
 	mount.append(label, slots);

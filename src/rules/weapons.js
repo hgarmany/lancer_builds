@@ -80,11 +80,12 @@ export function doesWeaponHaveTag(id, tagId) {
  * Get the number of uses a limited weapon has
  * Non-limited weapons return 0
  * 
+ * @param {number} level
  * @param {string} id
  * @returns {number}
  */
-export function getWeaponNumUses(id) {
-	return getItemNumUses(srcData.weapons.get(id));
+export function getWeaponNumUses(level, id) {
+	return getItemNumUses(level, srcData.weapons.get(id));
 }
 
 /**

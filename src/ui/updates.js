@@ -22,7 +22,8 @@ import {
 
 import {
 	getFrameImageSrc,
-	renderModsMenu
+	renderModsMenu,
+	renderWeaponTags
 } from './renderModules.js';
 
 import {
@@ -129,6 +130,9 @@ export function updateHASEWaterfall(level, id, doIncrement) {
 	for (let i = 0; i <= roadmap.maxLevel; i++) {
 		refreshHexes(i, id);
 		refreshStats(i);
+		
+		// TODO: refresh limited use tags
+
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
 	}
@@ -225,6 +229,8 @@ export function weaponUpdate(selector, level) {
 		data: selector.dataset
 	});
 
+	const effectiveMounts = roadmap.ll[level].mounts;
+
 	// This level becomes a loadout boundary. Later levels inherit it until
 	// another level explicitly defines its own mounts.
 	for (let i = currentLevel; i <= roadmap.maxLevel; i++) {
@@ -232,8 +238,12 @@ export function weaponUpdate(selector, level) {
 			break;
 
 		// replace mods
-		const modList = document.getElementById(`mods-ll-${i}`);
-		modList.replaceWith(renderModsMenu(i));
+		const freeModList = document.getElementById(`mods-ll-${i}`);
+		freeModList.replaceWith(renderModsMenu(i));
+		const weaponMods = selector.parentElement.children[1];
+		weaponMods.replaceWith(
+			renderWeaponTags(i, effectiveMounts[mountIdx].weapons[slotIdx])
+		);
 
 		redrawMount(i, mountIdx);
 		refreshStats(i);

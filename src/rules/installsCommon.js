@@ -32,12 +32,13 @@ export function doesItemHaveTag(item, tagId) {
  * Get the number of uses a limited item has
  * Non-limited items return -1
  * 
+ * @param {number} level
  * @param {Object} item
  * @returns {number}
  */
-export function getItemNumUses(item) {
+export function getItemNumUses(level, item) {
     const limited = item?.tags?.find(tag => tag.id === TAGS.LIMITED);
-    return limited ? Number(limited.val) + stats.limited_bonus : -1;
+    return limited ? Number(limited.val) + stats[level].limited_bonus : -1;
 }
 
 /**

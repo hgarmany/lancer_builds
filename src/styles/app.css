@@ -589,8 +589,13 @@ select {
 	border: 1px solid black;
 	border-radius: 1rem;
 
-	font-size: x-small;
+	width: min-content;
+	white-space: nowrap;
 
-	padding: 0.1rem 0.25rem;
+	font-family: var(--data-font);
+	font-size: x-small;
+	text-transform: uppercase;
+
+	padding: 0.1rem 0.5rem;
 	user-select: none;
 }

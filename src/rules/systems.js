@@ -53,11 +53,12 @@ function systemAIBonus(id) {
  * Get the number of uses a limited system has
  * Non-limited systems return -1
  * 
+ * @param {number} level
  * @param {string} id
  * @returns {number}
  */
-export function getSystemNumUses(id) {
-	return getItemNumUses(srcData.systems.get(id));
+export function getSystemNumUses(level, id) {
+	return getItemNumUses(level, srcData.systems.get(id));
 }
 
 /**
