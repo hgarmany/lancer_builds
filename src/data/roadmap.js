@@ -58,9 +58,11 @@ function createDefaultRoadmapLevel(level) {
 		haseIds: createEmptySlots(limits.mechSkills),
 		licenseId: null,
 		coreBonusId: null,
+		// null means "inherit the previous level's mounts"
 		mounts: null,
 		systems: [],
-		unusedModIds: [],
+		// null means "inherit the previous level's unused mod list"
+		unusedModIds: null,
 
 		// null means "continue using the previously active frame"
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null

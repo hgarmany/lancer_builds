@@ -26,7 +26,9 @@ import {
 import {
 	SELECT_TEMPLATE,
 	renderSelector,
-	renderWeaponSelector
+	renderWeaponSelector,
+	applyUnusedModDragManager,
+	applyWeaponModTagManager
 } from './selectors.js';
 
 import {
@@ -229,7 +231,7 @@ export function renderModsMenu(level) {
 	const modList = getEffectiveMods(level);
 
 	// omit mod menu when no options are available
-	if ((modList.length ?? 0) == 0) {
+	if (!modList) {
 		menu.style.display = 'none';
 		return menu;
 	}
@@ -238,14 +240,9 @@ export function renderModsMenu(level) {
 	// populate mod menu
 	for (let idx = 0; idx < modList.length; idx++) {
 		const mod = document.createElement('div');
-		mod.className = 'tag';
-		mod.draggable = true;
+		mod.className = 'tag mod-tag';
 		mod.textContent = srcData.mods.get(modList[idx])?.name ?? '';
-
-		mod.addEventListener('dragstart', event => {
-			event.dataTransfer.setData('id', modList[idx]);
-			event.dataTransfer.setData('idx', idx);
-		});
+		applyUnusedModDragManager(level, mod, modList[idx]);
 
 		menu.append(mod);
 	}
@@ -253,7 +250,7 @@ export function renderModsMenu(level) {
 	return menu;
 }
 
-export function renderWeaponTags(level, weapon) {
+export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 	const tags = document.createElement('div');
 	tags.className = 'weapon-tags';
 
@@ -264,8 +261,19 @@ export function renderWeaponTags(level, weapon) {
 
 		if (mod) {
 			const tag = document.createElement('div');
-			tag.className = 'tag';
-			tag.textContent = mod.name;
+			tag.className = 'tag mod-tag applied-mod';
+
+			const label = document.createElement('span');
+			label.textContent = mod.name;
+
+			const remove = document.createElement('button');
+			remove.className = 'clear';
+			remove.type = 'button';
+			remove.title = `Remove ${mod.name}`;
+
+			tag.append(label, remove);
+			applyWeaponModTagManager(
+				level, tag, remove, mountIdx, slotIdx, modId);
 
 			tags.append(tag);
 		}
@@ -283,6 +291,11 @@ export function renderWeaponTags(level, weapon) {
 			tags.append(tag);
 		}
 	}
+
+	if (tags.children.length == 0)
+		tags.style.display = 'none';
+	else
+		tags.style.display = 'flex';
 
 	return tags;
 }
@@ -342,7 +355,7 @@ export function renderMount(level, idx, data) {
 		}
 
 		// add weapon-specific tag (mod, ocal, limited)
-		slot.append(renderWeaponTags(level, weapons[i]));
+		slot.append(renderWeaponTags(level, weapons[i], idx, i));
 
 		slots.append(slot);
 	}

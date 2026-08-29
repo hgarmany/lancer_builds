@@ -22,8 +22,7 @@ import {
 
 import {
 	getFrameImageSrc,
-	renderModsMenu,
-	renderWeaponTags
+	renderModsMenu
 } from './renderModules.js';
 
 import {
@@ -210,6 +209,22 @@ export function frameUpdate(selector, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
+export function modUpdate(level, mountIndexes) {
+	const affectedMounts = [...new Set(mountIndexes)];
+
+	for (let i = level; i <= roadmap.maxLevel; i++) {
+		if (i > level && roadmap.ll[i].mounts)
+			break;
+
+		const freeModList = document.getElementById(`mods-ll-${i}`);
+		if (freeModList)
+			freeModList.replaceWith(renderModsMenu(i));
+
+		for (const mountIdx of affectedMounts)
+			redrawMount(i, mountIdx);
+	}
+}
+
 export function weaponUpdate(selector, level) {
 	const template = SELECT_TEMPLATE.WEAPON;
 
@@ -229,23 +244,13 @@ export function weaponUpdate(selector, level) {
 		data: selector.dataset
 	});
 
-	const effectiveMounts = roadmap.ll[level].mounts;
-
 	// This level becomes a loadout boundary. Later levels inherit it until
 	// another level explicitly defines its own mounts.
 	for (let i = currentLevel; i <= roadmap.maxLevel; i++) {
 		if (i > currentLevel && roadmap.ll[i].mounts)
 			break;
 
-		// replace mods
-		const freeModList = document.getElementById(`mods-ll-${i}`);
-		freeModList.replaceWith(renderModsMenu(i));
-		const weaponMods = selector.parentElement.children[1];
-		weaponMods.replaceWith(
-			renderWeaponTags(i, effectiveMounts[mountIdx].weapons[slotIdx])
-		);
-
-		redrawMount(i, mountIdx);
+		modUpdate(i, [mountIdx]);
 		refreshStats(i);
 		refreshBudgetPill(i);
 
@@ -270,9 +275,7 @@ export function systemUpdate(selector, level) {
 
 	// update stats and budget pill
 	for (let i = level; i <= roadmap.maxLevel; i++) {
-		// replace mods
-		const modList = document.getElementById(`mods-ll-${i}`);
-		modList.replaceWith(renderModsMenu(i));
+		modUpdate(i, []);
 
 		refreshStats(i);
 		refreshBudgetPill(i);

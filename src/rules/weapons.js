@@ -235,11 +235,26 @@ export function normalizeMounts(level, savedMounts = []) {
  */
 export function getEffectiveMods(level) {
 	for (let i = level; i >= 0; i--) {
-		if (roadmap.ll[i].unusedModIds?.length > 0)
+		if (roadmap.ll[i].unusedModIds != null)
 			return roadmap.ll[i].unusedModIds;
 	}
 
-	return [];
+	return null;
+}
+
+/**
+ * Grab the correct mods for this level and
+ * assign a copy list if the list is null
+ *
+ * @param {number} level
+ * @returns {Array<string>}
+ */
+export function reconfigureMods(level) {
+	const levelData = roadmap.ll[level];
+	if (levelData.unusedModIds == null)
+		levelData.unusedModIds = [...getEffectiveMods(level) ?? []];
+
+	return levelData.unusedModIds;
 }
 
 /**
@@ -315,6 +330,78 @@ function resizeFlexMount(level, mount) {
 }
 
 /**
+ * Attach a mod to an unmodded slot
+ * Draws mod from a source slot or the unused mod list
+ *
+ * @param {number} level
+ * @param {number} targetMountIdx
+ * @param {number} targetSlotIdx
+ * @param {string} modId
+ * @param {{ mountIdx: number, slotIdx: number }|null} source
+ * @returns {boolean}
+ */
+export function assignWeaponMod(
+	level,
+	targetMountIdx,
+	targetSlotIdx,
+	modId,
+	source = null
+) {
+	console.log('add mod');
+	if (!modId)
+		return false;
+
+	const mounts = normalizeMounts(level, getEffectiveMounts(level));
+	const targetWeapon = mounts[targetMountIdx]?.weapons[targetSlotIdx];
+	if (!targetWeapon?.id || targetWeapon.tags?.mod)
+		return false;
+	roadmap.ll[level].mounts = mounts;
+
+	if (source) {
+		// remove mod from its source slot
+		delete mounts[source.mountIdx]?.weapons[source.slotIdx]?.tags.mod;
+	}
+	else {
+		// remove mod from the unused mod list
+		const unusedModIds = reconfigureMods(level);
+		const modIdx = unusedModIds.indexOf(modId);
+		if (modIdx < 0)
+			return false;
+		unusedModIds.splice(modIdx, 1);
+	}
+
+	// add mod to the target slot
+	targetWeapon.tags.mod = modId;
+	return true;
+}
+
+/**
+ * Remove a mod from a weapon and return it to this level's unused mod list
+ *
+ * @param {number} level
+ * @param {number} mountIdx
+ * @param {number} slotIdx
+ * @returns {boolean}
+ */
+export function removeWeaponMod(level, mountIdx, slotIdx) {
+	console.log('remove mod');
+	const mounts = normalizeMounts(level, getEffectiveMounts(level));
+	const weapon = mounts[mountIdx]?.weapons[slotIdx];
+	const modId = weapon?.tags?.mod;
+	if (!modId)
+		return false;
+	roadmap.ll[level].mounts = mounts;
+
+	// remove mod data
+	delete weapon.tags.mod;
+	const unusedModIds = reconfigureMods(level);
+	if (!unusedModIds.includes(modId))
+		unusedModIds.push(modId);
+
+	return true;
+}
+
+/**
  * Apply a weapon selection to an existing mount
  * Where a level's loadout is inherited, create a new roadmap entry
  *
@@ -328,22 +415,20 @@ export function setWeaponSelection(level, mountIdx, slotIdx, id, data = null) {
 	const mount = mounts[mountIdx];
 	if (!mount)
 		return;
+	roadmap.ll[level].mounts = mounts;
 
 	const weapon = mount.weapons[slotIdx];
 
 	if (!id && weapon?.tags?.mod) {
 		// remove any mods on this weapon and return to the unused mod list
-		roadmap.ll[level].unusedModIds.push(weapon.tags.mod);
+		reconfigureMods(level).push(weapon.tags.mod);
 		delete weapon.tags.mod;
 	}
 
-	if (weapon?.tags && data?.mod)
-		// add specified mod
+	// insert new weapon data
+	weapon.id = id ?? null;
+	if (data?.mod)
 		weapon.tags.mod = data.mod;
-
-	// set loadout at this level, with updated weapon slot
-	roadmap.ll[level].mounts = mounts;
-	mount.weapons[slotIdx].id = id ?? null;
 
 	// dynamic weapon slots for flex mounts
 	if (mount.type === 'Flex')

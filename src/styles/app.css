@@ -231,7 +231,7 @@ select {
 	visibility: hidden;
 }
 
-.selector-clear {
+.clear {
 	position: absolute;
 	top: 0.1rem;
 	right: 0rem;
@@ -244,8 +244,8 @@ select {
 }
 
 /* x marker */
-.selector-clear::before,
-.selector-clear::after {
+.clear::before,
+.clear::after {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -256,20 +256,21 @@ select {
 	content: '';
 }
 
-.selector-clear::before {
+.clear::before {
 	transform: translate(-50%, -50%) rotate(45deg);
 }
 
-.selector-clear::after {
+.clear::after {
 	transform: translate(-50%, -50%) rotate(-45deg);
 }
 
-.selector-control.occupied + .selector-clear {
+.selector-control.occupied + .clear,
+.applied-mod .clear {
 	display: grid;
 }
 
-.selector-clear:hover,
-.selector-clear:focus-visible {
+.clear:hover,
+.clear:focus-visible {
 	background-color: lightgray;
 }
 
@@ -562,6 +563,16 @@ select {
 	border: 1px dashed black;
 }
 
+.weapon-slot {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.weapon-tags {
+	gap: 0.25rem;
+}
+
 .systems {
 	align-items: center;
 	gap: 0.25rem;
@@ -586,16 +597,34 @@ select {
 }
 
 .tag {
-	border: 1px solid black;
-	border-radius: 1rem;
-
+	position: relative;
 	width: min-content;
 	white-space: nowrap;
+	padding: 0.1rem 0.5rem;
+
+	border: 1px solid darkblue;
+	border-radius: 1rem;
 
 	font-family: var(--data-font);
 	font-size: x-small;
 	text-transform: uppercase;
+	color: darkblue;
 
-	padding: 0.1rem 0.5rem;
+	background-color: aliceblue;
 	user-select: none;
+}
+
+.mod-tag {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	cursor: grab;
+}
+
+.mod-tag:active {
+	cursor: grabbing;
+}
+
+.applied-mod {
+	padding-right: 1.5rem;
 }

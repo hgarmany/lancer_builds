@@ -36,6 +36,7 @@ import {
 	coreBonusUpdate,
 	frameUpdate,
 	weaponUpdate,
+	modUpdate,
 	systemUpdate
 } from './updates.js';
 
@@ -63,9 +64,9 @@ import {
 } from '../rules/frames.js';
 
 import {
-	getEffectiveMods,
-	getEffectiveMounts,
-	reconfigureMounts,
+	reconfigureMods,
+	assignWeaponMod,
+	removeWeaponMod,
 	isWeaponEligible,
 	setWeaponSelection
 } from '../rules/weapons.js';
@@ -235,25 +236,27 @@ export const SELECT_TEMPLATE = Object.freeze({
 			return null;
 		},
 		write: ({ level, idx, id, data }) => {
+			const unusedModIds = reconfigureMods(level);
 			if (!id) {
 				id = roadmap.ll[level].systems.splice(idx, 1)[0]?.id;
 				// if a mod, remove system from mod list
-				const modIdx = roadmap.ll[level].unusedModIds.indexOf(id);
+				const modIdx = unusedModIds.indexOf(id);
 				if (modIdx >= 0)
-					roadmap.ll[level].unusedModIds.splice(modIdx, 1);
+					unusedModIds.splice(modIdx, 1);
+
+				// TODO: if a mod but not found in the unused set
+				// search all slots and remove first occurrence
 			}
 			else {
 				const oldId = roadmap.ll[level].systems[idx]?.id;
-				const oldModIdx = roadmap.ll[level].unusedModIds.indexOf(oldId);
-				console.log(oldId);
-				console.log(oldModIdx);
+				const oldModIdx = unusedModIds.indexOf(oldId);
 				if (oldModIdx >= 0)
-					roadmap.ll[level].unusedModIds.splice(oldModIdx, 1);
+					unusedModIds.splice(oldModIdx, 1);
 				roadmap.ll[level].systems[idx] = { id, data };
 				// if a mod, add system to mod list
-				const modIdx = roadmap.ll[level].unusedModIds.indexOf(id);
+				const modIdx = unusedModIds.indexOf(id);
 				if (id.substring(0, 3) === 'wm_' && modIdx == -1)
-					roadmap.ll[level].unusedModIds.push(id);
+					unusedModIds.push(id);
 			}
 		},
 		getLabel: ({ id }) => {
@@ -370,6 +373,89 @@ export function setSelectorOpen(selector, doOpen) {
 	positionSelectorMenu(selector);
 }
 
+const MOD_TRANSFER_TYPE = 'application/x-lancer-weapon-mod';
+
+function setModTransferData(event, data) {
+	const serializedData = JSON.stringify(data);
+	event.dataTransfer.effectAllowed = 'move';
+	event.dataTransfer.setData(MOD_TRANSFER_TYPE, serializedData);
+	event.dataTransfer.setData('text/plain', serializedData);
+}
+
+function getModTransferData(event) {
+	const serializedData = event.dataTransfer.getData(MOD_TRANSFER_TYPE) ||
+		event.dataTransfer.getData('text/plain');
+	if (!serializedData)
+		return null;
+
+	try {
+		return JSON.parse(serializedData);
+	}
+	catch {
+		return null;
+	}
+}
+
+/**
+ * Make an unused mod tag draggable onto a weapon at the same level
+ *
+ * @param {number} level
+ * @param {HTMLElement} tag
+ * @param {string} modId
+ */
+export function applyUnusedModDragManager(level, tag, modId) {
+	tag.draggable = true;
+	tag.addEventListener('dragstart', event => {
+		setModTransferData(event, {
+			level,
+			modId,
+			source: 'unused'
+		});
+	});
+}
+
+/**
+ * Make an applied mod draggable and wire its removal button
+ *
+ * @param {number} level
+ * @param {HTMLElement} tag
+ * @param {HTMLButtonElement} removeButton
+ * @param {number} mountIdx
+ * @param {number} slotIdx
+ * @param {string} modId
+ */
+export function applyWeaponModTagManager(
+	level,
+	tag,
+	removeButton,
+	mountIdx,
+	slotIdx,
+	modId
+) {
+	tag.draggable = true;
+	tag.addEventListener('dragstart', event => {
+		if (event.target === removeButton) {
+			event.preventDefault();
+			return;
+		}
+
+		setModTransferData(event, {
+			level,
+			modId,
+			source: 'weapon',
+			mountIdx,
+			slotIdx
+		});
+	});
+
+	// remove mod from slot, return to unused list
+	removeButton.addEventListener('click', event => {
+		event.stopPropagation();
+		if (removeWeaponMod(level, mountIdx, slotIdx))
+			modUpdate(level, [mountIdx]);
+	});
+}
+
 /**
  * Assigns event listeners to a selector so that it can receive
  * drag-and-drop mods
@@ -381,33 +467,44 @@ export function applyWeaponAttachmentManager(level, selector) {
 	// drag-drop mods onto this weapon
 	selector.addEventListener('dragover', event => {
 		event.preventDefault();
+		event.dataTransfer.dropEffect = 'move';
 		selector.querySelector('.selector-control').focus();
 	});
 	selector.addEventListener('dragleave', event => {
-		event.preventDefault();
-		selector.querySelector('.selector-control').blur();
+		if (!selector.contains(event.relatedTarget))
+			selector.querySelector('.selector-control').blur();
 	});
 	selector.addEventListener('drop', event => {
 		event.preventDefault();
+		event.stopPropagation();
 
-		const currentWeapon = getEffectiveMounts(level)
-			?.[selector.dataset.mountIdx]?.weapons[selector.dataset.slotIdx];
-		const currentModIds = currentWeapon?.tags?.mod;
-		const draggedModId = event.dataTransfer.getData('id');
-		const draggedModIdx = Number(event.dataTransfer.getData('idx'));
-		console.log(currentModIds);
-		console.log(draggedModId);
-		if (currentModIds !== draggedModId) {
-			selector.dataset.mod = draggedModId;
-			roadmap.ll[level].unusedModIds = getEffectiveMods(level);
-			roadmap.ll[level].unusedModIds.splice(draggedModIdx, 1);
+		const mountIdx = Number(selector.dataset.mountIdx);
+		const slotIdx = Number(selector.dataset.slotIdx);
+		const updatedSelector = document.querySelector(
+			`#mount-${mountIdx}-ll-${level} ` +
+			`.weapon-select[data-slot-idx="${slotIdx}"]`);
+		setSelectorFocus(updatedSelector, false);
 
-			SELECT_TEMPLATE.WEAPON.changeEvent(selector, level);
-			setSelectorFocus(selector, false);
+		const transfer = getModTransferData(event);
+		if (!transfer || level !== Number(transfer.level))
+			return;
+
+		const source = transfer.source === 'weapon' ? {
+			mountIdx: Number(transfer.mountIdx),
+			slotIdx: Number(transfer.slotIdx)
+		} : null;
+		const didAssign = assignWeaponMod(
+			level,
+			mountIdx,
+			slotIdx,
+			transfer.modId,
+			source
+		);
+
+		if (didAssign) {
+			const affectedMounts = source ? [source.mountIdx, mountIdx] : [mountIdx];
+			modUpdate(level, affectedMounts);
 		}
-		console.log(roadmap.ll[level].mounts);
-
-		selector.querySelector('.selector-control').blur();
 	});
 }
 
@@ -511,7 +608,7 @@ export function renderSelector(
 	if (template.allowClear) {
 		control.classList.add('clearable');
 		const clear = document.createElement('button');
-		clear.className = 'selector-clear';
+		clear.className = 'clear';
 		clear.type = 'button';
 		clear.title = 'Clear selection';
 		clear.setAttribute('aria-label', 'Clear selection');

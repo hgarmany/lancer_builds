@@ -1,12 +1,3 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 node_modules
 dist
 dist-ssr
@@ -26,4 +17,12 @@ obj
 *.sw?
 /src/assets
 vite.config.js
+*.lcp
+dist
+.vs/
+.vscode/
+obj/
+*.esproj
+*.slnx
+/src/assets
 *.lcp
