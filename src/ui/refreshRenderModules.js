@@ -48,6 +48,7 @@ import {
 } from '../rules/systems.js';
 
 import {
+	getWeaponNumUses,
 	getEffectiveMounts,
 	getMountSlots
 } from '../rules/weapons.js';
@@ -268,6 +269,16 @@ export function redrawMounts(level) {
 	// remove any excess mounts that are not in use
 	while (container.children.length > mounts.length)
 		container.lastElementChild.remove();
+}
+
+export function refreshLimitedTags(level) {
+	const tags = document.getElementById(`row-ll-${level}`)
+		.querySelectorAll('.mounts-cell .tag.limited');
+
+	for (const tag of tags) {
+		const weaponId = tag.parentElement.parentElement.dataset.id;
+		tag.textContent = `Limited ${getWeaponNumUses(level, weaponId)}`;
+	}
 }
 
 /**

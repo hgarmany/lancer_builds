@@ -34,7 +34,8 @@ import {
 	refreshElectiveSystemList,
 	refreshWeaponSelectors,
 	redrawMount,
-	redrawMounts
+	redrawMounts,
+	refreshLimitedTags
 } from './refreshRenderModules.js';
 
 import {
@@ -129,8 +130,7 @@ export function updateHASEWaterfall(level, id, doIncrement) {
 	for (let i = 0; i <= roadmap.maxLevel; i++) {
 		refreshHexes(i, id);
 		refreshStats(i);
-		
-		// TODO: refresh limited use tags
+		refreshLimitedTags(i);
 
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);

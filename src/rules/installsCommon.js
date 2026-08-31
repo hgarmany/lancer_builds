@@ -37,7 +37,7 @@ export function doesItemHaveTag(item, tagId) {
  * @returns {number}
  */
 export function getItemNumUses(level, item) {
-    const limited = item?.tags?.find(tag => tag.id === TAGS.LIMITED);
+	const limited = item?.tags?.find(tag => tag.id === TAGS.LIMITED);
     return limited ? Number(limited.val) + stats[level].limited_bonus : -1;
 }
 

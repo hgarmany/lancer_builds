@@ -343,6 +343,8 @@ export function renderMount(level, idx, data) {
 	for (let i = 0; i < slotDefinitions.length; i++) {
 		const slot = document.createElement('div');
 		slot.className = 'weapon-slot';
+		if (weapons[i]?.id)
+			slot.dataset.id = weapons[i].id;
 
 		if (data.tags?.integrated) {
 			mount.classList.add('integrated');

@@ -547,7 +547,7 @@ select {
 	display: grid !important;
 	grid-template-rows: repeat(2, auto);
 	grid-auto-flow: column;
-	grid-auto-columns: minmax(10rem, 1fr);
+	grid-auto-columns: minmax(10rem, fit-content);
 	align-items: center;
 
 	gap: 0.5rem;
@@ -626,5 +626,25 @@ select {
 }
 
 .applied-mod {
-	padding-right: 1.5rem;
+	padding-right: 1.15rem;
+}
+
+.applied-mod .clear {
+	top: 50%;
+	right: 0.15rem;
+	width: 0.9rem;
+	height: 0.9rem;
+	transform: translateY(-50%);
+}
+
+.applied-mod .clear::before,
+.applied-mod .clear::after {
+	width: 0.55rem;
+	height: 1px;
+}
+
+.limited {
+	border-color: tomato;
+	background-color: peachpuff;
+	color: tomato;
 }
