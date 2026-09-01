@@ -15,15 +15,18 @@ import {
 } from '../data/cumulativeCatalog.js';
 
 import {
+	getFrameImageSrc
+} from './renderModules.js';
+
+import {
 	setSelectorClass,
 	setSelectorFocus,
 	SELECT_TEMPLATE
 } from './selectors.js';
 
 import {
-	getFrameImageSrc,
-	renderModsMenu
-} from './renderModules.js';
+	renderWeaponTagsMenu
+} from './tags.js';
 
 import {
 	refreshSelectors,
@@ -216,9 +219,9 @@ export function modUpdate(level, mountIndexes) {
 		if (i > level && roadmap.ll[i].mounts)
 			break;
 
-		const freeModList = document.getElementById(`mods-ll-${i}`);
+		const freeModList = document.getElementById(`weapon-tags-ll-${i}`);
 		if (freeModList)
-			freeModList.replaceWith(renderModsMenu(i));
+			freeModList.replaceWith(renderWeaponTagsMenu(i));
 
 		for (const mountIdx of affectedMounts)
 			redrawMount(i, mountIdx);

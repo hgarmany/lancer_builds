@@ -5,7 +5,6 @@ import {
 	renderHASETooltip,
 	getFrameImageSrc,
 	renderStats,
-	renderModsMenu,
 	renderMounts,
 	renderIntegratedSystems,
 	renderBudgetPill
@@ -15,6 +14,11 @@ import {
 	SELECT_TEMPLATE,
 	renderSelector
 } from './selectors.js';
+
+import {
+	renderMountTagsMenu,
+	renderWeaponTagsMenu
+} from './tags.js';
 
 import {
 	getEffectiveFrameId
@@ -165,7 +169,8 @@ function renderFrame(level) {
 
 function renderMountsCell(level) {
 	return [
-		renderModsMenu(level),
+		renderMountTagsMenu(level),
+		renderWeaponTagsMenu(level),
 		renderMounts(level)
 	];
 }

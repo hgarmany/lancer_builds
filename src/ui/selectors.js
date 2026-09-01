@@ -30,6 +30,10 @@ import {
 } from './refreshRenderModules.js';
 
 import {
+	applyWeaponAttachmentManager
+} from './tags.js';
+
+import {
 	skillTriggerUpdate,
 	talentUpdate,
 	licenseUpdate,
@@ -65,8 +69,6 @@ import {
 
 import {
 	reconfigureMods,
-	assignWeaponMod,
-	removeWeaponMod,
 	isWeaponEligible,
 	setWeaponSelection
 } from '../rules/weapons.js';
@@ -371,141 +373,6 @@ export function setSelectorOpen(selector, doOpen) {
 	activeSelector = selector;
 	selectorOverlay.append(menu);
 	positionSelectorMenu(selector);
-}
-
-const MOD_TRANSFER_TYPE = 'application/x-lancer-weapon-mod';
-
-function setModTransferData(event, data) {
-	const serializedData = JSON.stringify(data);
-	event.dataTransfer.effectAllowed = 'move';
-	event.dataTransfer.setData(MOD_TRANSFER_TYPE, serializedData);
-	event.dataTransfer.setData('text/plain', serializedData);
-}
-
-function getModTransferData(event) {
-	const serializedData = event.dataTransfer.getData(MOD_TRANSFER_TYPE) ||
-		event.dataTransfer.getData('text/plain');
-	if (!serializedData)
-		return null;
-
-	try {
-		return JSON.parse(serializedData);
-	}
-	catch {
-		return null;
-	}
-}
-
-/**
- * Make an unused mod tag draggable onto a weapon at the same level
- *
- * @param {number} level
- * @param {HTMLElement} tag
- * @param {string} modId
- */
-export function applyUnusedModDragManager(level, tag, modId) {
-	tag.draggable = true;
-	tag.addEventListener('dragstart', event => {
-		setModTransferData(event, {
-			level,
-			modId,
-			source: 'unused'
-		});
-	});
-}
-
-/**
- * Make an applied mod draggable and wire its removal button
- *
- * @param {number} level
- * @param {HTMLElement} tag
- * @param {HTMLButtonElement} removeButton
- * @param {number} mountIdx
- * @param {number} slotIdx
- * @param {string} modId
- */
-export function applyWeaponModTagManager(
-	level,
-	tag,
-	removeButton,
-	mountIdx,
-	slotIdx,
-	modId
-) {
-	tag.draggable = true;
-	tag.addEventListener('dragstart', event => {
-		if (event.target === removeButton) {
-			event.preventDefault();
-			return;
-		}
-
-		setModTransferData(event, {
-			level,
-			modId,
-			source: 'weapon',
-			mountIdx,
-			slotIdx
-		});
-	});
-
-	// remove mod from slot, return to unused list
-	removeButton.addEventListener('click', event => {
-		event.stopPropagation();
-		if (removeWeaponMod(level, mountIdx, slotIdx))
-			modUpdate(level, [mountIdx]);
-	});
-}
-
-/**
- * Assigns event listeners to a selector so that it can receive
- * drag-and-drop mods
- * 
- * @param {number} level
- * @param {HTMLDivElement} selector
- */
-export function applyWeaponAttachmentManager(level, selector) {
-	// drag-drop mods onto this weapon
-	selector.addEventListener('dragover', event => {
-		event.preventDefault();
-		event.dataTransfer.dropEffect = 'move';
-		selector.querySelector('.selector-control').focus();
-	});
-	selector.addEventListener('dragleave', event => {
-		if (!selector.contains(event.relatedTarget))
-			selector.querySelector('.selector-control').blur();
-	});
-	selector.addEventListener('drop', event => {
-		event.preventDefault();
-		event.stopPropagation();
-
-		const mountIdx = Number(selector.dataset.mountIdx);
-		const slotIdx = Number(selector.dataset.slotIdx);
-		const updatedSelector = document.querySelector(
-			`#mount-${mountIdx}-ll-${level} ` +
-			`.weapon-select[data-slot-idx="${slotIdx}"]`);
-		setSelectorFocus(updatedSelector, false);
-
-		const transfer = getModTransferData(event);
-		if (!transfer || level !== Number(transfer.level))
-			return;
-
-		const source = transfer.source === 'weapon' ? {
-			mountIdx: Number(transfer.mountIdx),
-			slotIdx: Number(transfer.slotIdx)
-		} : null;
-		const didAssign = assignWeaponMod(
-			level,
-			mountIdx,
-			slotIdx,
-			transfer.modId,
-			source
-		);
-
-		if (didAssign) {
-			const affectedMounts = source ? [source.mountIdx, mountIdx] : [mountIdx];
-			modUpdate(level, affectedMounts);
-		}
-	});
 }
 
 /**

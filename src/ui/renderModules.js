@@ -27,9 +27,13 @@ import {
 	SELECT_TEMPLATE,
 	renderSelector,
 	renderWeaponSelector,
-	applyUnusedModDragManager,
-	applyWeaponModTagManager
 } from './selectors.js';
+
+import {
+	applyMountAttachmentManager,
+	renderMountTags,
+	renderWeaponTags
+} from './tags.js';
 
 import {
 	updateHASEWaterfall
@@ -46,9 +50,7 @@ import {
 } from '../rules/stats.js';
 
 import {
-	getWeaponNumUses,
 	getMountSlots,
-	getEffectiveMods,
 	getEffectiveMounts
 } from '../rules/weapons.js';
 
@@ -223,83 +225,6 @@ export function renderStats(level) {
 	);
 }
 
-export function renderModsMenu(level) {
-	const menu = document.createElement('div');
-	menu.id = `mods-ll-${level}`;
-	menu.className = 'mod-menu';
-
-	const modList = getEffectiveMods(level);
-
-	// omit mod menu when no options are available
-	if (!modList) {
-		menu.style.display = 'none';
-		return menu;
-	}
-
-	menu.style.display = 'flex';
-	// populate mod menu
-	for (let idx = 0; idx < modList.length; idx++) {
-		const mod = document.createElement('div');
-		mod.className = 'tag mod-tag';
-		mod.textContent = srcData.mods.get(modList[idx])?.name ?? '';
-		applyUnusedModDragManager(level, mod, modList[idx]);
-
-		menu.append(mod);
-	}
-
-	return menu;
-}
-
-export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
-	const tags = document.createElement('div');
-	tags.className = 'weapon-tags';
-
-	const modId = weapon?.tags?.mod;
-
-	if (modId) {
-		const mod = srcData.mods.get(modId);
-
-		if (mod) {
-			const tag = document.createElement('div');
-			tag.className = 'tag mod-tag applied-mod';
-
-			const label = document.createElement('span');
-			label.textContent = mod.name;
-
-			const remove = document.createElement('button');
-			remove.className = 'clear';
-			remove.type = 'button';
-			remove.title = `Remove ${mod.name}`;
-
-			tag.append(label, remove);
-			applyWeaponModTagManager(
-				level, tag, remove, mountIdx, slotIdx, modId);
-
-			tags.append(tag);
-		}
-	}
-	
-	if (weapon?.id) {
-		const limited = getWeaponNumUses(level, weapon.id);
-		
-		if (limited >= 0) {
-			// limited uses tag
-			const tag = document.createElement('div');
-			tag.className = 'tag limited';
-			tag.textContent = `Limited ${limited}`;
-
-			tags.append(tag);
-		}
-	}
-
-	if (tags.children.length == 0)
-		tags.style.display = 'none';
-	else
-		tags.style.display = 'flex';
-
-	return tags;
-}
-
 /**
  * Create a stand-in element that resembles
  * but does not function as a weapons selector
@@ -336,6 +261,12 @@ export function renderMount(level, idx, data) {
 	const weapons = data.weapons;
 	const slotDefinitions = getMountSlots(data);
 
+	if (!data.tags?.integrated) {
+		// add mount tags
+		mount.append(renderMountTags(level, data));
+		applyMountAttachmentManager(level, mount);	
+	}
+
 	const slots = document.createElement('div');
 	slots.id = `mount-${idx}-ll-${level}`;
 	slots.className = 'select-group';
@@ -356,7 +287,7 @@ export function renderMount(level, idx, data) {
 				level, idx, i, slotDefinitions[i], weapons[i]?.id));
 		}
 
-		// add weapon-specific tag (mod, ocal, limited)
+		// add weapon-specific tags (mod, ocal, limited)
 		slot.append(renderWeaponTags(level, weapons[i], idx, i));
 
 		slots.append(slot);

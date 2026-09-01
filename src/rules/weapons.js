@@ -227,6 +227,11 @@ export function normalizeMounts(level, savedMounts = []) {
 	return newMounts;
 }
 
+export function getUnassignedMountTags(level) {
+	// TODO
+	return [];
+}
+
 /**
  * Get the last populated mod list up to this level
  * 
@@ -347,7 +352,6 @@ export function assignWeaponMod(
 	modId,
 	source = null
 ) {
-	console.log('add mod');
 	if (!modId)
 		return false;
 
@@ -384,7 +388,6 @@ export function assignWeaponMod(
  * @returns {boolean}
  */
 export function removeWeaponMod(level, mountIdx, slotIdx) {
-	console.log('remove mod');
 	const mounts = normalizeMounts(level, getEffectiveMounts(level));
 	const weapon = mounts[mountIdx]?.weapons[slotIdx];
 	const modId = weapon?.tags?.mod;
