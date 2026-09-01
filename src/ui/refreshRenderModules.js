@@ -24,6 +24,10 @@ import {
 } from './renderModules.js';
 
 import {
+	refreshSystemTags
+} from './tags.js';
+
+import {
 	SELECT_TEMPLATE,
 	renderSelector,
 	getSelectorValue,
@@ -44,7 +48,8 @@ import {
 } from '../rules/stats.js';
 
 import {
-	hasEligibleSystem
+	hasEligibleSystem,
+	getSystemNumUses
 } from '../rules/systems.js';
 
 import {
@@ -272,12 +277,21 @@ export function redrawMounts(level) {
 }
 
 export function refreshLimitedTags(level) {
-	const tags = document.getElementById(`row-ll-${level}`)
+	const row = document.getElementById(`row-ll-${level}`);
+	const weaponTags = row
 		.querySelectorAll('.mounts-cell .tag.limited');
 
-	for (const tag of tags) {
+	for (const tag of weaponTags) {
 		const weaponId = tag.parentElement.parentElement.dataset.id;
 		tag.textContent = `Limited ${getWeaponNumUses(level, weaponId)}`;
+	}
+
+	const systemTags = row.querySelectorAll(
+		'.systems-cell .tag.limited[data-system-id]');
+	for (const tag of systemTags) {
+		tag.textContent =
+			`Limited ${getSystemNumUses(
+				level, tag.parentElement.parentElement.systemId)}`;
 	}
 }
 
@@ -308,11 +322,13 @@ export function refreshElectiveSystemList(level) {
 	for (let idx = 0; idx < systems.length; idx++) {
 		if (idx < selectors.length) {
 			selectors[idx].dataset.idx = idx;
+			refreshSystemTags(level, selectors[idx], systems[idx].id);
 		}
 		else {
 			const selector =
 				renderSelector(level, systems[idx].id, SELECT_TEMPLATE.SYSTEM);
 			selector.dataset.idx = idx;
+			refreshSystemTags(level, selector, systems[idx].id);
 			selectGroup.append(selector);
 		}
 	}

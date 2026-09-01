@@ -32,7 +32,8 @@ import {
 import {
 	applyMountAttachmentManager,
 	renderMountTags,
-	renderWeaponTags
+	renderWeaponTags,
+	renderSystemTags
 } from './tags.js';
 
 import {
@@ -205,8 +206,8 @@ function renderStatBubble(level, statId) {
 	if (statValue !== null) {
 		output.textContent =
 			statId === 'size' && statValue < 1
-				? '\u00BD'
-				: String(statValue);
+				? ' \u00BD'
+				: ' ' + String(statValue);
 	}
 
 	statBubble.append(label, output);
@@ -327,12 +328,15 @@ export function renderIntegratedSystems(level) {
 		const system = srcData.systems.get(systemId);
 		if (system) {
 			integratedSystems.hidden = false;
+			const listing = document.createElement('span');
+
 			const systemLabel = document.createElement('span');
 			systemLabel.textContent = system.name ?? '';
 			systemLabel.title =	SELECT_TEMPLATE.SYSTEM
-				.getDescription({ id: integratedId }) ?? '';
+				.getDescription({ id: systemId }) ?? '';
 
-			integratedSystems.append(systemLabel);
+			listing.append(systemLabel, renderSystemTags(level, systemId));
+			integratedSystems.append(listing);
 		}
 	}
 

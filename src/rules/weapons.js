@@ -82,7 +82,7 @@ export function doesWeaponHaveTag(id, tagId) {
  * 
  * @param {number} level
  * @param {string} id
- * @returns {number}
+ * @returns {string}
  */
 export function getWeaponNumUses(level, id) {
 	return getItemNumUses(level, srcData.weapons.get(id));
@@ -228,8 +228,14 @@ export function normalizeMounts(level, savedMounts = []) {
 }
 
 export function getUnassignedMountTags(level) {
+	const attachments = getEffectiveMounts(level)
+		.flatMap(mount => mount.tags.attachments ?? []);
+
+	console.log(attachments);
+
 	// TODO
-	return [];
+
+	return null;
 }
 
 /**

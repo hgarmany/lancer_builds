@@ -14,7 +14,7 @@ export const TAGS = Object.freeze({
 	EXOTIC: 'tg_exotic',
 	UNIQUE: 'tg_unique',
 	AI: 'tg_ai',
-    LIMITED: 'tg_limited'
+	LIMITED: 'tg_limited'
 });
 
 /**
@@ -25,20 +25,33 @@ export const TAGS = Object.freeze({
  * @returns {boolean}
  */
 export function doesItemHaveTag(item, tagId) {
-    return item?.tags?.find(tag => tag.id === tagId) !== undefined;
+	return item?.tags?.find(tag => tag.id === tagId) !== undefined;
 }
 
 /**
  * Get the number of uses a limited item has
- * Non-limited items return -1
+ * Non-limited items return null
  * 
  * @param {number} level
  * @param {Object} item
- * @returns {number}
+ * @returns {string}
  */
 export function getItemNumUses(level, item) {
 	const limited = item?.tags?.find(tag => tag.id === TAGS.LIMITED);
-    return limited ? Number(limited.val) + stats[level].limited_bonus : -1;
+
+	if (!limited)
+		return null;
+
+	const bonus = stats[level].limited_bonus;
+
+	if (Number(limited.val))
+		return Number(limited.val) + bonus;
+
+	const plusSuffixIdx = limited.val.indexOf('+') + 1;
+	if (plusSuffixIdx > 0)
+		return limited.val.substring(0, plusSuffixIdx) +
+			(Number(limited.val.substring(plusSuffixIdx)) + bonus);
+	return `${limited.val}${bonus ? ('+' + bonus) : ''}`;
 }
 
 /**

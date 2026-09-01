@@ -111,13 +111,12 @@ export function coreBonusUpdate(selector, level) {
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, level);
 
-	// update stats and all mounts
-	refreshStats(level);
-
-	// update mount cells to accomodate cb-based mount changes
+	// update stats and mount cells
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		if (i === level || roadmap.ll[i].mounts)
 			reconfigureMounts(i);
+		refreshStats(i);
+		refreshLimitedTags(i);
 		redrawMounts(i);
 	}
 

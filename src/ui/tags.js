@@ -1,44 +1,48 @@
 import {
-    srcData
+	srcData
 } from '../data/loader.js';
 
 import {
-    setSelectorFocus
+	setSelectorFocus
 } from './selectors.js';
 
 import {
-    modUpdate
+	modUpdate
 } from './updates.js';
 
 import {
 	getWeaponNumUses,
 	getUnassignedMountTags,
 	getEffectiveMods,
-    assignWeaponMod,
-    removeWeaponMod
+	assignWeaponMod,
+	removeWeaponMod
 } from '../rules/weapons.js';
+
+import {
+	getSystemNumUses
+} from '../rules/systems.js';
 
 const MOD_TRANSFER_TYPE = 'application/x-lancer-weapon-mod';
 
 function setModTransferData(event, data) {
-    const serializedData = JSON.stringify(data);
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData(MOD_TRANSFER_TYPE, serializedData);
-    event.dataTransfer.setData('text/plain', serializedData);
+	const serializedData = JSON.stringify(data);
+	event.dataTransfer.effectAllowed = 'move';
+	event.dataTransfer.setData(MOD_TRANSFER_TYPE, serializedData);
+	event.dataTransfer.setData('text/plain', serializedData);
 }
 
 function getModTransferData(event) {
-    const serializedData = event.dataTransfer.getData(MOD_TRANSFER_TYPE) ||
-        event.dataTransfer.getData('text/plain');
-    if (!serializedData)
-        return null;
+	const serializedData = event.dataTransfer.getData(MOD_TRANSFER_TYPE) ||
+		event.dataTransfer.getData('text/plain');
+	if (!serializedData)
+		return null;
 
-    try {
-        return JSON.parse(serializedData);
-    }
-    catch {
-        return null;
-    }
+	try {
+		return JSON.parse(serializedData);
+	}
+	catch {
+		return null;
+	}
 }
 
 /**
@@ -49,14 +53,14 @@ function getModTransferData(event) {
  * @param {string} modId
  */
 function applyUnusedModDragManager(level, tag, modId) {
-    tag.draggable = true;
-    tag.addEventListener('dragstart', event => {
-        setModTransferData(event, {
-            level,
-            modId,
-            source: 'unused'
-        });
-    });
+	tag.draggable = true;
+	tag.addEventListener('dragstart', event => {
+		setModTransferData(event, {
+			level,
+			modId,
+			source: 'unused'
+		});
+	});
 }
 
 /**
@@ -70,35 +74,35 @@ function applyUnusedModDragManager(level, tag, modId) {
  * @param {string} modId
  */
 function applyWeaponTagManager(
-    level,
-    tag,
-    removeButton,
-    mountIdx,
-    slotIdx,
-    modId
+	level,
+	tag,
+	removeButton,
+	mountIdx,
+	slotIdx,
+	modId
 ) {
-    tag.draggable = true;
-    tag.addEventListener('dragstart', event => {
-        if (event.target === removeButton) {
-            event.preventDefault();
-            return;
-        }
+	tag.draggable = true;
+	tag.addEventListener('dragstart', event => {
+		if (event.target === removeButton) {
+			event.preventDefault();
+			return;
+		}
 
-        setModTransferData(event, {
-            level,
-            modId,
-            source: 'weapon',
-            mountIdx,
-            slotIdx
-        });
-    });
+		setModTransferData(event, {
+			level,
+			modId,
+			source: 'weapon',
+			mountIdx,
+			slotIdx
+		});
+	});
 
-    // remove mod from slot, return to unused list
-    removeButton.addEventListener('click', event => {
-        event.stopPropagation();
-        if (removeWeaponMod(level, mountIdx, slotIdx))
-            modUpdate(level, [mountIdx]);
-    });
+	// remove mod from slot, return to unused list
+	removeButton.addEventListener('click', event => {
+		event.stopPropagation();
+		if (removeWeaponMod(level, mountIdx, slotIdx))
+			modUpdate(level, [mountIdx]);
+	});
 }
 
 export function applyMountAttachmentManager(level, mount) {
@@ -113,48 +117,48 @@ export function applyMountAttachmentManager(level, mount) {
  * @param {HTMLDivElement} selector
  */
 export function applyWeaponAttachmentManager(level, selector) {
-    // drag-drop mods onto this weapon
-    selector.addEventListener('dragover', event => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-        selector.querySelector('.selector-control').focus();
-    });
-    selector.addEventListener('dragleave', event => {
-        if (!selector.contains(event.relatedTarget))
-            selector.querySelector('.selector-control').blur();
-    });
-    selector.addEventListener('drop', event => {
-        event.preventDefault();
-        event.stopPropagation();
+	// drag-drop mods onto this weapon
+	selector.addEventListener('dragover', event => {
+		event.preventDefault();
+		event.dataTransfer.dropEffect = 'move';
+		selector.querySelector('.selector-control').focus();
+	});
+	selector.addEventListener('dragleave', event => {
+		if (!selector.contains(event.relatedTarget))
+			selector.querySelector('.selector-control').blur();
+	});
+	selector.addEventListener('drop', event => {
+		event.preventDefault();
+		event.stopPropagation();
 
-        const mountIdx = Number(selector.dataset.mountIdx);
-        const slotIdx = Number(selector.dataset.slotIdx);
-        const updatedSelector = document.querySelector(
-            `#mount-${mountIdx}-ll-${level} ` +
-            `.weapon-select[data-slot-idx="${slotIdx}"]`);
-        setSelectorFocus(updatedSelector, false);
+		const mountIdx = Number(selector.dataset.mountIdx);
+		const slotIdx = Number(selector.dataset.slotIdx);
+		const updatedSelector = document.querySelector(
+			`#mount-${mountIdx}-ll-${level} ` +
+			`.weapon-select[data-slot-idx="${slotIdx}"]`);
+		setSelectorFocus(updatedSelector, false);
 
-        const transfer = getModTransferData(event);
-        if (!transfer || level !== Number(transfer.level))
-            return;
+		const transfer = getModTransferData(event);
+		if (!transfer || level !== Number(transfer.level))
+			return;
 
-        const source = transfer.source === 'weapon' ? {
-            mountIdx: Number(transfer.mountIdx),
-            slotIdx: Number(transfer.slotIdx)
-        } : null;
-        const didAssign = assignWeaponMod(
-            level,
-            mountIdx,
-            slotIdx,
-            transfer.modId,
-            source
-        );
+		const source = transfer.source === 'weapon' ? {
+			mountIdx: Number(transfer.mountIdx),
+			slotIdx: Number(transfer.slotIdx)
+		} : null;
+		const didAssign = assignWeaponMod(
+			level,
+			mountIdx,
+			slotIdx,
+			transfer.modId,
+			source
+		);
 
-        if (didAssign) {
-            const affectedMounts = source ? [source.mountIdx, mountIdx] : [mountIdx];
-            modUpdate(level, affectedMounts);
-        }
-    });
+		if (didAssign) {
+			const affectedMounts = source ? [source.mountIdx, mountIdx] : [mountIdx];
+			modUpdate(level, affectedMounts);
+		}
+	});
 }
 
 function renderMountTag(level, id) {
@@ -250,7 +254,7 @@ export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 	if (weapon?.id) {
 		const limited = getWeaponNumUses(level, weapon.id);
 		
-		if (limited >= 0) {
+		if (limited) {
 			// limited uses tag
 			const tag = document.createElement('div');
 			tag.className = 'tag limited';
@@ -266,4 +270,30 @@ export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 		tags.style.display = 'flex';
 
 	return tags;
+}
+
+export function renderSystemTags(level, systemId) {
+	const tags = document.createElement('div');
+	tags.className = 'system-tags';
+
+	const limited = getSystemNumUses(level, systemId);
+	if (limited != null) {
+		const tag = document.createElement('div');
+		tag.className = 'tag limited';
+		tag.textContent = `Limited ${limited}`;
+		tags.append(tag);
+	}
+
+	tags.hidden = tags.children.length === 0;
+	return tags;
+}
+
+export function refreshSystemTags(level, selector, systemId) {
+	const currentTags = selector.querySelector('.system-tags');
+	const updatedTags = renderSystemTags(level, systemId);
+
+	if (currentTags)
+		currentTags.replaceWith(updatedTags);
+	else
+		selector.append(updatedTags);
 }

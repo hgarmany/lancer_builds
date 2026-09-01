@@ -55,7 +55,7 @@ function systemAIBonus(id) {
  * 
  * @param {number} level
  * @param {string} id
- * @returns {number}
+ * @returns {string}
  */
 export function getSystemNumUses(level, id) {
 	return getItemNumUses(level, srcData.systems.get(id));

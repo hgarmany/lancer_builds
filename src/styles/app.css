@@ -580,6 +580,13 @@ select {
 	gap: 0.25rem;
 }
 
+.system-tags {
+	display: flex;
+	width: max-content;
+	gap: 0.25rem;
+	margin-top: 0.25rem;
+}
+
 .systems .select-group {
 	display: grid !important;
 	grid-template-rows: repeat(4, auto);

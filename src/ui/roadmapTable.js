@@ -17,7 +17,8 @@ import {
 
 import {
 	renderMountTagsMenu,
-	renderWeaponTagsMenu
+	renderWeaponTagsMenu,
+	renderSystemTags
 } from './tags.js';
 
 import {
@@ -57,9 +58,13 @@ function renderMenu(level, template) {
 
 	// configure selectors for current user-selected value
 	if (roadmapData instanceof Array) {
-		roadmapData.forEach((id, idx) => {
+		roadmapData.forEach((item, idx) => {
+			const id = template === SELECT_TEMPLATE.SYSTEM ?
+				item?.id ?? item : item;
 			const selector = renderSelector(level, id, template);
 			selector.dataset.idx = idx;
+			if (template === SELECT_TEMPLATE.SYSTEM)
+				selector.append(renderSystemTags(level, id));
 
 			selectGroup.append(selector);
 		});
@@ -67,6 +72,8 @@ function renderMenu(level, template) {
 	else {
 		const selector = renderSelector(level, roadmapData, template);
 		selector.dataset.idx = 0;
+		if (template === SELECT_TEMPLATE.SYSTEM)
+			selector.append(renderSystemTags(level, roadmapData));
 
 		selectGroup.append(selector);
 	}
