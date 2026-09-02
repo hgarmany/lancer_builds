@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+obj
 .vs/
 *.local
 
@@ -20,8 +21,8 @@ dist-ssr
 .DS_Store
 *.suo
 *.ntvs*
-*.njsproj
-*.sln
+*.esproj
+*.slnx
 *.sw?
 /src/assets
 vite.config.js
