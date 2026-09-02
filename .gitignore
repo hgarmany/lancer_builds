@@ -1,28 +1,15 @@
 node_modules
-dist
-dist-ssr
 obj
-.vs/
-*.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
 *.esproj
 *.slnx
-*.sw?
 /src/assets
 vite.config.js
 *.lcp
 dist
-.vs/
-.vscode/
-obj/
 *.esproj
 *.slnx
-/src/assets
 *.lcp
