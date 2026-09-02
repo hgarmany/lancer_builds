@@ -596,7 +596,8 @@ select {
 	margin-left: 0.5rem;
 }
 
-.mount-tags {
+.mount-tags,
+.custom-select-mimic .tags {
 	margin-bottom: 0.5rem;
 	margin-left: 0;
 }

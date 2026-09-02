@@ -285,6 +285,8 @@ export function renderMount(level, idx, data) {
 			mount.classList.add('integrated');
 			mount.dataset.integrated = data.tags.integrated;
 			const selector = renderIntegratedWeaponLabel(weapons[i]?.id);
+			selector.dataset.mountIdx = idx;
+			selector.dataset.slotIdx = i;
 			selector.append(renderWeaponTags(level, weapons[i], idx, i));
 			slots.append(selector);
 		}
@@ -308,6 +310,7 @@ export function renderMount(level, idx, data) {
  */
 export function renderMounts(level) {
 	const mountsList = document.createElement('div');
+	mountsList.id = `mounts-list-ll-${level}`;
 	mountsList.className = 'mounts-list';
 
 	mountsList.append(...getEffectiveMounts(level).map((mount, index) =>

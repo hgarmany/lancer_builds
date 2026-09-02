@@ -675,9 +675,9 @@ export function isWeaponEligible(
 			.some(weapon => weapon.id === id))
 		return false;
 
-	// talent-issued weapons must match rank exactly
+	// talent-issued weapons cannot be attached via selector
 	if (candidate.talent_item)
-		return candidate.talent_rank == talents[level].get(candidate.talent_id);
+		return false;
 
 	// gms weapons are always eligible
 	if (!candidate.license_id)

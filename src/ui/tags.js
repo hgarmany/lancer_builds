@@ -353,17 +353,6 @@ export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 	return tags;
 }
 
-export function refreshWeaponTags(level, selector, weapon) {
-	const mountIdx = Number(selector.dataset.mountIdx);
-	const slotIdx = Number(selector.dataset.slotIdx);
-
-	const currentTags = selector.querySelector('.tags');
-	const updatedTags = renderWeaponTags(
-		level, weapon, mountIdx, slotIdx);
-
-	currentTags.replaceWith(updatedTags);;
-}
-
 export function renderSystemTags(level, systemId) {
 	const system = srcData.systems.get(systemId);
 
@@ -381,9 +370,22 @@ export function renderSystemTags(level, systemId) {
 export function refreshTags(level, selectors) {
 	for (const selector of selectors) {
 		const currentTags = selector.querySelector('.tags');
-		if (selector.classList.contains('weapon-select'))
-			currentTags.replaceWith(renderWeaponTags(level, selector.value));
-		else if (selector.classList.contains('system-select'))
-			currentTags.replaceWith(renderSystemTags(level, selector.value));
+		let updatedTags = null;
+
+		if (selector.classList.contains('weapon-select') ||
+			selector.classList.contains('custom-select-mimic')) {
+			const mountIdx = Number(selector.dataset.mountIdx);
+			const slotIdx = Number(selector.dataset.slotIdx);
+			const weapon = getEffectiveMounts(level)[mountIdx]
+				?.weapons[slotIdx];
+
+			updatedTags = renderWeaponTags(
+				level, weapon, mountIdx, slotIdx);
+		}
+		else if (selector.classList.contains('system-select')) {
+			updatedTags = renderSystemTags(level, selector.value);
+		}
+
+		currentTags.replaceWith(updatedTags);
 	}
 }

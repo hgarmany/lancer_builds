@@ -233,8 +233,10 @@ export function modUpdate(level, mountIndexes) {
 
 		for (const mountIdx of affectedMounts) {
 			const mount =
-				document.getElementById(`mount-${mountIdx}-ll-${level}`);
-			refreshTags(i, mount.children);
+				document.getElementById(`mount-${mountIdx}-ll-${i}`);
+			if (mount)
+				refreshTags(i, mount.querySelectorAll(
+					'.weapon-select, .custom-select-mimic'));
 		}
 	}
 }

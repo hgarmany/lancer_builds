@@ -25,8 +25,7 @@ import {
 
 import {
 	renderSystemTags,
-	refreshTags,
-	refreshWeaponTags
+	refreshTags
 } from './tags.js';
 
 import {
@@ -176,8 +175,9 @@ export function refreshWeaponSelectors(
 				SELECT_TEMPLATE.WEAPON,
 				{ slot }
 			);
-			refreshWeaponTags(i, selector, mount.weapons[slotIdx]);
 		}
+
+		refreshTags(i, selectors);
 	}
 }
 
@@ -230,12 +230,18 @@ export function refreshStats(level) {
 				didStatWorsen(cumulativeCatalog, level, id));
 		}
 	}
+
+	const mounts = document.getElementById(`mounts-list-ll-${level}`);
+	refreshTags(level, mounts.querySelectorAll(
+		'.custom-select, .custom-select-mimic'));
+	const systems = document.getElementById(`system-ll-${level}`);
+	refreshTags(level, systems.children);
 }
 
 export function redrawMount(level, mountIdx) {
 	const mounts = getEffectiveMounts(level);
-	const mount = document.getElementById(`row-ll-${level}`)
-		.querySelector('.mounts-list').children[mountIdx];
+	const mount = document.getElementById(`mounts-list-ll-${level}`)
+		.children[mountIdx];
 	mount.replaceWith(
 		renderMount(level, mountIdx, mounts[mountIdx]));
 
@@ -252,8 +258,7 @@ export function redrawMount(level, mountIdx) {
  * @param {number} level
  */
 export function redrawMounts(level) {
-	const container = document.getElementById(`row-ll-${level}`)
-		.querySelector('.mounts-list');
+	const container = document.getElementById(`mounts-list-ll-${level}`);
 	const mounts = getEffectiveMounts(level);
 
 	for (let idx = 0; idx < mounts.length; idx++) {

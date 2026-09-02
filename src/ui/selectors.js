@@ -265,6 +265,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 				if (id.substring(0, 3) === 'wm_' && modIdx == -1)
 					unusedModIds.push(id);
 			}
+			console.log(roadmap.ll[level].systems);
 		},
 		getLabel: ({ id }) => {
 			return id ? (srcData.systems.get(id)?.name ?? '') :
