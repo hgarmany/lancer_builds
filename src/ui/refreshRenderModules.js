@@ -7,7 +7,7 @@
 
 import {
 	roadmap,
-	getEffectiveSystemLevel
+	getEffectiveSystems
 } from '../data/roadmap.js';
 
 import {
@@ -24,7 +24,9 @@ import {
 } from './renderModules.js';
 
 import {
-	refreshSystemTags
+	renderSystemTags,
+	refreshTags,
+	refreshWeaponTags
 } from './tags.js';
 
 import {
@@ -174,6 +176,7 @@ export function refreshWeaponSelectors(
 				SELECT_TEMPLATE.WEAPON,
 				{ slot }
 			);
+			refreshWeaponTags(i, selector, mount.weapons[slotIdx]);
 		}
 	}
 }
@@ -277,25 +280,6 @@ export function redrawMounts(level) {
 		container.lastElementChild.remove();
 }
 
-export function refreshLimitedTags(level) {
-	const row = document.getElementById(`row-ll-${level}`);
-	const weaponTags = row
-		.querySelectorAll('.mounts-cell .tag.limited');
-
-	for (const tag of weaponTags) {
-		const weaponId = tag.parentElement.parentElement.dataset.id;
-		tag.textContent = `Limited ${getWeaponNumUses(level, weaponId)}`;
-	}
-
-	const systemTags = row.querySelectorAll(
-		'.systems-cell .tag.limited[data-system-id]');
-	for (const tag of systemTags) {
-		tag.textContent =
-			`Limited ${getSystemNumUses(
-				level, tag.parentElement.parentElement.systemId)}`;
-	}
-}
-
 /**
  * Targeted replacement of free and total SP counts
  * 
@@ -315,35 +299,26 @@ export function refreshElectiveSystemList(level) {
 	if (!selectGroup)
 		return;
 
-	const systems = roadmap.ll[getEffectiveSystemLevel(level)].systems
-		.filter(system => system?.id);
+	const systems = getEffectiveSystems(level);
 	const selectors = Array.from(selectGroup.children);
 
-	// guarantee selector count matches exactly the number of systems installed
-	for (let idx = 0; idx < systems.length; idx++) {
-		if (idx < selectors.length) {
-			selectors[idx].dataset.idx = idx;
-			refreshSystemTags(level, selectors[idx], systems[idx].id);
-		}
-		else {
-			const selector =
-				renderSelector(level, systems[idx].id, SELECT_TEMPLATE.SYSTEM);
-			selector.dataset.idx = idx;
-			refreshSystemTags(level, selector, systems[idx].id);
-			selectGroup.append(selector);
-		}
+	for (let idx = 0; idx < selectors.length; idx++) {
+		// remove empty selectors
+		if (idx >= systems.length)
+			selectors[idx].remove();
+		// set selector vals
+		else
+			selectors[idx].value = systems[idx].id;
 	}
 
-	// remove empty selectors
-	for (let i = systems.length; i < selectors.length; i++) {
-		selectors[i].remove();
-	}
+	refreshTags(level, selectors);
 
 	if (hasEligibleSystem(level)) {
 		// generate prototype selector
 		const selector =
 			renderSelector(level, null, SELECT_TEMPLATE.SYSTEM);
 		selector.dataset.idx = systems.length;
+		selector.append(renderSystemTags(level, null));
 
 		// add empty selector to list
 		selectGroup.append(selector);

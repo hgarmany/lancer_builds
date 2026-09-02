@@ -7,7 +7,7 @@
 
 import {
 	roadmap,
-	getEffectiveSystemLevel
+	getEffectiveSystems
 } from '../data/roadmap.js';
 
 import {
@@ -25,7 +25,8 @@ import {
 
 import {
 	renderWeaponTagsMenu,
-	renderMountTagsMenu
+	renderMountTagsMenu,
+	refreshTags
 } from './tags.js';
 
 import {
@@ -37,8 +38,7 @@ import {
 	refreshElectiveSystemList,
 	refreshWeaponSelectors,
 	redrawMount,
-	redrawMounts,
-	refreshLimitedTags
+	redrawMounts
 } from './refreshRenderModules.js';
 
 import {
@@ -125,7 +125,6 @@ export function coreBonusUpdate(selector, level) {
 			reconfigureMounts(i);
 		reconcileMountAttachments(i);
 		refreshStats(i);
-		refreshLimitedTags(i);
 		redrawMounts(i);
 		refreshMountTagMenu(i);
 	}
@@ -142,7 +141,6 @@ export function updateHASEWaterfall(level, id, doIncrement) {
 	for (let i = 0; i <= roadmap.maxLevel; i++) {
 		refreshHexes(i, id);
 		refreshStats(i);
-		refreshLimitedTags(i);
 
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
@@ -233,8 +231,11 @@ export function modUpdate(level, mountIndexes) {
 		if (freeModList)
 			freeModList.replaceWith(renderWeaponTagsMenu(i));
 
-		for (const mountIdx of affectedMounts)
-			redrawMount(i, mountIdx);
+		for (const mountIdx of affectedMounts) {
+			const mount =
+				document.getElementById(`mount-${mountIdx}-ll-${level}`);
+			refreshTags(i, mount.children);
+		}
 	}
 }
 
@@ -295,10 +296,6 @@ export function systemUpdate(selector, level) {
 	 * when the user manually selects a system in a level that is actually
 	 * empty in the roadmap, first copy system configuration into this level
 	 */
-	const listSrcLevel = getEffectiveSystemLevel(level);
-	if (listSrcLevel !== level)
-		roadmap.ll[level].systems = [...roadmap.ll[listSrcLevel].systems];
-
 	selectionUpdate(selector, SELECT_TEMPLATE.SYSTEM);
 
 	// update stats and budget pill

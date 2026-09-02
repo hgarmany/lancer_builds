@@ -32,7 +32,8 @@ import {
 import {
 	dropWeaponTag,
 	applyAttachmentManager,
-	MOD_TRANSFER_TYPE
+	MOD_TRANSFER_TYPE,
+	renderWeaponTags
 } from './tags.js';
 
 import {
@@ -77,7 +78,8 @@ import {
 
 import {
 	isSystemEligible,
-	hasEligibleSystem
+	hasEligibleSystem,
+	configureSystems
 } from '../rules/systems.js';
 
 const selectorMenus = new WeakMap();
@@ -240,9 +242,10 @@ export const SELECT_TEMPLATE = Object.freeze({
 			return null;
 		},
 		write: ({ level, idx, id, data }) => {
+			const systems = configureSystems(level);
 			const unusedModIds = reconfigureMods(level);
 			if (!id) {
-				id = roadmap.ll[level].systems.splice(idx, 1)[0]?.id;
+				id = systems.splice(idx, 1)[0]?.id;
 				// if a mod, remove system from mod list
 				const modIdx = unusedModIds.indexOf(id);
 				if (modIdx >= 0)
@@ -252,11 +255,11 @@ export const SELECT_TEMPLATE = Object.freeze({
 				// search all slots and remove first occurrence
 			}
 			else {
-				const oldId = roadmap.ll[level].systems[idx]?.id;
+				const oldId = systems[idx]?.id;
 				const oldModIdx = unusedModIds.indexOf(oldId);
 				if (oldModIdx >= 0)
 					unusedModIds.splice(oldModIdx, 1);
-				roadmap.ll[level].systems[idx] = { id, data };
+				systems[idx] = { id, data };
 				// if a mod, add system to mod list
 				const modIdx = unusedModIds.indexOf(id);
 				if (id.substring(0, 3) === 'wm_' && modIdx == -1)
@@ -499,8 +502,7 @@ export function renderSelector(
  * Creates a weapon selector with default options configured
  * 
  * @param {number} level
- * @param {string} selectedId
- * @param {Object} template
+ * @param {Object} weapon
  * @returns {HTMLElement}
  */
 export function renderWeaponSelector(
@@ -508,8 +510,9 @@ export function renderWeaponSelector(
 	mountIdx,
 	slotIdx,
 	slot,
-	selectedId
+	weapon
 ) {
+	const selectedId = weapon?.id ?? null;
 	const selector = renderSelector(
 		level,
 		selectedId,
@@ -521,6 +524,8 @@ export function renderWeaponSelector(
 
 	applyAttachmentManager(
 		level, selector, dropWeaponTag, MOD_TRANSFER_TYPE);
+	selector.append(renderWeaponTags(
+		level, weapon, mountIdx, slotIdx));
 
 	return selector;
 }

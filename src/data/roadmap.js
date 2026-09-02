@@ -105,13 +105,13 @@ export function createDefaultRoadmap() {
 	console.log(roadmap);
 }
 
-export function getEffectiveSystemLevel(level) {
-	for (let i = level; i > 0; i--) {
-		if (roadmap.ll[i].systems[0])
-			return i;
+export function getEffectiveSystems(level) {
+	for (let i = level; i >= 0; i--) {
+		if (roadmap.ll[i].systems?.length > 0)
+			return roadmap.ll[i].systems;
 	}
 
-	return 0;
+	return [];
 }
 
 /**

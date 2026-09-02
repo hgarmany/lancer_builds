@@ -2,7 +2,7 @@
 
 import {
 	roadmap,
-	getEffectiveSystemLevel
+	getEffectiveSystems
 } from '../data/roadmap.js';
 
 import {
@@ -100,8 +100,7 @@ export function isSystemEligible(level, id, selectedId = null) {
 		return false;
 
 	// check for uniques, reject unique systems already installed
-	const installedSystems =
-		roadmap.ll[getEffectiveSystemLevel(level)].systems;
+	const installedSystems = getEffectiveSystems(level);
 	if (doesItemHaveTag(candidate, TAGS.UNIQUE) &&
 		id != selectedId &&
 		installedSystems
@@ -142,4 +141,10 @@ export function getIntegratedSystemIds(level) {
 
 	return (integratedId && integratedId.substring(0, 3) === 'ms_') ?
 		[ integratedId ] : [];
+}
+
+export function configureSystems(level) {
+	roadmap.ll[level].systems = [...getEffectiveSystems(level)];
+
+	return roadmap.ll[level].systems;
 }

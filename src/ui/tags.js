@@ -8,9 +8,9 @@ import {
 } from './updates.js';
 
 import {
-	getWeaponNumUses,
 	getUnassignedMountTags,
 	getMountAttachmentLabel,
+	getEffectiveMounts,
 	getEffectiveMods,
 	assignMountAttachment,
 	removeMountAttachment,
@@ -19,8 +19,10 @@ import {
 } from '../rules/weapons.js';
 
 import {
-	getSystemNumUses
-} from '../rules/systems.js';
+	TAGS,
+	doesItemHaveTag,
+	getItemNumUses
+} from '../rules/installsCommon.js';
 
 export const MOD_TRANSFER_TYPE = 'application/x-lancer-weapon-mod';
 export const MOUNT_TRANSFER_TYPE = 'application/x-lancer-mount-attachment';
@@ -241,6 +243,37 @@ export function renderWeaponTagsMenu(level) {
 	return renderTagsMenu(level, 'weapon', getEffectiveMods, renderWeaponTag);
 }
 
+function tryAITag(tags, item) {
+	if (!doesItemHaveTag(item, TAGS.AI))
+		return;
+
+	const tag = document.createElement('div');
+	tag.className = 'tag ai';
+	tag.textContent = `AI`;
+	tags.append(tag);
+}
+
+function tryExoticTag(tags, item) {
+	if (!doesItemHaveTag(item, TAGS.EXOTIC))
+		return;
+
+	const tag = document.createElement('div');
+	tag.className = 'tag exotic';
+	tag.textContent = `Exotic`;
+	tags.append(tag);
+}
+
+function tryLimitedTag(tags, item, level) {
+	const limited = getItemNumUses(level, item);
+	if (!limited)
+		return;
+
+	const tag = document.createElement('div');
+	tag.className = 'tag limited';
+	tag.textContent = `Limited ${limited}`;
+	tags.append(tag);
+}
+
 export function renderMountTags(level, data, mountIdx) {
 	const tags = document.createElement('div');
 	tags.className = 'mount-tags';
@@ -278,17 +311,18 @@ export function renderMountTags(level, data, mountIdx) {
 	}
 
 	tags.style.display = (tags.children.length === 0) ? 'none' : 'flex';
-
 	return tags;
 }
 
 export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
+	const srcWeapon = srcData.weapons.get(weapon?.id);
+
 	const tags = document.createElement('div');
-	tags.className = 'weapon-tags';
+	tags.className = 'tags';
 
 	const modId = weapon?.tags?.mod;
-
 	if (modId) {
+		// mod tag
 		const mod = srcData.mods.get(modId);
 
 		if (mod) {
@@ -310,50 +344,46 @@ export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 			tags.append(tag);
 		}
 	}
-	
-	if (weapon?.id) {
-		const limited = getWeaponNumUses(level, weapon.id);
-		
-		if (limited) {
-			// limited uses tag
-			const tag = document.createElement('div');
-			tag.className = 'tag limited';
-			tag.textContent = `Limited ${limited}`;
 
-			tags.append(tag);
-		}
-	}
+	tryAITag(tags, srcWeapon);
+	tryExoticTag(tags, srcWeapon);
+	tryLimitedTag(tags, srcWeapon, level);
 
-	if (tags.children.length == 0)
-		tags.style.display = 'none';
-	else
-		tags.style.display = 'flex';
-
+	tags.style.display = (tags.children.length === 0) ? 'none' : 'flex';
 	return tags;
+}
+
+export function refreshWeaponTags(level, selector, weapon) {
+	const mountIdx = Number(selector.dataset.mountIdx);
+	const slotIdx = Number(selector.dataset.slotIdx);
+
+	const currentTags = selector.querySelector('.tags');
+	const updatedTags = renderWeaponTags(
+		level, weapon, mountIdx, slotIdx);
+
+	currentTags.replaceWith(updatedTags);;
 }
 
 export function renderSystemTags(level, systemId) {
+	const system = srcData.systems.get(systemId);
+
 	const tags = document.createElement('div');
-	tags.className = 'system-tags';
+	tags.className = 'tags';
 
-	const limited = getSystemNumUses(level, systemId);
-	if (limited != null) {
-		const tag = document.createElement('div');
-		tag.className = 'tag limited';
-		tag.textContent = `Limited ${limited}`;
-		tags.append(tag);
-	}
+	tryAITag(tags, system);
+	tryExoticTag(tags, system);
+	tryLimitedTag(tags, system, level);
 
-	tags.hidden = tags.children.length === 0;
+	tags.style.display = (tags.children.length === 0) ? 'none' : 'flex';
 	return tags;
 }
 
-export function refreshSystemTags(level, selector, systemId) {
-	const currentTags = selector.querySelector('.system-tags');
-	const updatedTags = renderSystemTags(level, systemId);
-
-	if (currentTags)
-		currentTags.replaceWith(updatedTags);
-	else
-		selector.append(updatedTags);
+export function refreshTags(level, selectors) {
+	for (const selector of selectors) {
+		const currentTags = selector.querySelector('.tags');
+		if (selector.classList.contains('weapon-select'))
+			currentTags.replaceWith(renderWeaponTags(level, selector.value));
+		else if (selector.classList.contains('system-select'))
+			currentTags.replaceWith(renderSystemTags(level, selector.value));
+	}
 }

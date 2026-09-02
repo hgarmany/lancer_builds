@@ -280,25 +280,19 @@ export function renderMount(level, idx, data) {
 	slots.className = 'select-group';
 	// add all weapons to the mount
 	for (let i = 0; i < slotDefinitions.length; i++) {
-		const slot = document.createElement('div');
-		slot.className = 'weapon-slot';
-		if (weapons[i]?.id)
-			slot.dataset.id = weapons[i].id;
-
 		if (data.tags?.integrated) {
+			// integrated mount w/ pseudo-selector
 			mount.classList.add('integrated');
 			mount.dataset.integrated = data.tags.integrated;
-			slot.append(renderIntegratedWeaponLabel(weapons[i]?.id));
+			const selector = renderIntegratedWeaponLabel(weapons[i]?.id);
+			selector.append(renderWeaponTags(level, weapons[i], idx, i));
+			slots.append(selector);
 		}
 		else {
-			slot.append(renderWeaponSelector(
-				level, idx, i, slotDefinitions[i], weapons[i]?.id));
+			// true selection mount
+			slots.append(renderWeaponSelector(
+				level, idx, i, slotDefinitions[i], weapons[i]));
 		}
-
-		// add weapon-specific tags (mod, ocal, limited)
-		slot.append(renderWeaponTags(level, weapons[i], idx, i));
-
-		slots.append(slot);
 	}
 
 	mount.append(slots);
