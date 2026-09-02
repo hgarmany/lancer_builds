@@ -20,12 +20,12 @@ import {
 
 import {
 	setSelectorClass,
-	setSelectorFocus,
 	SELECT_TEMPLATE
 } from './selectors.js';
 
 import {
-	renderWeaponTagsMenu
+	renderWeaponTagsMenu,
+	renderMountTagsMenu
 } from './tags.js';
 
 import {
@@ -50,8 +50,15 @@ import {
 } from '../rules/frames.js';
 
 import {
-	reconfigureMounts
+	reconfigureMounts,
+	reconcileMountAttachments
 } from '../rules/weapons.js';
+
+function refreshMountTagMenu(level) {
+	const current = document.getElementById(`mount-tags-ll-${level}`);
+	if (current)
+		current.replaceWith(renderMountTagsMenu(level));
+}
 
 /**
  * Write to the roadmap and cumulative catalog a user selection
@@ -87,6 +94,7 @@ export function talentUpdate(selector, level) {
 		// resolves existing hard-set integrated talent mounts
 		reconfigureMounts(i);
 		redrawMounts(i);
+		refreshMountTagMenu(i);
 		refreshElectiveSystemList(i);
 	}
 
@@ -115,9 +123,11 @@ export function coreBonusUpdate(selector, level) {
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		if (i === level || roadmap.ll[i].mounts)
 			reconfigureMounts(i);
+		reconcileMountAttachments(i);
 		refreshStats(i);
 		refreshLimitedTags(i);
 		redrawMounts(i);
+		refreshMountTagMenu(i);
 	}
 
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
@@ -201,6 +211,7 @@ export function frameUpdate(selector, level) {
 	) {
 		refreshStats(i);
 		redrawMounts(i);
+		refreshMountTagMenu(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
 	}
@@ -227,6 +238,19 @@ export function modUpdate(level, mountIndexes) {
 	}
 }
 
+export function mountTagUpdate(level, mountIndexes) {
+	const affectedMounts = [...new Set(mountIndexes)];
+
+	for (let i = level; i <= roadmap.maxLevel; i++) {
+		if (i > level && roadmap.ll[i].mounts)
+			break;
+
+		refreshMountTagMenu(i);
+		for (const mountIdx of affectedMounts)
+			redrawMount(i, mountIdx);
+	}
+}
+
 export function weaponUpdate(selector, level) {
 	const template = SELECT_TEMPLATE.WEAPON;
 
@@ -245,6 +269,8 @@ export function weaponUpdate(selector, level) {
 		id: newId,
 		data: selector.dataset
 	});
+	const mountTagChanges = reconcileMountAttachments(currentLevel);
+	mountTagUpdate(currentLevel, [mountIdx, ...mountTagChanges]);
 
 	// This level becomes a loadout boundary. Later levels inherit it until
 	// another level explicitly defines its own mounts.

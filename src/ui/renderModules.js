@@ -30,7 +30,9 @@ import {
 } from './selectors.js';
 
 import {
-	applyMountAttachmentManager,
+	dropMountTag,
+	applyAttachmentManager,
+	MOUNT_TRANSFER_TYPE,
 	renderMountTags,
 	renderWeaponTags,
 	renderSystemTags
@@ -52,6 +54,7 @@ import {
 
 import {
 	getMountSlots,
+	getEffectiveMountType,
 	getEffectiveMounts
 } from '../rules/weapons.js';
 
@@ -251,21 +254,25 @@ function renderIntegratedWeaponLabel(id) {
  * @returns {HTMLDivElement}
  */
 export function renderMount(level, idx, data) {
+	const mountType = getEffectiveMountType(data);
 	const mount = document.createElement('div');
 	mount.className = 'mount menu';
-	mount.dataset.mountType = data.type;
+	mount.dataset.mountType = mountType;
+	mount.dataset.mountIdx = idx;
 
 	const label = document.createElement('div');
 	label.className = 'menu-label';
-	label.textContent = data.type;
+	label.textContent = mountType;
+	mount.append(label);
 
 	const weapons = data.weapons;
 	const slotDefinitions = getMountSlots(data);
 
 	if (!data.tags?.integrated) {
 		// add mount tags
-		mount.append(renderMountTags(level, data));
-		applyMountAttachmentManager(level, mount);	
+		mount.append(renderMountTags(level, data, idx));
+		applyAttachmentManager(
+			level, mount, dropMountTag, MOUNT_TRANSFER_TYPE);
 	}
 
 	const slots = document.createElement('div');
@@ -294,7 +301,7 @@ export function renderMount(level, idx, data) {
 		slots.append(slot);
 	}
 
-	mount.append(label, slots);
+	mount.append(slots);
 
 	return mount;
 }

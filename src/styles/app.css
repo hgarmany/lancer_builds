@@ -206,7 +206,8 @@ select {
 	cursor: pointer;
 }
 
-.selector-control:focus {
+.mount.drag-focus,
+.custom-select.drag-focus > .selector-control {
 	outline: 2px solid Highlight;
 	outline-offset: 1px;
 }
@@ -571,20 +572,21 @@ select {
 	gap: 0.25rem;
 }
 
-.weapon-tags {
-	gap: 0.25rem;
-}
-
 .systems {
 	align-items: center;
 	gap: 0.25rem;
 }
 
-.system-tags {
+
+.mount-tags {
 	display: flex;
-	width: max-content;
+	margin-bottom: 0.5rem;
+}
+
+.mount-tags,
+.weapon-tags,
+.system-tags {
 	gap: 0.25rem;
-	margin-top: 0.25rem;
 }
 
 .systems .select-group {
@@ -623,14 +625,16 @@ select {
 	user-select: none;
 }
 
-.mod-tag {
+.mod-tag,
+.mount-tag {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.25rem;
 	cursor: grab;
 }
 
-.mod-tag:active {
+.mod-tag:active,
+.mount-tag:active {
 	cursor: grabbing;
 }
 

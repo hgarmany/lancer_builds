@@ -30,7 +30,9 @@ import {
 } from './refreshRenderModules.js';
 
 import {
-	applyWeaponAttachmentManager
+	dropWeaponTag,
+	applyAttachmentManager,
+	MOD_TRANSFER_TYPE
 } from './tags.js';
 
 import {
@@ -308,13 +310,6 @@ export function setOptionHidden(option, hide = true) {
 	option.hidden = hide;
 }
 
-export function setSelectorFocus(selector, doFocus) {
-	if (doFocus)
-		selector.querySelector('.selector-control').focus();
-	else
-		selector.querySelector('.selector-control').blur();
-}
-
 /**
  * Find the best location to place the selector menu
  * Prefers under selector to over, takes the nearest possible x-pos
@@ -447,7 +442,6 @@ export function renderSelector(
 		value.textContent = option.textContent;
 		template.changeEvent(selector, level);
 		setSelectorOpen(selector, false);
-		setSelectorFocus(selector, false);
 	});
 
 	if (!template.getEligibility?.(context) ?? false)
@@ -489,7 +483,6 @@ export function renderSelector(
 			}) ?? '';
 			template.changeEvent(selector, level);
 			setSelectorOpen(selector, false);
-			setSelectorFocus(selector, false);
 		});
 		selector.append(clear);
 	}
@@ -526,7 +519,8 @@ export function renderWeaponSelector(
 	selector.dataset.mountIdx = mountIdx;
 	selector.dataset.slotIdx = slotIdx;
 
-	applyWeaponAttachmentManager(level, selector);
+	applyAttachmentManager(
+		level, selector, dropWeaponTag, MOD_TRANSFER_TYPE);
 
 	return selector;
 }

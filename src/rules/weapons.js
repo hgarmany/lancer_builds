@@ -29,6 +29,18 @@ const coreBonuses = cumulativeCatalog.coreBonuses;
 const activeFrame = cumulativeCatalog.activeFrame;
 const stats = cumulativeCatalog.stats;
 
+export const MOUNT_ATTACHMENT = Object.freeze({
+	AUTO_STABILIZING: 'cb_auto_stabilizing_hardpoints',
+	MOUNT_RETROFITTING: 'cb_mount_retrofitting',
+	SUPERHEAVY_BRACING: 'superheavy_bracing'
+});
+
+const MOUNT_ATTACHMENT_LABELS = Object.freeze({
+	[MOUNT_ATTACHMENT.AUTO_STABILIZING]: 'Auto-Stabilizing Hardpoints',
+	[MOUNT_ATTACHMENT.MOUNT_RETROFITTING]: 'Mount Retrofitting',
+	[MOUNT_ATTACHMENT.SUPERHEAVY_BRACING]: 'Superheavy Bracing'
+});
+
 const AUXILIARY_SLOT = Object.freeze({
 	label: 'Aux',
 	allowedWeaponMounts: Object.freeze(['Auxiliary'])
@@ -97,8 +109,13 @@ export function getWeaponNumUses(level, id) {
  * 
  */
 export function getMountSlots(mount) {
-	if (mount.type !== 'Flex')
-		return MOUNT_SLOTS[mount.type] ?? [];
+	if (mount.tags?.attachments?.includes(
+		MOUNT_ATTACHMENT.SUPERHEAVY_BRACING))
+		return [];
+
+	const mountType = getEffectiveMountType(mount);
+	if (mountType !== 'Flex')
+		return MOUNT_SLOTS[mountType] ?? [];
 
 	// flex mount acts like an aux/aux mount
 	// if either slot has an aux weapon
@@ -107,6 +124,24 @@ export function getMountSlots(mount) {
 	const doTwoSlots = firstWeapon?.mount === 'Auxiliary' ||
 		!firstWeapon && secondWeapon?.mount === 'Auxiliary';
 	return doTwoSlots ? [MAIN_SLOT, AUXILIARY_SLOT] : [MAIN_SLOT];
+}
+
+/**
+ * Get the mount type after special mount alterations are applied
+ *
+ * @param {Object} mount
+ * @returns {string}
+ */
+export function getEffectiveMountType(mount) {
+	return mount.tags?.attachments?.includes(
+		MOUNT_ATTACHMENT.MOUNT_RETROFITTING)
+		? 'Main/Aux'
+		: mount.type;
+}
+
+export function getMountAttachmentLabel(id) {
+	return srcData.coreBonuses.get(id)?.name ??
+		MOUNT_ATTACHMENT_LABELS[id] ?? id;
 }
 
 function createEmptyMount(type, tags) {
@@ -177,13 +212,18 @@ function buildMountConfiguration(level) {
 }
 
 function cloneMount(mount, tags = mount.tags ?? {}) {
+	const attachments = mount.tags?.attachments;
 	return {
 		...mount,
 		weapons: (mount.weapons ?? []).map(weapon => ({
 			...weapon,
 			tags: { ...(weapon.tags ?? {}) }
 		})),
-		tags: { ...tags }
+		tags: {
+			...(mount.tags ?? {}),
+			...tags,
+			...(attachments ? { attachments: [...attachments] } : {})
+		}
 	};
 }
 
@@ -228,14 +268,152 @@ export function normalizeMounts(level, savedMounts = []) {
 }
 
 export function getUnassignedMountTags(level) {
-	const attachments = getEffectiveMounts(level)
-		.flatMap(mount => mount.tags.attachments ?? []);
+	const unassigned = getGrantedMountTags(level);
+	const assigned = getEffectiveMounts(level)
+		.flatMap(mount => mount.tags?.attachments ?? []);
 
-	console.log(attachments);
+	for (const id of assigned) {
+		const index = unassigned.indexOf(id);
+		if (index >= 0)
+			unassigned.splice(index, 1);
+	}
 
-	// TODO
+	return unassigned;
+}
 
-	return null;
+function getGrantedMountTags(level, mounts = getEffectiveMounts(level)) {
+	const granted = [];
+
+	for (const id of [
+		MOUNT_ATTACHMENT.AUTO_STABILIZING,
+		MOUNT_ATTACHMENT.MOUNT_RETROFITTING
+	]) {
+		if (coreBonuses[level]?.includes(id))
+			granted.push(id);
+	}
+
+	for (const mount of mounts) {
+		for (const weapon of mount.weapons ?? []) {
+			if (srcData.weapons.get(weapon.id)?.mount === 'Superheavy')
+				granted.push(MOUNT_ATTACHMENT.SUPERHEAVY_BRACING);
+		}
+	}
+
+	return granted;
+}
+
+function resizeMountToAttachments(level, mount) {
+	const slotCount = getMountSlots(mount).length;
+	while (mount.weapons.length > slotCount) {
+		const removedWeapon = mount.weapons.pop();
+		if (removedWeapon?.tags?.mod)
+			reconfigureMods(level).push(removedWeapon.tags.mod);
+	}
+
+	while (mount.weapons.length < slotCount)
+		mount.weapons.push({ id: null, tags: {} });
+}
+
+function mountCanReceiveAttachment(mount, id) {
+	if (!mount || mount.tags?.integrated ||
+		mount.tags?.attachments?.includes(id))
+		return false;
+
+	switch (id) {
+		case MOUNT_ATTACHMENT.MOUNT_RETROFITTING:
+			return getEffectiveMountType(mount) !== 'Main/Aux';
+		case MOUNT_ATTACHMENT.SUPERHEAVY_BRACING:
+			return !(mount.weapons ?? []).some(weapon => weapon.id);
+	}
+
+	return true;
+}
+
+/**
+ * Attach an available mount effect from either
+ * another mount or the unused attachment list
+ */
+export function assignMountAttachment(
+	level,
+	targetMountIdx,
+	id,
+	sourceMountIdx = null
+) {
+	if (!id)
+		return false;
+
+	const mounts = normalizeMounts(level, getEffectiveMounts(level));
+	const target = mounts[targetMountIdx];
+	if (!mountCanReceiveAttachment(target, id))
+		return false;
+
+	if (sourceMountIdx == null) {
+		if (!getUnassignedMountTags(level).includes(id))
+			return false;
+	}
+	else {
+		const sourceAttachments = mounts[sourceMountIdx]?.tags?.attachments;
+		const sourceIndex = sourceAttachments?.indexOf(id) ?? -1;
+		if (sourceIndex < 0)
+			return false;
+		sourceAttachments.splice(sourceIndex, 1);
+		resizeMountToAttachments(level, mounts[sourceMountIdx]);
+	}
+
+	target.tags.attachments ??= [];
+	target.tags.attachments.push(id);
+	resizeMountToAttachments(level, target);
+	roadmap.ll[level].mounts = mounts;
+	return true;
+}
+
+export function removeMountAttachment(level, mountIdx, id) {
+	const mounts = normalizeMounts(level, getEffectiveMounts(level));
+	const mount = mounts[mountIdx];
+	const attachmentIndex = mount?.tags?.attachments?.indexOf(id) ?? -1;
+	if (attachmentIndex < 0)
+		return false;
+
+	mount.tags.attachments.splice(attachmentIndex, 1);
+	resizeMountToAttachments(level, mount);
+	roadmap.ll[level].mounts = mounts;
+	return true;
+}
+
+/**
+ * Remove mount attachments that are no longer granted at this level
+ * Returns the indexes whose display/slot configuration changed
+ */
+export function reconcileMountAttachments(level) {
+	const effectiveMounts = getEffectiveMounts(level);
+	const mounts = normalizeMounts(level, effectiveMounts);
+	const available = getGrantedMountTags(level, mounts);
+	const affected = [];
+
+	for (let mountIdx = 0; mountIdx < mounts.length; mountIdx++) {
+		const mount = mounts[mountIdx];
+		const current = mount.tags?.attachments ?? [];
+		const retained = [];
+
+		for (const id of current) {
+			const availableIdx = available.indexOf(id);
+			if (availableIdx < 0)
+				continue;
+			available.splice(availableIdx, 1);
+			retained.push(id);
+		}
+
+		if (retained.length !== current.length) {
+			mount.tags.attachments = retained;
+			resizeMountToAttachments(level, mount);
+			affected.push(mountIdx);
+		}
+	}
+
+	if (affected.length)
+		roadmap.ll[level].mounts = mounts;
+
+	return affected;
 }
 
 /**

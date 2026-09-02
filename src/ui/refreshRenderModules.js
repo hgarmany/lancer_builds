@@ -55,6 +55,7 @@ import {
 import {
 	getWeaponNumUses,
 	getEffectiveMounts,
+	getEffectiveMountType,
 	getMountSlots
 } from '../rules/weapons.js';
 
@@ -263,7 +264,7 @@ export function redrawMounts(level) {
 			// if the current mount list is exhausted, add a new mount
 			container.append(renderMount(level, idx, data));
 		}
-		else if (currentMount.dataset.mountType !== data.type ||
+		else if (currentMount.dataset.mountType !== getEffectiveMountType(data) ||
 			currentSlots !== requiredSlots ||
 			currentMount.dataset.integrated !== data.tags.integrated) {
 			// if the current mount doesn't match the new type, replace
