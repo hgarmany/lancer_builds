@@ -79,9 +79,15 @@ const roadmapContainer = document.querySelector(".roadmap-container");
 export const tableBody = document.getElementById("roadmap-body");
 const tableHead = document.querySelector("#roadmap-table thead");
 
-export function renderPackageList(packages) {
+export function renderPackageList(packages, isImport, eventLCP) {
 	lcpPackages.replaceChildren();
 	lcpCount.textContent = String(packages.length);
+
+	if (eventLCP) {
+		lcpStatus.textContent = isImport ?
+			`Installed ${eventLCP.name}.` :
+			`Removed ${eventLCP.name}.`;
+	}
 
 	for (const lcp of packages) {
 		const entry = document.createElement('li');
@@ -95,7 +101,7 @@ export function renderPackageList(packages) {
 		const remove = document.createElement('button');
 		remove.type = 'button';
 		remove.textContent = 'Remove';
-		remove.addEventListener('click', () => removeLCP(lcp.id));
+		remove.addEventListener('click', () => removeLCP(lcp));
 
 		entry.append(label, remove);
 		lcpPackages.append(entry);

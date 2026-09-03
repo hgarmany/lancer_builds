@@ -1,7 +1,7 @@
 // main.js
 
 import {
-	importCoreData,
+	loadSourceData,
 	configureLcpManager
 } from './data/loader.js';
 
@@ -15,14 +15,10 @@ import {
 
 import {
 	configureHeader,
-	initializeRenderPipeline,
-	rerenderRoadmap
+	initializeRenderPipeline
 } from './ui/renderer.js';
 
-// grab official massif press data
-importCoreData();
-
-// configure a blank roadmap
+loadSourceData();
 createDefaultRoadmap();
 
 // initialize roadmap planner

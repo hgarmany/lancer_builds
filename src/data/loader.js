@@ -168,6 +168,11 @@ export function parseLcpArchive(bytes, fileName = 'package.lcp') {
 	};
 }
 
+/**
+ * Compile data from all available JSON
+ * 
+ * @returns {Object}
+ */
 function getMergedData() {
 	const mergedData = {};
 	for (const collectionName of LCP_COLLECTIONS)
@@ -186,9 +191,9 @@ function getMergedData() {
 }
 
 /**
- * Build source data maps out of core Lancer data and installed LCPs.
+ * Build source data maps out of core Lancer data and installed LCPs
  */
-export function importCoreData() {
+export function loadSourceData() {
 	const mergedData = getMergedData();
 
 	srcData.skillTriggers = normalizeById(mergedData.skills);
@@ -202,6 +207,26 @@ export function importCoreData() {
 		...mergedData.mods
 	]);
 	srcData.mods = normalizeById(mergedData.mods);
+
+	console.log(srcData);
+}
+
+function pushLcpChange(lcp, isImport) {
+	const packages = getStoredPackages();
+	const idx = packages.findIndex(
+		candidate => candidate.id === lcp.id);
+
+	if (isImport)
+		packages.splice(idx, 0, lcp);
+	else
+		packages.splice(idx, 1);
+
+	setStoredPackages(packages);
+	loadSourceData();
+	renderPackageList(packages, isImport, lcp);
+
+	initializeCatalog();
+	rerenderRoadmap();
 }
 
 /**
@@ -215,23 +240,7 @@ async function importLCP(file) {
 	try {
 		const lcp = parseLcpArchive(
 			new Uint8Array(await file.arrayBuffer()), file.name);
-		const packages = getStoredPackages();
-		const existingIndex = packages.findIndex(
-			candidate => candidate.id === lcp.id);
-
-		if (existingIndex >= 0)
-			packages[existingIndex] = lcp;
-		else
-			packages.push(lcp);
-
-		setStoredPackages(packages);
-		importCoreData();
-		renderPackageList(packages);
-		lcpStatus.textContent = existingIndex >= 0 ?
-			`Updated ${lcp.name}.` : `Installed ${lcp.name}.`;
-
-		initializeCatalog();
-		rerenderRoadmap();
+		pushLcpChange(lcp, true);
 	}
 	catch (error) {
 		console.error(error);
@@ -243,19 +252,8 @@ async function importLCP(file) {
 	}
 }
 
-export function removeLCP(id) {
-	const packages = getStoredPackages();
-	const removedPackage = packages.find(candidate => candidate.id === id);
-	const updatedPackages = packages
-		.filter(candidate => candidate.id !== id);
-	setStoredPackages(updatedPackages);
-	importCoreData();
-	renderPackageList(updatedPackages);
-	lcpStatus.textContent = removedPackage ?
-		`Removed ${removedPackage.name}.` : 'Package was not installed.';
-
-	initializeCatalog();
-	rerenderRoadmap();
+export function removeLCP(lcp) {
+	pushLcpChange(lcp, false);
 }
 
 export function configureLcpManager() {
