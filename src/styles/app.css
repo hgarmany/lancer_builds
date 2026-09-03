@@ -38,6 +38,11 @@ main {
 	padding: 1rem;
 }
 
+.namebar {
+	font-size: x-large;
+	padding: 0 1rem;
+}
+
 .roadmap-shell {
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);

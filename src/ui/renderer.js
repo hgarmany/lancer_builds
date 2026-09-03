@@ -83,3 +83,12 @@ export function initializeRenderPipeline() {
 	positionLevelLabels();
 	levelRowResizeObserver.observe(tableBody);
 }
+
+/**
+ * Totally rebuild the roadmap table
+ */
+export function rerenderRoadmap() {
+	tableBody.replaceChildren();
+	levelRail.replaceChildren();
+	initializeRenderPipeline();
+}

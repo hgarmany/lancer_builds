@@ -5,7 +5,8 @@
  */
 
 import {
-	srcData
+	srcData,
+	removeLCP
 } from '../data/loader.js';
 
 import {
@@ -65,12 +66,41 @@ import {
 
 export const roadmapName = document.getElementById('roadmap-name');
 export const maxLevelInput = document.getElementById('roadmap-max-level');
+
+export const fileInput = document.getElementById('lcp-file');
+const lcpPackages = document.getElementById('lcp-packages');
+const lcpCount = document.getElementById('lcp-count');
+export const lcpStatus = document.getElementById('lcp-status');
+
 export const levelRail = document.querySelector(".level-rail");
 
 const roadmapShell = document.getElementById("roadmap-shell");
 const roadmapContainer = document.querySelector(".roadmap-container");
 export const tableBody = document.getElementById("roadmap-body");
 const tableHead = document.querySelector("#roadmap-table thead");
+
+export function renderPackageList(packages) {
+	lcpPackages.replaceChildren();
+	lcpCount.textContent = String(packages.length);
+
+	for (const lcp of packages) {
+		const entry = document.createElement('li');
+		entry.dataset.packageId = lcp.id;
+
+		const label = document.createElement('span');
+		label.textContent = lcp.version ?
+			`${lcp.name} ${lcp.version}` : lcp.name;
+		label.title = [lcp.author, lcp.description].filter(Boolean).join('\n\n');
+
+		const remove = document.createElement('button');
+		remove.type = 'button';
+		remove.textContent = 'Remove';
+		remove.addEventListener('click', () => removeLCP(lcp.id));
+
+		entry.append(label, remove);
+		lcpPackages.append(entry);
+	}
+}
 
 /**
  * 

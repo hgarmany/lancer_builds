@@ -1,20 +1,22 @@
 // main.js
 
 import {
-    importCoreData
+	importCoreData,
+	configureLcpManager
 } from './data/loader.js';
 
 import {
-    createDefaultRoadmap
+	createDefaultRoadmap
 } from './data/roadmap.js';
 
 import {
-    initializeCatalog
+	initializeCatalog
 } from './data/cumulativeCatalog.js';
 
 import {
-    configureHeader,
-    initializeRenderPipeline
+	configureHeader,
+	initializeRenderPipeline,
+	rerenderRoadmap
 } from './ui/renderer.js';
 
 // grab official massif press data
@@ -27,3 +29,4 @@ createDefaultRoadmap();
 configureHeader();
 initializeCatalog();
 initializeRenderPipeline();
+configureLcpManager();
