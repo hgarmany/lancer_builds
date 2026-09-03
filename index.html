@@ -23,14 +23,13 @@
 </head>
 <body>
 	<main id="app">
-		<header class="name-toolbar">
+		<header>
 			<input
 				id="roadmap-name"
-				class="namebar"
 				type="text"
 				aria-label="Lancer roadmap name">
 
-			<label class="max-ll-select">
+			<label id="max-ll-select">
 				Maximum LL
 				<input
 					id="roadmap-max-level"
@@ -40,12 +39,12 @@
 					step="1">
 			</label>
 
-			<details id="lcp-manager" class="lcp-manager">
+			<details id="lcp-manager">
 				<summary>
 					LCPs
 					<span id="lcp-count">0</span>
 				</summary>
-				<div class="lcp-panel">
+				<div id="lcp-panel">
 					<input
 						id="lcp-file"
 						class="visually-hidden"
@@ -58,14 +57,15 @@
 				</div>
 			</details>
 
-			<button
-				id="theme-toggle"
-				class="theme-toggle"
-				type="button"
-				aria-pressed="false">
-				<span>Theme</span>
-				<strong>GMS Light</strong>
-			</button>
+			<label class="theme-toggle">
+				<input
+					id="theme-toggle"
+					class="theme-toggle-input"
+					type="checkbox"
+					role="switch"
+					aria-label="Toggle GMS color theme">
+				<strong class="theme-name"></strong>
+			</label>
 		</header>
 		<section id="roadmap-shell" class="roadmap-shell">
 			<aside class="level-rail">

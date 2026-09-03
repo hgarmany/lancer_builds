@@ -76,7 +76,7 @@ export function createDefaultRoadmap() {
 	roadmap = {
 		name: 'New Roadmap',
 		maxLevel: MAX_LICENSE_LEVEL,
-		allowExotics: false,
+		allowExotics: true,
 		ll: Array.from(
 			{ length: MAX_LICENSE_LEVEL + 1 },
 			(_, level) => createDefaultRoadmapLevel(level)

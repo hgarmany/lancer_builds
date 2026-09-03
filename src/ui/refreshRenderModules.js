@@ -293,10 +293,13 @@ export function redrawMounts(level) {
 export function refreshBudgetPill(level) {
 	const stats = cumulativeCatalog.stats[level];
 
-	document.getElementById(
-		`budget-free-ll-${level}`).textContent = stats.sp_budget;
+	const budgetCount = document.getElementById(`budget-free-ll-${level}`);
+	const budgetPill = budgetCount.parentElement;
+	budgetCount.textContent = stats.sp_budget;
 	document.getElementById(
 		`budget-total-ll-${level}`).textContent = stats.sp;
+	budgetPill.classList.toggle('error', stats.sp_budget < 0);
+	budgetPill.style.display = stats.sp_budget ? 'inline' : 'none';
 }
 
 export function refreshElectiveSystemList(level) {

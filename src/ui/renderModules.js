@@ -66,6 +66,7 @@ import {
 
 export const roadmapName = document.getElementById('roadmap-name');
 export const maxLevelInput = document.getElementById('roadmap-max-level');
+export const themeToggle = document.getElementById('theme-toggle');
 
 export const fileInput = document.getElementById('lcp-file');
 const lcpPackages = document.getElementById('lcp-packages');
@@ -405,7 +406,7 @@ export function renderBudgetPill(level) {
 
 	budgetPill.append(budgetFree, '/', budgetTotal, ' SP');
 	budgetPill.classList.toggle('error', stats.sp_budget < 0);
-	budgetPill.hidden = stats.sp_budget === 0;
+	budgetPill.style.display = stats.sp_budget ? 'inline' : 'none';
 
 	return budgetPill;
 }

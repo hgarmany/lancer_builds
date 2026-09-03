@@ -102,3 +102,8 @@ export const HASE_MAP = {
 		label: 'Eng'
 	}
 }
+
+export const THEME = Object.freeze({
+	LIGHT: 'gms-light',
+	DARK: 'gms-dark'
+});

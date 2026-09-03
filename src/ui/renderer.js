@@ -17,9 +17,14 @@ import {
 import {
 	roadmapName,
 	maxLevelInput,
+	themeToggle,
 	levelRail,
 	tableBody
 } from './renderModules.js';
+
+import {
+	THEME
+} from '../constants.js';
 
 function positionLevelLabels() {
 	const railTop = levelRail.getBoundingClientRect().top;
@@ -37,12 +42,29 @@ function positionLevelLabels() {
 
 const levelRowResizeObserver = new ResizeObserver(positionLevelLabels);
 
+function resizeRoadmapName() {
+	roadmapName.style.width = '0';
+	roadmapName.style.width = `${roadmapName.scrollWidth}px`;
+}
+
 /**
  * Connect the roadmap name and max LL fields to table + roadmap data
  */
 export function configureHeader() {
 	roadmapName.value = roadmap.name;
+	resizeRoadmapName();
 	maxLevelInput.value = String(roadmap.maxLevel);
+	themeToggle.checked =
+		document.documentElement.dataset.theme === THEME.DARK;
+
+	themeToggle.addEventListener('change', event => {
+		const theme = event.currentTarget.checked ? THEME.DARK : THEME.LIGHT;
+		document.documentElement.dataset.theme = theme;
+		localStorage.setItem('lancer-roadmap-theme', theme);
+	});
+
+	roadmapName.addEventListener('input', resizeRoadmapName);
+	document.fonts?.ready.then(resizeRoadmapName);
 
 	maxLevelInput.addEventListener('change', event => {
 		const currentMaxLevel = roadmap.maxLevel;

@@ -11,9 +11,46 @@
 	--body-font: Inter, sans-serif;
 	--header-font: Helvetica, sans-sarif;
 	--data-font: ui-monospace, monospace;
+	--on-strong: #fffaee;
+	--table-header: var(--text);
+}
 
-	--background: #d9d9d6;
-	--grid-line: #d0d0d0;
+html[data-theme="gms-light"] {
+	--background: #f4f4f4;
+	--grid-line: #d8d8d8;
+	--surface: #ffffff;
+	--surface-raised: #e3e3e3;
+	--text: #212121;
+	--text-muted: #666666;
+	--border: #212121;
+	--primary: #991e2a;
+	--accent: #c28200;
+	--focus: #1e998d;
+	--good: #6cff66;
+	--error: #8c1420;
+	--limited: #8c1420;
+	--exotic: #5b32a3;
+	--ai: #1a60ae;
+	--tag-color: #1e6922;
+}
+
+html[data-theme="gms-dark"] {
+	--background: #11151c;
+	--grid-line: #212d40;
+	--surface: #212d40;
+	--surface-raised: #161c27;
+	--text: #e4e5d1;
+	--text-muted: #c9cba3;
+	--border: #e4e5d1;
+	--primary: #802932;
+	--accent: #f3de2c;
+	--focus: #48a6a7;
+	--good: #035800;
+	--error: #dd5562;
+	--limited: #ffb329;
+	--exotic: #c693ff;
+	--ai: #64b5f6;
+	--tag-color: #66bb6a;
 }
 
 body {
@@ -38,9 +75,191 @@ main {
 	padding: 1rem;
 }
 
-.namebar {
+header {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1rem;
+	border-left: 0.5rem solid var(--accent);
+	border-radius: 0.5rem;
+	background-color: var(--primary);
+	box-shadow: 0 0.25rem 0.75rem
+		color-mix(in srgb, var(--border) 25%, transparent);
+	color: var(--on-strong);
+}
+
+#roadmap-name {
+	min-width: 12.5rem;
+	max-width: min(60rem, 100%);
+	padding: 0.25rem 0.75rem;
+	background-color: var(--primary);
+	border-radius: 0.5rem;
+	border-color: transparent;
+
+	color: var(--on-strong);
+	font-family: var(--header-font);
 	font-size: x-large;
-	padding: 0 1rem;
+	font-weight: 900;
+	letter-spacing: 0.02em;
+}
+
+#max-ll-select {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-family: var(--header-font);
+	font-size: 0.7rem;
+	font-weight: 900;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+#roadmap-max-level {
+	box-sizing: border-box;
+	width: 3.75rem;
+	border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+	border-radius: 0.25rem;
+	padding: 0.25rem;
+	background-color: var(--surface);
+	color: var(--text);
+	font-weight: 900;
+	text-align: center;
+}
+
+#lcp-manager {
+	position: relative;
+}
+
+#lcp-manager > summary,
+.theme-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	box-sizing: border-box;
+	border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+	border-radius: 1rem;
+	padding: 0.2rem 0.65rem;
+	background-color: var(--surface);
+	color: var(--text);
+	font-size: 0.7rem;
+	letter-spacing: 0.04em;
+	cursor: pointer;
+	user-select: none;
+}
+
+/* arrow */
+#lcp-manager > summary::after {
+	border-inline: 0.25rem solid transparent;
+	border-top: 0.35rem solid currentColor;
+	content: '';
+}
+
+#lcp-manager[open] > summary::after {
+	transform: rotate(180deg);
+}
+
+#lcp-count {
+	display: inline-grid;
+	min-width: 1.2rem;
+	min-height: 1.2rem;
+	place-items: center;
+	border-radius: 50%;
+	background-color: var(--primary);
+	color: var(--on-strong);
+	font-family: var(--data-font);
+	font-weight: 900;
+}
+
+#lcp-panel {
+	position: absolute;
+	top: calc(100% + 0.45rem);
+	z-index: 10;
+	width: min(24rem, calc(100vw - 2rem));
+	border: 1px solid var(--border);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+	background-color: var(--surface);
+	box-shadow: 0 0 1rem 0.25rem
+		color-mix(in srgb, var(--border) 20%, transparent);
+	color: var(--text);
+}
+
+#lcp-file {
+	box-sizing: border-box;
+	width: 100%;
+	background-color: var(--surface-raised);
+	border: 1px solid var(--border);
+	border-radius: 0.25rem;
+	padding: 0.25rem;
+}
+
+#lcp-file::file-selector-button {
+	margin-right: 0.5rem;
+	border: 0;
+	border-radius: 0.2rem;
+	padding: 0.25rem 0.5rem;
+	background-color: var(--primary);
+	color: var(--on-strong);
+	font: inherit;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+#lcp-packages {
+	display: grid;
+	gap: 0.5rem;
+	padding: 0.25rem;
+}
+
+#lcp-packages li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+#lcp-packages button {
+	border: 1px solid var(--error);
+	padding: 0.15rem 0.5rem;
+	background-color: color-mix(in srgb, var(--error) 14%, var(--surface));
+	color: var(--error);
+}
+
+#lcp-status {
+	display: block;
+	min-height: 1.25em;
+	color: var(--text-muted);
+	border-top: 1px solid color-mix(in srgb, var(--text-muted) 50%, var(--surface));
+	padding-top: 0.5rem;
+	font-size: x-small;
+}
+
+.theme-toggle-input {
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+}
+
+.theme-toggle:has(.theme-toggle-input:focus-visible),
+#roadmap-name:focus-visible,
+#roadmap-max-level:focus-visible,
+#lcp-file:focus-visible,
+#lcp-manager > summary:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 2px;
+}
+
+#lcp-manager > summary:hover,
+.theme-toggle:hover {
+	border-color: var(--focus);
+}
+
+.theme-name::after {
+	content: "GMS Light";
+}
+
+html[data-theme="gms-dark"] .theme-name::after {
+	content: "GMS Dark";
 }
 
 .roadmap-shell {
@@ -68,11 +287,11 @@ main {
 	width: 2.5rem;
 
 	border-radius: 0 1rem 1rem 0;
-	background-color: darkred;
+	background-color: var(--primary);
 
 	text-align: center;
 	align-content: center;
-	color: white;
+	color: var(--on-strong);
 	font-size: large;
 	font-weight: 900;
 	letter-spacing: 0.05rem;
@@ -82,7 +301,7 @@ main {
 }
 
 .level-tab.cb-level {
-	filter: drop-shadow(-0.35rem 0 0 gold);
+	filter: drop-shadow(-0.35rem 0 0 var(--accent));
 }
 
 .roadmap-table-track {
@@ -96,7 +315,7 @@ main {
 	--column-gap: 1rem;
 
 	width: auto;
-	min-width: calc(100% + 2rem);
+	min-width: calc(100% + 2rem + var(--column-gap));
 	margin: -0.5rem -1rem;
 	border-collapse: separate;
 	border-spacing: var(--column-gap) 0.5rem;
@@ -121,7 +340,7 @@ main {
 }
 
 .roadmap-table thead {
-	color: white;
+	color: var(--background);
 }
 
 .roadmap-table thead th {
@@ -132,7 +351,7 @@ main {
 	position: relative;
 	display: block;
 	padding: 0.25rem;
-	background-color: black;
+	background-color: var(--table-header);
 }
 
 .roadmap-table thead th:not(:last-child) > span::after {
@@ -141,13 +360,13 @@ main {
 	left: 100%;
 	width: 1rem;
 	height: 100%;
-	background-color: black;
+	background-color: var(--table-header);
 	content: '';
 }
 
 .roadmap-table tbody td {
-	border: 1px solid black;
-	background-color: white;
+	border: 1px solid var(--border);
+	background-color: var(--surface);
 	border-radius: 1rem;
 	padding: 0.65rem;
 }
@@ -198,12 +417,13 @@ main {
 }
 
 button,
-input,
 select {
 	font-family: inherit;
 	line-height: 1.2;
 	border-radius: 1rem;
 	border-color: transparent;
+	color: var(--text);
+	background-color: var(--surface);
 }
 
 /* new custom selector */
@@ -232,7 +452,7 @@ select {
 
 .mount.drag-focus,
 .custom-select.drag-focus > .selector-control {
-	outline: 2px solid Highlight;
+	outline: 2px solid var(--focus);
 	outline-offset: 1px;
 }
 
@@ -278,7 +498,7 @@ select {
 	width: 0.75rem;
 	height: 2px;
 	border-radius: 1px;
-	background-color: black;
+	background-color: var(--text);
 	content: '';
 }
 
@@ -297,7 +517,7 @@ select {
 
 .clear:hover,
 .clear:focus-visible {
-	background-color: lightgray;
+	background-color: var(--surface-raised);
 }
 
 .selector-menu {
@@ -306,10 +526,10 @@ select {
 	z-index: 100;
 	max-height: 15rem;
 	overflow-y: auto;
-	border: 1px solid ButtonBorder;
+	border: 1px solid var(--border);
 	border-radius: 0.5rem;
-	background-color: white;
-	box-shadow: 0 0.35rem 0.8rem gray;
+	background-color: var(--surface);
+	box-shadow: 0 0.35rem 0.8rem color-mix(in srgb, var(--background) 35%, transparent);
 }
 
 .custom-select .selector-menu {
@@ -323,8 +543,8 @@ select {
 }
 
 .selector-option:hover {
-	background-color: Highlight;
-	color: HighlightText;
+	background-color: var(--focus);
+	color: var(--on-strong);
 }
 
 .custom-select.open .selector-arrow {
@@ -334,11 +554,12 @@ select {
 /* end new custom selector */
 
 .error {
-	background-color: red !important;
+	background-color: var(--error) !important;
+	color: var(--on-strong) !important;
 }
 
 .hazard {
-	color: red !important;
+	color: var(--error) !important;
 }
 
 .roadmap-table .level-up {
@@ -439,7 +660,7 @@ select {
 	width: 100%;
 	height: 100%;
 	padding: 2px;
-	background-color: black;
+	background-color: var(--border);
 	clip-path: var(--hexagon);
 	-webkit-clip-path: var(--hexagon);
 }
@@ -450,7 +671,7 @@ select {
 	width: 100%;
 	height: 100%;
 	place-items: center;
-	background-color: lightgray;
+	background-color: var(--surface-raised);
 	clip-path: inherit;
 	-webkit-clip-path: inherit;
 	font-weight: 900;
@@ -470,7 +691,7 @@ select {
 	height: 16px;
 	border: 0;
 	background-color: transparent;
-	color: black;
+	color: var(--text);
 	cursor: pointer;
 	font-size: 0.75rem;
 	font-weight: 800;
@@ -541,7 +762,7 @@ select {
 	text-align: center;
 	gap: 0.2rem;
 
-	background-color: lightgray;
+	background-color: var(--surface-raised);
 	border-radius: 0.5rem;
 	margin: 0.15rem;
 	padding: 0.5rem 0.25rem;
@@ -580,13 +801,18 @@ select {
 }
 
 .mount {
-	border: 1px solid black;
+	border: 1px solid var(--border);
 	border-radius: 0.5rem;
 	padding: 0.5rem;
 }
 
 .mount.integrated {
-	border: 1px dashed black;
+	border: 1px dashed var(--border);
+}
+
+.mount,
+.mount .selector-control {
+	background-color: var(--surface-raised);
 }
 
 .systems {
@@ -618,11 +844,11 @@ select {
 
 .budget-pill {
 	width: min-content;
-	border: 1px solid black;
+	border: 1px solid var(--border);
 	border-radius: 1rem;
+	background-color: color-mix(in srgb, var(--good) 50%, var(--surface));
 	padding: 0.1rem 0.5rem;
 	margin-bottom: 0.5rem;
-
 	white-space: nowrap;
 }
 
@@ -632,15 +858,15 @@ select {
 	white-space: nowrap;
 	padding: 0.1rem 0.5rem;
 
-	border: 1px solid darkblue;
+	border: 1px solid var(--tag-color);
 	border-radius: 1rem;
 
 	font-family: var(--data-font);
 	font-size: x-small;
 	text-transform: uppercase;
-	color: darkblue;
+	color: var(--tag-color);
 
-	background-color: aliceblue;
+	background-color: color-mix(in srgb, var(--tag-color) 14%, var(--surface));
 	user-select: none;
 }
 
@@ -651,9 +877,9 @@ select {
 	gap: 0.25rem;
 	cursor: grab;
 
-	border-color: black;
-	background-color: lightgreen;
-	color: black;
+	border-color: var(--tag-color);
+	background-color: color-mix(in srgb, var(--tag-color) 16%, var(--surface));
+	color: var(--tag-color);
 }
 
 .mod-tag:active,
@@ -675,12 +901,27 @@ select {
 
 .applied-tag .clear::before,
 .applied-tag .clear::after {
+	background-color: var(--tag-color);
 	width: 0.55rem;
 	height: 1px;
 }
 
 .limited {
-	border-color: tomato;
-	background-color: peachpuff;
-	color: tomato;
+	border-color: var(--limited);
+	background-color: color-mix(in srgb, var(--limited) 12%, var(--surface));
+	color: var(--limited);
+}
+
+.exotic,
+.tag.exotic {
+	border-color: var(--exotic);
+	background-color: color-mix(in srgb, var(--exotic) 12%, var(--surface));
+	color: var(--exotic);
+}
+
+.ai,
+.tag.ai {
+	border-color: var(--ai);
+	background-color: color-mix(in srgb, var(--ai) 12%, var(--surface));
+	color: var(--ai);
 }
