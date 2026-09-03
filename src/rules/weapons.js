@@ -428,7 +428,7 @@ export function getEffectiveMods(level) {
 			return roadmap.ll[i].unusedModIds;
 	}
 
-	return null;
+	return [];
 }
 
 /**

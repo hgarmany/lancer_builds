@@ -131,3 +131,108 @@ export function setMaxLevel(roadmap, maxLevel) {
 
 	roadmap.maxLevel = maxLevel;
 }
+
+function nullInvalidId(id, collection) {
+	return id && collection.has(id) ? id : null;
+}
+
+function sourceIsAvailable(id, sourceData) {
+	return !id ||
+		sourceData.frames.has(id) ||
+		sourceData.talents.has(id) ||
+		sourceData.coreBonuses.has(id);
+}
+
+function getPreviousUnusedMods(level) {
+	for (let i = level - 1; i >= 0; i--) {
+		if (roadmap.ll[i].unusedModIds != null)
+			return roadmap.ll[i].unusedModIds;
+	}
+
+	return [];
+}
+
+/**
+ * Clear/remove all roadmap references to selections
+ * from unloaded LCPs
+ *
+ * @param {Object} sourceData
+ */
+export function cleanRoadmapAfterLcpRemove(sourceData) {
+	for (let level = 0; level < roadmap.ll.length; level++) {
+		const data = roadmap.ll[level];
+		data.skillTriggerIds = data.skillTriggerIds.map(id =>
+			nullInvalidId(id, sourceData.skillTriggers));
+		data.talentIds = data.talentIds.map(id =>
+			nullInvalidId(id, sourceData.talents));
+		data.licenseId = nullInvalidId(
+			data.licenseId, sourceData.licenses);
+		data.coreBonusId = nullInvalidId(
+			data.coreBonusId, sourceData.coreBonuses);
+		data.frameId = nullInvalidId(
+			data.frameId, sourceData.frames);
+
+		// system and mod lists size adaptively
+		data.systems = data.systems.filter(system =>
+			nullInvalidId(system.id, sourceData.systems));
+		if (data.unusedModIds != null) {
+			data.unusedModIds = data.unusedModIds
+				.filter(id => sourceData.mods.has(id));
+		}
+
+		if (!Array.isArray(data.mounts))
+			continue;
+
+		const detachedMods = [];
+		let retainedMountCount = 0;
+		
+		// weapons from invalid sources must pop off any valid mods
+		for (const mount of data.mounts) {
+			const mountAvailable = sourceIsAvailable(
+				mount.tags?.source, sourceData);
+
+			for (const weapon of mount.weapons ?? []) {
+				weapon.tags ??= {};
+				weapon.id = nullInvalidId(weapon.id, sourceData.weapons);
+
+				const modId = weapon.tags.mod;
+				if (modId && (!mountAvailable || !weapon.id ||
+					!sourceData.mods.has(modId))) {
+					if ((!mountAvailable || !weapon.id) &&
+						sourceData.mods.has(modId))
+						detachedMods.push(modId);
+
+					delete weapon.tags.mod;
+				}
+			}
+
+			if (mountAvailable)
+				data.mounts[retainedMountCount++] = mount;
+		}
+		data.mounts.length = retainedMountCount;
+
+		// valid mounts may still have invalid attachments
+		const hasSuperheavy = data.mounts.some(mount =>
+			(mount.weapons ?? []).some(weapon =>
+				sourceData.weapons.get(weapon.id)?.mount === 'Superheavy'));
+
+		for (const mount of data.mounts) {
+			if (mount.tags?.attachments) {
+				mount.tags.attachments = mount.tags.attachments.filter(id =>
+					id === 'superheavy_bracing' ? hasSuperheavy :
+						sourceIsAvailable(id, sourceData));
+			}
+		}
+
+		// detached mods handling: invalid -> discarded, valid -> unused list
+		if (detachedMods.length) {
+			const unusedMods = data.unusedModIds ??
+				[...getPreviousUnusedMods(level)];
+			for (const id of detachedMods) {
+				if (!unusedMods.includes(id))
+					unusedMods.push(id);
+			}
+			data.unusedModIds = unusedMods;
+		}
+	}
+}

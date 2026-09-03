@@ -222,7 +222,7 @@ function renderTagsMenu(level, type, getTags, renderTag) {
 	const tagList = getTags(level);
 
 	// omit menu when no options are available
-	if (!tagList) {
+	if (!tagList.length) {
 		menu.style.display = 'none';
 		return menu;
 	}
@@ -310,7 +310,7 @@ export function renderMountTags(level, data, mountIdx) {
 		tags.append(tag);
 	}
 
-	tags.style.display = (tags.children.length === 0) ? 'none' : 'flex';
+	tags.style.display = tags.children.length ? 'flex' : 'none';
 	return tags;
 }
 
@@ -349,7 +349,7 @@ export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 	tryExoticTag(tags, srcWeapon);
 	tryLimitedTag(tags, srcWeapon, level);
 
-	tags.style.display = (tags.children.length === 0) ? 'none' : 'flex';
+	tags.style.display = tags.children.length ? 'flex' : 'none';
 	return tags;
 }
 
@@ -363,7 +363,7 @@ export function renderSystemTags(level, systemId) {
 	tryExoticTag(tags, system);
 	tryLimitedTag(tags, system, level);
 
-	tags.style.display = (tags.children.length === 0) ? 'none' : 'flex';
+	tags.style.display = tags.children.length ? 'flex' : 'none';
 	return tags;
 }
 

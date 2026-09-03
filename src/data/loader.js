@@ -9,6 +9,10 @@ import {
 } from './normalizeLicenses.js';
 
 import {
+	cleanRoadmapAfterLcpRemove
+} from './roadmap.js';
+
+import {
 	initializeCatalog
 } from '../data/cumulativeCatalog.js';
 
@@ -228,6 +232,8 @@ function pushLcpChange(lcp, isImport) {
 
 	setStoredPackages(packages);
 	loadSourceData();
+	if (!isImport)
+		cleanRoadmapAfterLcpRemove(srcData);
 	renderPackageList(packages, isImport, lcp);
 
 	initializeCatalog();
