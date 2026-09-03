@@ -216,10 +216,15 @@ function pushLcpChange(lcp, isImport) {
 	const idx = packages.findIndex(
 		candidate => candidate.id === lcp.id);
 
-	if (isImport)
-		packages.splice(idx, 0, lcp);
-	else
+	if (isImport) {
+		if (idx < 0)
+			packages.push(lcp);
+		else
+			packages.splice(idx, 1, lcp);
+	}
+	else {
 		packages.splice(idx, 1);
+	}
 
 	setStoredPackages(packages);
 	loadSourceData();

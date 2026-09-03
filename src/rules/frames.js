@@ -39,6 +39,9 @@ export function getEffectiveFrameId(level) {
 export function isFrameEligible(level, id) {
 	// frame must be either GMS or within the scope of selected licenses
 	const frame = srcData.frames.get(id);
+	if (!frame)
+		return false;
+
 	return Number(licenses[level].get(frame.license_id)) >=
 		frame.license_level || frame.source === 'GMS';
 }

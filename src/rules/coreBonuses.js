@@ -43,6 +43,9 @@ export function isCoreBonusEligible(level, id, selectedId = null) {
 		return false;
 
 	const candidate = srcData.coreBonuses.get(id);
+	if (!candidate)
+		return false;
+
 	const manufacturer = candidate.source;
 
 	// allow all GMS core bonuses
@@ -52,7 +55,7 @@ export function isCoreBonusEligible(level, id, selectedId = null) {
 	// otherwise evaluate unspent license levels
 	let total = 0;
 	licenses[level]?.forEach((value, key) => {
-		if (srcData.frames?.get(key).source === manufacturer)
+		if (srcData.frames?.get(key)?.source === manufacturer)
 			total += value;
 	});
 	

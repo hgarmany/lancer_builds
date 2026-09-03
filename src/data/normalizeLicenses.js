@@ -12,31 +12,13 @@ const excludeLicenseNamesIds = [
  * @returns {Array<{id: string, name: string}>}
  */
 export function getLicenses(gameData) {
-	const licenseNames = new Set();
-
-	const collections = [
-		gameData.frames,
-		gameData.systems,
-		gameData.weapons
-	];
-
-	for (const collection of collections) {
-		if (!Array.isArray(collection))
-			continue;
-
-		for (const item of collection) {
-			const licenseName = getLicenseName(item);
-
-			if (licenseName && !excludeLicenseNamesIds.includes(licenseName))
-				licenseNames.add(licenseName);
-		}
-	}
-
 	const licenses = new Map();
 
-	for (const name of [...licenseNames].sort((a, b) => a.localeCompare(b))) {
-		const id = `mf_${slugify(name)}`;
-		licenses.set(id, { id, name });
+	for (const frame of gameData.frames) {
+		const id = frame.license_id;
+		if (!licenses.get(id) &&
+			!excludeLicenseNamesIds.includes(frame.source))
+			licenses.set(id, { id, name: frame?.name });
 	}
 
 	return licenses;
