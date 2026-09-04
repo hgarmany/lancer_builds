@@ -152,6 +152,43 @@ function getPreviousUnusedMods(level) {
 	return [];
 }
 
+export async function loadRoadmapFile(file) {
+	let loadedRoadmap;
+	try {
+		loadedRoadmap = JSON.parse(await file.text());
+	}
+	catch {
+		throw new Error('Not a valid roadmap file.');
+	}
+
+	const hasValidShape = loadedRoadmap &&
+		typeof loadedRoadmap === 'object' &&
+		!Array.isArray(loadedRoadmap) &&
+		typeof loadedRoadmap.name === 'string' &&
+		Number.isInteger(loadedRoadmap.maxLevel) &&
+		loadedRoadmap.maxLevel >= 0 &&
+		loadedRoadmap.maxLevel <= MAX_LICENSE_LEVEL &&
+		Array.isArray(loadedRoadmap.ll) &&
+		loadedRoadmap.ll.length === loadedRoadmap.maxLevel + 1 &&
+		loadedRoadmap.ll.every(level => level && typeof level === 'object');
+
+	if (!hasValidShape)
+		throw new Error('Not a valid roadmap file.');
+
+	roadmap = loadedRoadmap;
+}
+export function saveRoadmapFile() {
+	const json = JSON.stringify(roadmap, null, '\t');
+	const blob = new Blob([json], { type: "application/json" });
+
+	const link = document.createElement("a");
+	link.href = URL.createObjectURL(blob);
+	link.download = roadmap.name;
+	link.click();
+
+	URL.revokeObjectURL(link.href);
+}
+
 /**
  * Clear/remove all roadmap references to selections
  * from unloaded LCPs

@@ -2,11 +2,14 @@
 
 import {
 	roadmap,
-	setMaxLevel
+	setMaxLevel,
+	saveRoadmapFile,
+	loadRoadmapFile
 } from '../data/roadmap.js';
 
 import {
-	resizeCatalog
+	resizeCatalog,
+	initializeCatalog
 } from '../data/cumulativeCatalog.js';
 
 import {
@@ -18,6 +21,9 @@ import {
 	roadmapName,
 	maxLevelInput,
 	themeToggle,
+	loadBtn,
+	saveBtn,
+	roadmapFileInput,
 	levelRail,
 	tableBody
 } from './renderModules.js';
@@ -47,13 +53,17 @@ function resizeRoadmapName() {
 	roadmapName.style.width = `${roadmapName.scrollWidth}px`;
 }
 
+function refreshRoadmapHeader() {
+	roadmapName.value = roadmap.name;
+	resizeRoadmapName();
+	maxLevelInput.value = String(roadmap.maxLevel);
+}
+
 /**
  * Connect the roadmap name and max LL fields to table + roadmap data
  */
 export function configureHeader() {
-	roadmapName.value = roadmap.name;
-	resizeRoadmapName();
-	maxLevelInput.value = String(roadmap.maxLevel);
+	refreshRoadmapHeader();
 	themeToggle.checked =
 		document.documentElement.dataset.theme === THEME.DARK;
 
@@ -62,6 +72,28 @@ export function configureHeader() {
 		document.documentElement.dataset.theme = theme;
 		localStorage.setItem('lancer-roadmap-theme', theme);
 	});
+
+	// load/save roadmap file
+	loadBtn.addEventListener('click', () => roadmapFileInput.click());
+	roadmapFileInput.addEventListener('change', async () => {
+		const file = roadmapFileInput.files?.[0];
+		if (!file)
+			return;
+
+		try {
+			await loadRoadmapFile(file);
+			initializeCatalog();
+			refreshRoadmapHeader();
+			rerenderRoadmap();
+		}
+		catch (error) {
+			console.error(error);
+		}
+		finally {
+			roadmapFileInput.value = '';
+		}
+	});
+	saveBtn.addEventListener('click', saveRoadmapFile);
 
 	roadmapName.addEventListener('input', resizeRoadmapName);
 	document.fonts?.ready.then(resizeRoadmapName);

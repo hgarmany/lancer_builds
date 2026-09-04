@@ -78,6 +78,9 @@ const SIZE_ICON_SVGS = Object.freeze({
 export const roadmapName = document.getElementById('roadmap-name');
 export const maxLevelInput = document.getElementById('roadmap-max-level');
 export const themeToggle = document.getElementById('theme-toggle');
+export const loadBtn = document.getElementById('load-btn');
+export const saveBtn = document.getElementById('save-btn');
+export const roadmapFileInput = document.getElementById('roadmap-file');
 
 export const fileInput = document.getElementById('lcp-file');
 const lcpPackages = document.getElementById('lcp-packages');
