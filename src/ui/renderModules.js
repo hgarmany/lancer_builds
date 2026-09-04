@@ -63,6 +63,18 @@ import {
 	getIntegratedSystemIds
 } from '../rules/systems.js';
 
+import sizeHalfSvg from '../assets/size-icons/size-half.svg?raw';
+import sizeOneSvg from '../assets/size-icons/size-1.svg?raw';
+import sizeTwoSvg from '../assets/size-icons/size-2.svg?raw';
+import sizeThreeSvg from '../assets/size-icons/size-3.svg?raw';
+
+const SIZE_ICON_SVGS = Object.freeze({
+	0.5: sizeHalfSvg,
+	1: sizeOneSvg,
+	2: sizeTwoSvg,
+	3: sizeThreeSvg
+});
+
 export const roadmapName = document.getElementById('roadmap-name');
 export const maxLevelInput = document.getElementById('roadmap-max-level');
 export const themeToggle = document.getElementById('theme-toggle');
@@ -226,16 +238,19 @@ export function setStatValue(bubble, output, statId, value) {
 	output.value = value;
 
 	if (statId === 'size') {
-		const iconSuffix = value === 0.5 ? 'half' : String(value);
-
-		const icon = bubble.querySelector('.size-stat-icon') ??
-			document.createElement('img');
-		icon.className = 'size-stat-icon';
-		icon.src = `./src/assets/size-icons/size-${iconSuffix}.svg`;
-
-		bubble.append(icon);
 		bubble.classList.add('size-stat-bubble');
 
+		const template = document.createElement('template');
+		template.innerHTML = SIZE_ICON_SVGS[value].trim();
+		const icon = template.content.firstElementChild;
+		icon.classList.add('size-stat-icon');
+		
+		const previousIcon = bubble.querySelector('.size-stat-icon');
+		if (previousIcon)
+			previousIcon.replaceWith(icon);
+		else
+			bubble.append(icon);
+		
 		output.textContent = value === 0.5 ? ' ½' : ` ${value}`;
 	}
 	else {
