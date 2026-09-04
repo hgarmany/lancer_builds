@@ -27,7 +27,7 @@ html[data-theme="gms-light"] {
 	--accent: #c28200;
 	--focus: #1e998d;
 	--good: #6cff66;
-	--error: #8c1420;
+	--error: #ae2835;
 	--limited: #b67500;
 	--exotic: #5b32a3;
 	--ai: #1a60ae;
@@ -46,7 +46,7 @@ html[data-theme="gms-dark"] {
 	--accent: #f3de2c;
 	--focus: #48a6a7;
 	--good: #035800;
-	--error: #dd5562;
+	--error: #e15664;
 	--limited: #ffb329;
 	--exotic: #c693ff;
 	--ai: #64b5f6;
@@ -132,7 +132,7 @@ header {
 }
 
 #lcp-manager > summary,
-.theme-toggle {
+.header-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.45rem;
@@ -234,13 +234,17 @@ header {
 	font-size: x-small;
 }
 
-.theme-toggle-input {
+.header-btn-input {
 	position: absolute;
 	opacity: 0;
 	pointer-events: none;
 }
 
-.theme-toggle:has(.theme-toggle-input:focus-visible),
+.header-btn .fa {
+	font-size: 1rem;
+}
+
+.header-btn:has(.header-btn-input:focus-visible),
 #roadmap-name:focus-visible,
 #roadmap-max-level:focus-visible,
 #lcp-file:focus-visible,
@@ -250,7 +254,7 @@ header {
 }
 
 #lcp-manager > summary:hover,
-.theme-toggle:hover {
+.header-btn:hover {
 	border-color: var(--focus);
 }
 
@@ -554,8 +558,24 @@ select {
 /* end new custom selector */
 
 .error {
-	background-color: var(--error) !important;
-	color: var(--on-strong) !important;
+	animation: flashing_error 1s infinite;
+}
+
+@keyframes flashing_error {
+	0% {
+		background-color: var(--error);
+		color: var(--on-strong);
+	}
+
+	50% {
+		background-color: var(--surface-raised);
+		color: var(--text);
+	}
+
+	100% {
+		background-color: var(--error);
+		color: var(--on-strong);
+	}
 }
 
 .hazard {
@@ -691,7 +711,7 @@ select {
 	height: 16px;
 	border: 0;
 	background-color: transparent;
-	color: var(--text);
+	color: inherit;
 	cursor: pointer;
 	font-size: 0.75rem;
 	font-weight: 800;

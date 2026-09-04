@@ -206,8 +206,11 @@ export function initializeCatalog() {
 }
 
 export function resizeCatalog(newMaxLevel) {
-	if (newMaxLevel > roadmap.maxLevel) {
-		initializeCatalogLevel(newMaxLevel);
+	const currentMaxLevel = cumulativeCatalog.stats.length - 1;
+
+	if (newMaxLevel > currentMaxLevel) {
+		for (let level = currentMaxLevel + 1; level <= newMaxLevel; level++)
+			initializeCatalogLevel(level);
 	}
 	else {
 		const spliceTarget = newMaxLevel + 1;

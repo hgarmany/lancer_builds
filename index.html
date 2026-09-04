@@ -2,41 +2,38 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta
-		name="viewport"
-		content="width=device-width, initial-scale=1.0"
-	>
+	<meta name="viewport"
+		  content="width=device-width, initial-scale=1.0">
 	<title>Lancer Roadmap</title>
 	<script>
-		(() => {
-			const storedTheme = localStorage.getItem("lancer-roadmap-theme");
-			const theme = ["gms-light", "gms-dark"].includes(storedTheme)
-				? storedTheme
-				: window.matchMedia("(prefers-color-scheme: dark)").matches
-					? "gms-dark"
-					: "gms-light";
+				(() => {
+					const storedTheme = localStorage.getItem("lancer-roadmap-theme");
+					const theme = ["gms-light", "gms-dark"].includes(storedTheme)
+						? storedTheme
+						: window.matchMedia("(prefers-color-scheme: dark)").matches
+							? "gms-dark"
+							: "gms-light";
 
-			document.documentElement.dataset.theme = theme;
-		})();
+					document.documentElement.dataset.theme = theme;
+				})();
 	</script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="/src/styles/app.css">
 </head>
 <body>
 	<main id="app">
 		<header>
-			<input
-				id="roadmap-name"
-				type="text"
-				aria-label="Lancer roadmap name">
+			<input id="roadmap-name"
+				   type="text"
+				   aria-label="Lancer roadmap name">
 
 			<label id="max-ll-select">
 				Maximum LL
-				<input
-					id="roadmap-max-level"
-					type="number"
-					min="0"
-					max="12"
-					step="1">
+				<input id="roadmap-max-level"
+					   type="number"
+					   min="0"
+					   max="12"
+					   step="1">
 			</label>
 
 			<details id="lcp-manager">
@@ -45,27 +42,36 @@
 					<span id="lcp-count">0</span>
 				</summary>
 				<div id="lcp-panel">
-					<input
-						id="lcp-file"
-						class="visually-hidden"
-						type="file"
-						accept=".lcp,application/zip">
+					<input id="lcp-file"
+						   class="visually-hidden"
+						   type="file"
+						   accept=".lcp,application/zip">
 					<ul id="lcp-packages"></ul>
-					<output
-						id="lcp-status"
-						aria-live="polite"></output>
+					<output id="lcp-status"
+							aria-live="polite"></output>
 				</div>
 			</details>
 
-			<label class="theme-toggle">
-				<input
-					id="theme-toggle"
-					class="theme-toggle-input"
-					type="checkbox"
-					role="switch"
-					aria-label="Toggle GMS color theme">
+			<label class="header-btn theme-toggle">
+				<input id="theme-toggle"
+					   class="header-btn-input"
+					   type="checkbox"
+					   role="switch"
+					   aria-label="Toggle GMS color theme">
 				<strong class="theme-name"></strong>
 			</label>
+
+			<button id="load-btn"
+					class="header-btn"
+					title="Load roadmap from file">
+				<i class="fa fa-folder-open"></i>
+			</button>
+
+			<button id="save-btn"
+					class="header-btn"
+					title="Save roadmap to file">
+				<i class="fa fa-save"></i>
+			</button>
 		</header>
 		<section id="roadmap-shell" class="roadmap-shell">
 			<aside class="level-rail">

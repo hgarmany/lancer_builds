@@ -73,7 +73,8 @@ import {
 import {
 	reconfigureMods,
 	isWeaponEligible,
-	setWeaponSelection
+	setWeaponSelection,
+	reconfigureMounts
 } from '../rules/weapons.js';
 
 import {
@@ -250,9 +251,17 @@ export const SELECT_TEMPLATE = Object.freeze({
 				const modIdx = unusedModIds.indexOf(id);
 				if (modIdx >= 0)
 					unusedModIds.splice(modIdx, 1);
-
-				// TODO: if a mod but not found in the unused set
-				// search all slots and remove first occurrence
+				else {
+					const mounts = reconfigureMounts(level);
+					for (const mount of mounts) {
+						for (const weapon of mount.weapons) {
+							if (weapon?.tags.mod === id) {
+								delete weapon.tags.mod;
+								return;
+							}
+						}
+					}
+				}
 			}
 			else {
 				const oldId = systems[idx]?.id;
@@ -265,7 +274,6 @@ export const SELECT_TEMPLATE = Object.freeze({
 				if (srcData.mods.get(id) && modIdx == -1)
 					unusedModIds.push(id);
 			}
-			console.log(roadmap.ll[level].systems);
 		},
 		getLabel: ({ id }) => {
 			return id ? (srcData.systems.get(id)?.name ?? '') :

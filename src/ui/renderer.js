@@ -70,18 +70,25 @@ export function configureHeader() {
 		const currentMaxLevel = roadmap.maxLevel;
 		const newMaxLevel = Number(event.currentTarget.value);
 
-		resizeCatalog(newMaxLevel);
+		if (newMaxLevel === currentMaxLevel)
+			return;
+
 		setMaxLevel(roadmap, newMaxLevel);
+		resizeCatalog(newMaxLevel);
 		
 		if (currentMaxLevel > newMaxLevel) {
-			// remove extraneous row entirely
-			document.getElementById(`row-ll-${currentMaxLevel}`).remove();
-			document.getElementById(`label-ll-${currentMaxLevel}`).remove();
+			// remove every row above the new maximum
+			for (let level = currentMaxLevel; level > newMaxLevel; level--) {
+				document.getElementById(`row-ll-${level}`).remove();
+				document.getElementById(`label-ll-${level}`).remove();
+			}
 		}
 		else {
-			// build new row at default settings
-			tableBody.append(renderLevelRow(newMaxLevel));
-			levelRail.append(renderLevelLabel(newMaxLevel));
+			// build every new row
+			for (let level = currentMaxLevel + 1; level <= newMaxLevel; level++) {
+				tableBody.append(renderLevelRow(level));
+				levelRail.append(renderLevelLabel(level));
+			}
 		}
 
 		positionLevelLabels();
