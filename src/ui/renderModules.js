@@ -63,7 +63,6 @@ import {
 	getIntegratedSystemIds
 } from '../rules/systems.js';
 
-
 export const roadmapName = document.getElementById('roadmap-name');
 export const maxLevelInput = document.getElementById('roadmap-max-level');
 export const themeToggle = document.getElementById('theme-toggle');
@@ -216,6 +215,35 @@ export function getFrameImageSrc(frameId) {
 }
 
 /**
+ * Size stats represented by a hex-themed SVG
+ * All others by their own values
+ *
+ * @param {HTMLElement} output
+ * @param {string} statId
+ * @param {number|null} value
+ */
+export function setStatValue(bubble, output, statId, value) {
+	output.value = value;
+
+	if (statId === 'size') {
+		const iconSuffix = value === 0.5 ? 'half' : String(value);
+
+		const icon = bubble.querySelector('.size-stat-icon') ??
+			document.createElement('img');
+		icon.className = 'size-stat-icon';
+		icon.src = `./src/assets/size-icons/size-${iconSuffix}.svg`;
+
+		bubble.append(icon);
+		bubble.classList.add('size-stat-bubble');
+
+		output.textContent = value === 0.5 ? ' ½' : ` ${value}`;
+	}
+	else {
+		output.textContent = ` ${value}`;
+	}
+}
+
+/**
  * Draw a label-value bubble for a given stat
  * 
  * @param {number} level 
@@ -237,18 +265,11 @@ function renderStatBubble(level, statId) {
 	const output = document.createElement('span');
 	output.id = `stat-${statId}-ll-${level}`;
 	output.className = 'stat-value';
-	output.value = statValue;
+	setStatValue(statBubble, output, statId, statValue);
 	// mark for user attention any stats that have gotten worse this level
 	// typically, the result of changing active frames
 	output.classList.toggle('hazard',
 		didStatWorsen(cumulativeCatalog, level, statId));
-
-	if (statValue !== null) {
-		output.textContent =
-			statId === 'size' && statValue < 1
-				? ' \u00BD'
-				: ' ' + String(statValue);
-	}
 
 	statBubble.append(label, output);
 	return statBubble;

@@ -19,6 +19,7 @@ import {
 } from '../constants.js';
 
 import {
+	setStatValue,
 	renderMount,
 	renderMounts
 } from './renderModules.js';
@@ -225,7 +226,7 @@ export function refreshStats(level) {
 	for (const [id, value] of Object.entries(stats)) {
 		const statBubble = document.getElementById(`stat-${id}-ll-${level}`);
 		if (statBubble) {
-			statBubble.textContent = value;
+			setStatValue(statBubble.parentElement, statBubble, id, value);
 			statBubble.classList.toggle('hazard',
 				didStatWorsen(cumulativeCatalog, level, id));
 		}
