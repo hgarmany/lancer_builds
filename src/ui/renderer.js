@@ -25,6 +25,8 @@ import {
 	saveBtn,
 	roadmapFileInput,
 	levelRail,
+	roadmapShell,
+	roadmapContainer,
 	tableBody
 } from './renderModules.js';
 
@@ -47,6 +49,29 @@ function positionLevelLabels() {
 }
 
 const levelRowResizeObserver = new ResizeObserver(positionLevelLabels);
+
+function updateTableOverflowIndicators() {
+	const leftOverflow = roadmapContainer.scrollLeft;
+	const rightOverflow = roadmapContainer.scrollWidth -
+		roadmapContainer.clientWidth - leftOverflow;
+	const shellRect = roadmapShell.getBoundingClientRect();
+	const bodyRect = tableBody.getBoundingClientRect();
+
+	roadmapShell.style.setProperty(
+		'--table-body-top',
+		`${bodyRect.top - shellRect.top}px`
+	);
+	roadmapShell.style.setProperty(
+		'--table-body-height',
+		`${bodyRect.height}px`
+	);
+
+	roadmapShell.classList.toggle('overflow-left', leftOverflow > 0);
+	roadmapShell.classList.toggle('overflow-right', rightOverflow > 0);
+}
+
+const tableOverflowObserver =
+	new ResizeObserver(updateTableOverflowIndicators);
 
 function resizeRoadmapName() {
 	roadmapName.style.width = '0';
@@ -143,6 +168,14 @@ export function initializeRenderPipeline() {
 
 	positionLevelLabels();
 	levelRowResizeObserver.observe(tableBody);
+	roadmapContainer.addEventListener(
+		'scroll',
+		updateTableOverflowIndicators,
+		{ passive: true }
+	);
+	tableOverflowObserver.observe(roadmapContainer);
+	tableOverflowObserver.observe(tableBody);
+	updateTableOverflowIndicators();
 }
 
 /**

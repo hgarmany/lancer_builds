@@ -82,15 +82,15 @@ export const loadBtn = document.getElementById('load-btn');
 export const saveBtn = document.getElementById('save-btn');
 export const roadmapFileInput = document.getElementById('roadmap-file');
 
+export const lcpManager = document.getElementById('lcp-manager');
 export const fileInput = document.getElementById('lcp-file');
 const lcpPackages = document.getElementById('lcp-packages');
 const lcpCount = document.getElementById('lcp-count');
 export const lcpStatus = document.getElementById('lcp-status');
 
 export const levelRail = document.querySelector(".level-rail");
-
-const roadmapShell = document.getElementById("roadmap-shell");
-const roadmapContainer = document.querySelector(".roadmap-container");
+export const roadmapShell = document.getElementById("roadmap-shell");
+export const roadmapContainer = document.querySelector(".roadmap-container");
 export const tableBody = document.getElementById("roadmap-body");
 const tableHead = document.querySelector("#roadmap-table thead");
 

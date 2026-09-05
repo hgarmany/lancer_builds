@@ -20,7 +20,8 @@ html[data-theme="gms-light"] {
 	--background: #f4f4f4;
 	--grid-line: #d8d8d8;
 	--surface: #ffffff;
-	--surface-raised: #e3e3e3;
+	--surface-raised: #c4c4c4;
+	--surface-highlight: #e1e1e1;
 	--text: #212121;
 	--text-muted: #666666;
 	--border: #212121;
@@ -39,7 +40,8 @@ html[data-theme="gms-dark"] {
 	--background: #11151c;
 	--grid-line: #212d40;
 	--surface: #212d40;
-	--surface-raised: #161c27;
+	--surface-raised: #0b0b0e;
+	--surface-highlight: #161c27;
 	--text: #e4e5d1;
 	--text-muted: #c9cba3;
 	--border: #e4e5d1;
@@ -283,8 +285,45 @@ html[data-theme="gms-dark"] .theme-name::after {
 }
 
 .roadmap-shell {
+	position: relative;
 	display: grid;
 	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.roadmap-shell::before,
+.roadmap-shell::after {
+	position: absolute;
+	top: var(--table-body-top, 0);
+	z-index: 10;
+	width: 1.25rem;
+	height: var(--table-body-height, 0);
+	opacity: 0;
+	pointer-events: none;
+	content: '';
+	transition: opacity 120ms ease-out;
+}
+
+.roadmap-shell::before {
+	left: 2.5rem;
+	background: linear-gradient(
+		to right,
+		color-mix(in srgb, var(--primary) 70%, transparent),
+		transparent
+	);
+}
+
+.roadmap-shell::after {
+	right: 0;
+	background: linear-gradient(
+		to left,
+		color-mix(in srgb, var(--primary) 70%, transparent),
+		transparent
+	);
+}
+
+.roadmap-shell.overflow-left::before,
+.roadmap-shell.overflow-right::after {
+	opacity: 1;
 }
 
 .roadmap-container {
@@ -446,10 +485,16 @@ select {
 	background-color: var(--surface);
 }
 
-/* new custom selector */
+/* custom selector */
+
 .custom-select {
 	position: relative;
 	max-width: max-content;
+}
+
+.selector-control-row {
+	position: relative;
+	width: max-content;
 }
 
 .custom-select-mimic {
@@ -465,15 +510,20 @@ select {
 	align-items: center;
 	padding: 0.1rem 0.5rem;
 	min-width: 7rem;
+	background-color: color-mix(in srgb, var(--surface-raised) 75%, transparent);
 	line-height: 1.2;
 	text-align: left;
 	cursor: pointer;
 }
 
 .mount.drag-focus,
-.custom-select.drag-focus > .selector-control {
+.custom-select.drag-focus .selector-control {
 	outline: 2px solid var(--focus);
 	outline-offset: 1px;
+}
+
+.selector-control:hover {
+	background-color: color-mix(in srgb, var(--surface-highlight) 75%, transparent);;
 }
 
 .selector-control.occupied {
@@ -499,12 +549,13 @@ select {
 
 .clear {
 	position: absolute;
-	top: 0.1rem;
-	right: 0rem;
+	top: 50%;
+	right: 0.1rem;
 	z-index: 2;
 	display: none;
 	width: 1.25rem;
 	height: 1.25rem;
+	transform: translateY(-50%);
 	background: transparent;
 	cursor: pointer;
 }
@@ -537,7 +588,8 @@ select {
 
 .clear:hover,
 .clear:focus-visible {
-	background-color: var(--surface-raised);
+	background-color: color-mix(in srgb, var(--surface-raised) 75%, transparent);;
+
 }
 
 .selector-menu {
@@ -592,10 +644,6 @@ select {
 		background-color: var(--error);
 		color: var(--on-strong);
 	}
-}
-
-.hazard {
-	color: var(--error) !important;
 }
 
 .roadmap-table .level-up {
@@ -782,6 +830,8 @@ select {
 	max-width: 9rem;
 }
 
+/* stats cell styles */
+
 .stats-cell {
 	min-width: 19rem;
 }
@@ -798,7 +848,8 @@ select {
 	text-align: center;
 	gap: 0.2rem;
 
-	background-color: var(--surface-raised);
+	background-color:
+		color-mix(in srgb, var(--surface) 75%, var(--accent));
 	border-radius: 0.5rem;
 	margin: 0.15rem;
 	padding: 0.5rem 0.25rem;
@@ -831,6 +882,60 @@ select {
 	fill: var(--text);
 }
 
+.hazard {
+	color: var(--error);
+}
+
+/* shared tags styles */
+
+.mount-tags,
+.tags {
+	display: flex;
+	gap: 0.25rem;
+	margin-top: 0.25rem;
+	margin-left: 0.5rem;
+}
+
+.tag {
+	position: relative;
+	width: min-content;
+	white-space: nowrap;
+	padding: 0.1rem 0.5rem;
+
+	border: 1px solid var(--tag-color);
+	border-radius: 1rem;
+
+	font-family: var(--data-font);
+	font-size: x-small;
+	text-transform: uppercase;
+	color: var(--tag-color);
+
+	background-color: color-mix(in srgb, var(--tag-color) 14%, var(--surface));
+	user-select: none;
+}
+
+.limited {
+	border-color: var(--limited);
+	background-color: color-mix(in srgb, var(--limited) 12%, var(--surface));
+	color: var(--limited);
+}
+
+.exotic,
+.tag.exotic {
+	border-color: var(--exotic);
+	background-color: color-mix(in srgb, var(--exotic) 12%, var(--surface));
+	color: var(--exotic);
+}
+
+.ai,
+.tag.ai {
+	border-color: var(--ai);
+	background-color: color-mix(in srgb, var(--ai) 12%, var(--surface));
+	color: var(--ai);
+}
+
+/* mounts cell styles */
+
 .mounts {
 	align-items: center;
 	gap: 0.5rem;
@@ -855,70 +960,18 @@ select {
 	border: 1px solid var(--border);
 	border-radius: 0.5rem;
 	padding: 0.5rem;
+	background-color:
+		color-mix(in srgb, var(--surface) 75%, var(--accent));
 }
 
 .mount.integrated {
 	border: 1px dashed var(--border);
 }
 
-.mount,
-.mount .selector-control {
-	background-color: var(--surface-raised);
-}
-
-.systems {
-	align-items: center;
-	gap: 0.25rem;
-}
-
-.mount-tags,
-.tags {
-	display: flex;
-	gap: 0.25rem;
-	margin-top: 0.25rem;
-	margin-left: 0.5rem;
-}
-
 .mount-tags,
 .custom-select-mimic .tags {
 	margin-bottom: 0.5rem;
 	margin-left: 0;
-}
-
-.systems .select-group {
-	display: grid !important;
-	grid-template-rows: repeat(4, auto);
-	grid-auto-flow: column;
-	grid-auto-columns: minmax(10rem, 1fr);
-	align-items: center;
-}
-
-.budget-pill {
-	width: min-content;
-	border: 1px solid var(--border);
-	border-radius: 1rem;
-	background-color: color-mix(in srgb, var(--good) 50%, var(--surface));
-	padding: 0.1rem 0.5rem;
-	margin-bottom: 0.5rem;
-	white-space: nowrap;
-}
-
-.tag {
-	position: relative;
-	width: min-content;
-	white-space: nowrap;
-	padding: 0.1rem 0.5rem;
-
-	border: 1px solid var(--tag-color);
-	border-radius: 1rem;
-
-	font-family: var(--data-font);
-	font-size: x-small;
-	text-transform: uppercase;
-	color: var(--tag-color);
-
-	background-color: color-mix(in srgb, var(--tag-color) 14%, var(--surface));
-	user-select: none;
 }
 
 .mod-tag,
@@ -957,22 +1010,27 @@ select {
 	height: 1px;
 }
 
-.limited {
-	border-color: var(--limited);
-	background-color: color-mix(in srgb, var(--limited) 12%, var(--surface));
-	color: var(--limited);
+/* systems cell styles */
+
+.systems {
+	align-items: center;
+	gap: 0.25rem;
 }
 
-.exotic,
-.tag.exotic {
-	border-color: var(--exotic);
-	background-color: color-mix(in srgb, var(--exotic) 12%, var(--surface));
-	color: var(--exotic);
+.systems .select-group {
+	display: grid !important;
+	grid-template-rows: repeat(4, auto);
+	grid-auto-flow: column;
+	grid-auto-columns: minmax(10rem, 1fr);
+	align-items: center;
 }
 
-.ai,
-.tag.ai {
-	border-color: var(--ai);
-	background-color: color-mix(in srgb, var(--ai) 12%, var(--surface));
-	color: var(--ai);
+.budget-pill {
+	width: min-content;
+	border: 1px solid var(--border);
+	border-radius: 1rem;
+	background-color: color-mix(in srgb, var(--good) 50%, var(--surface));
+	padding: 0.1rem 0.5rem;
+	margin-bottom: 0.5rem;
+	white-space: nowrap;
 }

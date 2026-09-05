@@ -406,6 +406,9 @@ export function renderSelector(
 	selector.dataset.ll = level;
 	selector.value = selectedId;
 
+	const controlRow = document.createElement('div');
+	controlRow.className = 'selector-control-row';
+
 	const control = document.createElement('button');
 	control.className = 'selector-control';
 	control.classList.toggle('occupied', selectedId);
@@ -475,7 +478,7 @@ export function renderSelector(
 			setSelectorOpen(selector, false);
 	});
 
-	selector.append(control);
+	controlRow.append(control);
 
 	// remove/clear selector button
 	if (template.allowClear) {
@@ -496,8 +499,10 @@ export function renderSelector(
 			template.changeEvent(selector, level);
 			setSelectorOpen(selector, false);
 		});
-		selector.append(clear);
+		controlRow.append(clear);
 	}
+
+	selector.append(controlRow);
 
 	control.addEventListener('click', () =>
 		setSelectorOpen(selector, !selector.classList.contains('open')));

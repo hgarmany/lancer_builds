@@ -22,6 +22,7 @@ import {
 
 import {
 	fileInput,
+	lcpManager,
 	lcpStatus,
 	renderPackageList
 } from '../ui/renderModules.js';
@@ -269,6 +270,16 @@ export function removeLCP(lcp) {
 
 export function configureLcpManager() {
 	renderPackageList(getStoredPackages());
+
+	document.addEventListener('pointerdown', event => {
+		if (!lcpManager.contains(event.target))
+			lcpManager.open = false;
+	});
+
+	document.addEventListener('keydown', event => {
+		if (event.key === 'Escape')
+			lcpManager.open = false;
+	});
 
 	fileInput.addEventListener('change', async () => {
 		const file = fileInput.files?.[0];
