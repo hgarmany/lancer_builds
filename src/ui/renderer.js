@@ -89,6 +89,11 @@ function refreshRoadmapHeader() {
  */
 export function configureHeader() {
 	refreshRoadmapHeader();
+
+	roadmapName.addEventListener('change', event => {
+		roadmap.name = event.currentTarget.value;
+	});
+
 	themeToggle.checked =
 		document.documentElement.dataset.theme === THEME.DARK;
 

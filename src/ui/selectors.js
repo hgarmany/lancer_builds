@@ -71,7 +71,10 @@ import {
 } from '../rules/frames.js';
 
 import {
-	reconfigureMods,
+	reconfigureMods
+} from '../rules/attachments.js';
+
+import {
 	isWeaponEligible,
 	setWeaponSelection,
 	reconfigureMounts

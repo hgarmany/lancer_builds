@@ -8,15 +8,18 @@ import {
 } from './updates.js';
 
 import {
+	getEffectiveMounts
+} from '../rules/weapons.js';
+
+import {
 	getUnassignedMountTags,
 	getMountAttachmentLabel,
-	getEffectiveMounts,
 	getEffectiveMods,
 	assignMountAttachment,
 	removeMountAttachment,
 	assignWeaponMod,
 	removeWeaponMod
-} from '../rules/weapons.js';
+} from '../rules/attachments.js';
 
 import {
 	TAGS,

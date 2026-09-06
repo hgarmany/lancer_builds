@@ -50,9 +50,12 @@ import {
 } from '../rules/frames.js';
 
 import {
-	reconfigureMounts,
-	reconcileMountAttachments
+	reconfigureMounts
 } from '../rules/weapons.js';
+
+import {
+	reconcileMountAttachments
+} from '../rules/attachments.js';
 
 function refreshMountTagMenu(level) {
 	const current = document.getElementById(`mount-tags-ll-${level}`);

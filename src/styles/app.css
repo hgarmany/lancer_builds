@@ -264,12 +264,9 @@ header {
 }
 
 #lcp-manager > summary:hover,
+#lcp-manager[open] > summary,
 .header-btn:hover {
-	background-color: color-mix(in srgb, var(--on-strong) 15%, transparent);
-}
-
-#lcp-manager[open] > summary {
-	background-color: color-mix(in srgb, var(--on-strong) 20%, transparent);
+	background-color: color-mix(in srgb, var(--on-strong) 25%, transparent);
 }
 
 .theme-name {
