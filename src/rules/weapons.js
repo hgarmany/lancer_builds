@@ -17,8 +17,7 @@ import {
 } from '../constants.js';
 
 import {
-	ATTACHMENT_ID,
-	initializeMods
+	ATTACHMENT_ID
 } from './attachments.js';
 
 import {
@@ -333,7 +332,7 @@ function resizeFlexMount(level, mount) {
 function updateMountSlotCount(level, mount) {
 	const slotCount = getMountSlots(mount).length;
 	while (mount.weapons.length > slotCount)
-		const removedWeapon = mount.weapons.pop();
+		mount.weapons.pop();
 	while (mount.weapons.length < slotCount)
 		mount.weapons.push({ id: null });
 }

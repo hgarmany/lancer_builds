@@ -16,8 +16,7 @@ import {
 } from './selectors.js';
 
 import {
-	renderMountTagsMenu,
-	renderWeaponTagsMenu,
+	renderAttachmentsMenu,
 	renderSystemTags
 } from './tags.js';
 
@@ -176,8 +175,7 @@ function renderFrame(level) {
 
 function renderMountsCell(level) {
 	return [
-		renderMountTagsMenu(level),
-		renderWeaponTagsMenu(level),
+		renderAttachmentsMenu(level),
 		renderMounts(level)
 	];
 }

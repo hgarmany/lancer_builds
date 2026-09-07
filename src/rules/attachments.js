@@ -50,7 +50,7 @@ export function getEligibleAttachments(level) {
 	}
 
 	// superheavy bracing from a mounted superheavy weapon
-	for (const mount of mounts) {
+	for (const mount of getEffectiveMounts(level)) {
 		const hasBracing =
 			(mount.type === 'Heavy' || mount.type === 'Superheavy') &&
 			srcData.weapons.get(mount.weapons[0]?.id)?.mount === 'Superheavy';
@@ -82,7 +82,7 @@ export function getUnusedAttachments(level) {
 
 	// consolidate all mount and weapon attachments at this level
 	const attachments = mounts.flatMap(mount => [
-		...mount.attachments,
+		...mount.attachments ?? [],
 		...(mount.weapons ?? []).flatMap(weapon => weapon.attachments)
 	]);
 
@@ -180,4 +180,53 @@ export function moveAttachment({
 	}
 
 	return true;
+}
+
+/**
+ * Checks all attachment points on this level and
+ * culls any attachments that are no longer eligible
+ * Returns the indices of those mounts that must be re-rendered
+ * 
+ * @param {number} level 
+ * @returns {Array<number>}
+ */
+export function updateAppliedAttachments(level) {
+	const tagList = getEligibleAttachments(level);
+	const mounts = [...getEffectiveMounts(level)];
+	const affectedMountIndices = [];
+	let initializeNewMounts = false;
+
+	for (let i = 0; i < mounts.length; i++) {
+		let mountChanged = false;
+
+		mounts[i].attachments?.filter(attachment => {
+			if (tagList.includes(attachment))
+				return true;
+			mountChanged = true;
+			return false;
+		});
+		if (mounts[i].attachments?.length === 0)
+			delete mount.attachments;
+
+		for (const weapon of mounts[i].weapons) {
+			weapon.attachments?.filter(attachment => {
+				if (tagList.includes(attachment))
+					return true;
+				mountChanged = true;
+				return false;
+			});
+			if (weapon.attachments?.length === 0)
+				delete weapon.attachments;
+		}
+
+		if (mountChanged) {
+			affectedMounts.push(i);
+			initializeNewMounts = true;
+		}
+	}
+
+	if (initializeNewMounts)
+		roadmap.ll[level].mounts = mounts;
+
+	return affectedMountIndices;
 }

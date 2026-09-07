@@ -33,7 +33,6 @@ import {
 import {
 	dropMountTag,
 	applyAttachmentManager,
-	MOUNT_TRANSFER_TYPE,
 	renderMountTags,
 	renderWeaponTags,
 	renderSystemTags
@@ -347,8 +346,7 @@ export function renderMount(level, idx, data) {
 	if (!data.tags?.integrated) {
 		// add mount tags
 		mount.append(renderMountTags(level, data, idx));
-		applyAttachmentManager(
-			level, mount, dropMountTag, MOUNT_TRANSFER_TYPE);
+		applyAttachmentManager(level, mount, dropMountTag);
 	}
 
 	const slots = document.createElement('div');

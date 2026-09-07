@@ -25,7 +25,7 @@ export const TAGS = Object.freeze({
  * @returns {boolean}
  */
 export function doesItemHaveTag(item, tagId) {
-	return item?.tags?.has(tag => tag.id === tagId);
+	return item?.tags?.find(tag => tag.id === tagId) !== undefined;
 }
 
 /**

@@ -32,7 +32,6 @@ import {
 import {
 	dropWeaponTag,
 	applyAttachmentManager,
-	MOD_TRANSFER_TYPE,
 	renderWeaponTags
 } from './tags.js';
 
@@ -71,7 +70,6 @@ import {
 } from '../rules/frames.js';
 
 import {
-	initializeMods,
 	moveAttachment
 } from '../rules/attachments.js';
 
@@ -531,8 +529,7 @@ export function renderWeaponSelector(
 	selector.dataset.mountIdx = mountIdx;
 	selector.dataset.slotIdx = slotIdx;
 
-	applyAttachmentManager(
-		level, selector, dropWeaponTag, MOD_TRANSFER_TYPE);
+	applyAttachmentManager(level, selector, dropWeaponTag);
 	selector.append(renderWeaponTags(
 		level, weapon, mountIdx, slotIdx));
 

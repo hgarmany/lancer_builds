@@ -24,8 +24,7 @@ import {
 } from './selectors.js';
 
 import {
-	renderWeaponTagsMenu,
-	renderMountTagsMenu,
+	renderAttachmentsMenu,
 	refreshTags
 } from './tags.js';
 
@@ -54,13 +53,13 @@ import {
 } from '../rules/weapons.js';
 
 import {
-	reconcileMountAttachments
+	updateAppliedAttachments
 } from '../rules/attachments.js';
 
-function refreshMountTagMenu(level) {
-	const current = document.getElementById(`mount-tags-ll-${level}`);
+function refreshAttachmentMenu(level) {
+	const current = document.getElementById(`attachments-ll-${level}`);
 	if (current)
-		current.replaceWith(renderMountTagsMenu(level));
+		current.replaceWith(renderAttachmentsMenu(level));
 }
 
 /**
@@ -97,7 +96,7 @@ export function talentUpdate(selector, level) {
 		// resolves existing hard-set integrated talent mounts
 		reconfigureMounts(i);
 		redrawMounts(i);
-		refreshMountTagMenu(i);
+		refreshAttachmentMenu(i);
 		refreshElectiveSystemList(i);
 	}
 
@@ -126,10 +125,10 @@ export function coreBonusUpdate(selector, level) {
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		if (i === level || roadmap.ll[i].mounts)
 			reconfigureMounts(i);
-		reconcileMountAttachments(i);
+		updateAppliedAttachments(i);
 		refreshStats(i);
 		redrawMounts(i);
-		refreshMountTagMenu(i);
+		refreshAttachmentMenu(i);
 	}
 
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
@@ -212,7 +211,7 @@ export function frameUpdate(selector, level) {
 	) {
 		refreshStats(i);
 		redrawMounts(i);
-		refreshMountTagMenu(i);
+		refreshAttachmentMenu(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
 	}
@@ -230,7 +229,7 @@ export function modUpdate(level, mountIndexes) {
 		if (i > level && roadmap.ll[i].mounts)
 			break;
 
-		const freeModList = document.getElementById(`weapon-tags-ll-${i}`);
+		const freeModList = document.getElementById(`attachments-ll-${i}`);
 		if (freeModList)
 			freeModList.replaceWith(renderWeaponTagsMenu(i));
 
@@ -251,7 +250,7 @@ export function mountTagUpdate(level, mountIndexes) {
 		if (i > level && roadmap.ll[i].mounts)
 			break;
 
-		refreshMountTagMenu(i);
+		refreshAttachmentMenu(i);
 		for (const mountIdx of affectedMounts)
 			redrawMount(i, mountIdx);
 	}
@@ -274,7 +273,7 @@ export function weaponUpdate(selector, level) {
 		slotIdx,
 		id: newId
 	});
-	const mountTagChanges = reconcileMountAttachments(currentLevel);
+	const mountTagChanges = updateAppliedAttachments(level);
 	mountTagUpdate(currentLevel, [mountIdx, ...mountTagChanges]);
 
 	// This level becomes a loadout boundary. Later levels inherit it until

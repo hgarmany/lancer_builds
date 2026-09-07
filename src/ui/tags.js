@@ -12,13 +12,8 @@ import {
 } from '../rules/weapons.js';
 
 import {
-	getUnassignedMountTags,
-	getMountAttachmentLabel,
-	getEffectiveMods,
-	assignMountAttachment,
-	removeMountAttachment,
-	assignWeaponMod,
-	removeWeaponMod
+	getUnusedAttachments,
+	moveAttachment
 } from '../rules/attachments.js';
 
 import {
@@ -27,18 +22,18 @@ import {
 	getItemNumUses
 } from '../rules/installsCommon.js';
 
-export const MOD_TRANSFER_TYPE = 'application/x-lancer-weapon-mod';
-export const MOUNT_TRANSFER_TYPE = 'application/x-lancer-mount-attachment';
+export const ATTACHMENT_TRANSFER_TYPE = 'application/x-lancer-attachment';
 
-function setTagTransferData(event, type, data) {
-	const serializedData = JSON.stringify(data);
+function setAttachmentTransferData(event, level, attachmentData) {
+	const serializedData = JSON.stringify(attachmentData);
 	event.dataTransfer.effectAllowed = 'move';
-	event.dataTransfer.setData(type, serializedData);
+	event.dataTransfer.setData(ATTACHMENT_TRANSFER_TYPE, serializedData);
 	event.dataTransfer.setData('text/plain', serializedData);
 }
 
-function getTagTransferData(event, type) {
-	const serializedData = event.dataTransfer.getData(type);
+function getAttachmentTransferData(event) {
+	const serializedData =
+		event.dataTransfer.getData(ATTACHMENT_TRANSFER_TYPE);
 	if (!serializedData)
 		return null;
 
@@ -48,21 +43,6 @@ function getTagTransferData(event, type) {
 	catch {
 		return null;
 	}
-}
-
-/**
- * Make an unused mod tag draggable onto a weapon at the same level
- *
- * @param {number} level
- * @param {HTMLElement} tag
- * @param {string} modId
- */
-function applyUnusedModDragManager(level, tag, modId) {
-	tag.draggable = true;
-	tag.addEventListener('dragstart', event => {
-		setTagTransferData(event, MOD_TRANSFER_TYPE,
-			{ level, modId, source: 'unused' });
-	});
 }
 
 /**
@@ -90,8 +70,8 @@ function applyWeaponTagManager(
 			return;
 		}
 
-		setTagTransferData(event, MOD_TRANSFER_TYPE,
-			{ level, modId, source: 'weapon', mountIdx, slotIdx });
+		setAttachmentTransferData(event, level,
+			{ modId, source: 'weapon', mountIdx, slotIdx });
 	});
 
 	// remove mod from slot, return to unused list
@@ -103,7 +83,7 @@ function applyWeaponTagManager(
 }
 
 export function dropMountTag(event, level, mount) {
-	const transfer = getTagTransferData(event, MOUNT_TRANSFER_TYPE);
+	const transfer = getAttachmentTransferData(event);
 	mount.blur();
 	if (!transfer || level !== Number(transfer.level))
 		return;
@@ -123,7 +103,7 @@ export function dropMountTag(event, level, mount) {
 }
 
 export function dropWeaponTag(event, level, weaponSelector) {
-	if (!event.dataTransfer.types.includes(MOD_TRANSFER_TYPE))
+	if (!event.dataTransfer.types.includes(ATTACHMENT_TRANSFER_TYPE))
 		return;
 	event.preventDefault();
 	event.stopPropagation();
@@ -134,7 +114,7 @@ export function dropWeaponTag(event, level, weaponSelector) {
 		`#mount-${mountIdx}-ll-${level} ` +
 		`.weapon-select[data-slot-idx="${slotIdx}"]`);
 
-	const transfer = getTagTransferData(event, MOD_TRANSFER_TYPE);
+	const transfer = getAttachmentTransferData(event);
 	if (!transfer || level !== Number(transfer.level))
 		return;
 
@@ -167,11 +147,10 @@ export function dropWeaponTag(event, level, weaponSelector) {
 export function applyAttachmentManager(
 	level,
 	target,
-	dropFunction,
-	transferType
+	dropFunction
 ) {
 	target.addEventListener('dragover', event => {
-		if (!event.dataTransfer.types.includes(transferType))
+		if (!event.dataTransfer.types.includes(ATTACHMENT_TRANSFER_TYPE))
 			return;
 
 		event.preventDefault();
@@ -186,7 +165,7 @@ export function applyAttachmentManager(
 	});
 
 	target.addEventListener('drop', event => {
-		if (!event.dataTransfer.types.includes(transferType))
+		if (!event.dataTransfer.types.includes(ATTACHMENT_TRANSFER_TYPE))
 			return;
 
 		target.classList.remove('drag-focus');
@@ -194,56 +173,37 @@ export function applyAttachmentManager(
 	});
 }
 
-function renderMountTag(level, id) {
-	const tag = document.createElement('div');
-	tag.className = 'tag mount-tag';
-	tag.textContent = getMountAttachmentLabel(id);
-	tag.draggable = true;
-	tag.addEventListener('dragstart', event => {
-		setTagTransferData(event, MOUNT_TRANSFER_TYPE,
-			{ level, id, source: 'unused' });
+function renderAttachment(level, attachmentData) {
+	const attachment = document.createElement('div');
+	attachment.className = `tag ${attachmentData.type}-tag`;
+	attachment.textContent = attachmentData.label;
+	attachment.draggable = true;
+	attachment.addEventListener('dragstart', event => {
+		setAttachmentTransferData(event, level, attachmentData);
 	});
 
-	return tag;
+	return attachment;
 }
 
-function renderWeaponTag(level, id) {
-	const tag = document.createElement('div');
-	tag.className = 'tag mod-tag';
-	tag.textContent = srcData.mods.get(id)?.name ?? '';
-
-	applyUnusedModDragManager(level, tag, id);
-
-	return tag;
-}
-
-function renderTagsMenu(level, type, getTags, renderTag) {
+export function renderAttachmentsMenu(level) {
 	const menu = document.createElement('div');
-	menu.id = `${type}-tags-ll-${level}`;
-	menu.className = 'tag-menu';
+	menu.id = `attachments-ll-${level}`;
+	menu.className = 'attachment-menu';
 
-	const tagList = getTags(level);
+	const attachmentList = getUnusedAttachments(level);
 
 	// omit menu when no options are available
-	if (!tagList.length) {
+	if (!attachmentList.length) {
 		menu.style.display = 'none';
 		return menu;
 	}
 
 	menu.style.display = 'flex';
 	// populate tag menu
-	for (const tag of tagList)
-		menu.append(renderTag(level, tag));
+	for (const attachment of attachmentList)
+		menu.append(renderAttachment(level, attachment));
 
 	return menu;
-}
-
-export function renderMountTagsMenu(level) {
-	return renderTagsMenu(level, 'mount', getUnassignedMountTags, renderMountTag);
-}
-
-export function renderWeaponTagsMenu(level) {
-	return renderTagsMenu(level, 'weapon', getEffectiveMods, renderWeaponTag);
 }
 
 function tryAITag(tags, item) {
@@ -299,8 +259,8 @@ export function renderMountTags(level, data, mountIdx) {
 				event.preventDefault();
 				return;
 			}
-			setTagTransferData(event, MOUNT_TRANSFER_TYPE,
-				{ level, id, source: 'mount', mountIdx });
+			setAttachmentTransferData(event, level,
+				{ id, source: 'mount', mountIdx });
 		});
 
 		remove.addEventListener('click', event => {

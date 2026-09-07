@@ -275,7 +275,7 @@ export function redrawMounts(level) {
 		}
 		else if (currentMount.dataset.mountType !== getEffectiveMountType(data) ||
 			currentSlots !== requiredSlots ||
-			currentMount.dataset.integrated !== data.tags.integrated) {
+			currentMount.dataset.integrated !== data.integrated) {
 			// if the current mount doesn't match the new type, replace
 			currentMount.replaceWith(renderMount(level, idx, data));
 		}
