@@ -323,26 +323,26 @@ export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 	const tags = document.createElement('div');
 	tags.className = 'tags';
 
-	const modId = weapon?.tags?.mod;
-	if (modId) {
+	for (const attachment of weapon?.attachments ?? []) {
 		// mod tag
-		const mod = srcData.mods.get(modId);
+		const dataElement = srcData.mods.get(attachment) ??
+			srcData.coreBonus.get(attachment);
 
-		if (mod) {
+		if (dataElement) {
 			const tag = document.createElement('div');
 			tag.className = 'tag mod-tag applied-tag';
 
 			const label = document.createElement('span');
-			label.textContent = mod.name;
+			label.textContent = dataElement.name;
 
 			const remove = document.createElement('button');
 			remove.className = 'clear';
 			remove.type = 'button';
-			remove.title = `Remove ${mod.name}`;
+			remove.title = `Remove ${dataElement.name}`;
 
 			tag.append(label, remove);
 			applyWeaponTagManager(
-				level, tag, remove, mountIdx, slotIdx, modId);
+				level, tag, remove, mountIdx, slotIdx, attachment);
 
 			tags.append(tag);
 		}

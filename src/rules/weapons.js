@@ -17,8 +17,8 @@ import {
 } from '../constants.js';
 
 import {
-	MOUNT_ATTACHMENT,
-	reconfigureMods
+	ATTACHMENT_ID,
+	initializeMods
 } from './attachments.js';
 
 import {
@@ -54,6 +54,11 @@ const HEAVY_SLOT = Object.freeze({
 	])
 });
 
+const SUPERHEAVY_SLOT = Object.freeze({
+	label: 'Superheavy',
+	allowedWeaponMounts: Object.freeze(['Superheavy'])
+});
+
 const SHIP_CLASS = Object.freeze({
 	label: 'Ship-Class',
 	allowedWeaponMounts: Object.freeze(['Ship-class'])
@@ -61,7 +66,7 @@ const SHIP_CLASS = Object.freeze({
 
 export const MOUNT_SLOTS = Object.freeze({
 	'Ship-class': Object.freeze([SHIP_CLASS]),
-	'Superheavy': Object.freeze([HEAVY_SLOT]),
+	'Superheavy': Object.freeze([SUPERHEAVY_SLOT]),
 	'Heavy': Object.freeze([HEAVY_SLOT]),
 	'Main': Object.freeze([MAIN_SLOT]),
 	'Flex': Object.freeze([MAIN_SLOT]),
@@ -100,8 +105,8 @@ export function getWeaponNumUses(level, id) {
  * @returns {string}
  */
 export function getEffectiveMountType(mount) {
-	return mount.tags?.attachments?.includes(
-		MOUNT_ATTACHMENT.MOUNT_RETROFITTING)
+	return mount.attachments?.includes(
+		ATTACHMENT_ID.MOUNT_RETROFITTING)
 		? 'Main/Aux'
 		: mount.type;
 }
@@ -115,8 +120,8 @@ export function getEffectiveMountType(mount) {
  * 
  */
 export function getMountSlots(mount) {
-	if (mount.tags?.attachments?.includes(
-		MOUNT_ATTACHMENT.SUPERHEAVY_BRACING))
+	if (mount.attachments?.includes(
+		ATTACHMENT_ID.SUPERHEAVY_BRACING))
 		return [];
 
 	const mountType = getEffectiveMountType(mount);
@@ -132,9 +137,12 @@ export function getMountSlots(mount) {
 	return doTwoSlots ? [MAIN_SLOT, AUXILIARY_SLOT] : [MAIN_SLOT];
 }
 
-function createEmptyMount(type, tags) {
-	const weapons = MOUNT_SLOTS[type].map(() => ({ id: null, tags: {} }));
-	return { type, weapons, tags };
+function createEmptyMount(type, attachments) {
+	const weapons = MOUNT_SLOTS[type].map(() => ({ id: null }));
+	const newMount = { type, weapons };
+	if (attachments)
+		newMount.attachments = attachments;
+	return newMount;
 }
 
 /**
@@ -166,11 +174,9 @@ function buildMountConfiguration(level) {
 		if (weapon) {
 			const newMount = {
 				type: weapon.mount,
-				weapons: [{ id: integration.weapon, tags: {} }],
-				tags: {
-					source: integration.source,
-					integrated: integration.weapon
-				}
+				weapons: [{ id: integration.weapon }],
+				source: integration.source,
+				integrated: integration.weapon
 			};
 			mountsOut.push(newMount);
 		}
@@ -199,25 +205,23 @@ function buildMountConfiguration(level) {
 	return mountsOut.concat(frameMounts);
 }
 
-function cloneMount(mount, tags = mount.tags ?? {}) {
-	const attachments = mount.tags?.attachments;
+function cloneMount(mount, attachments = mount.attachments ?? []) {
 	return {
 		...mount,
 		weapons: (mount.weapons ?? []).map(weapon => ({
 			...weapon,
-			tags: { ...(weapon.tags ?? {}) }
+			attachments: { ...(weapon.attachments ?? {}) }
 		})),
-		tags: {
-			...(mount.tags ?? {}),
-			...tags,
-			...(attachments ? { attachments: [...attachments] } : {})
+		attachments: {
+			...(mount.attachments ?? []),
+			...attachments
 		}
 	};
 }
 
 function mountsHaveSameSource(savedMount, newMount) {
-	const savedIntegrated = savedMount.tags?.integrated;
-	const newIntegrated = newMount.tags?.integrated;
+	const savedIntegrated = savedMount.integrated;
+	const newIntegrated = newMount.integrated;
 
 	if (savedIntegrated || newIntegrated) {
 		return savedMount.type === newMount.type &&
@@ -225,7 +229,7 @@ function mountsHaveSameSource(savedMount, newMount) {
 	}
 
 	return savedMount.type === newMount.type &&
-		savedMount.tags?.source === newMount.tags?.source;
+		savedMount.source === newMount.source;
 }
 
 /**
@@ -248,8 +252,8 @@ export function normalizeMounts(level, savedMounts = []) {
 		const savedMount = unmatchedMounts.splice(matchingMountIdx, 1)[0];
 
 		// integrated mounts handling
-		if (!newMounts[i].tags?.integrated)
-			newMounts[i] = cloneMount(savedMount, newMounts[i].tags);
+		if (!newMounts[i].integrated)
+			newMounts[i] = cloneMount(savedMount, newMounts[i].attachments);
 	}
 
 	return newMounts;
@@ -280,8 +284,8 @@ export function getEffectiveMounts(level) {
 function getMountConfigurationKey(mounts) {
 	return JSON.stringify(mounts.map(mount => [
 		mount.type,
-		mount.tags?.source ?? null,
-		mount.tags?.integrated ?? null
+		mount.source ?? null,
+		mount.integrated ?? null
 	]));
 }
 
@@ -314,17 +318,24 @@ export function reconfigureMounts(level) {
 function resizeFlexMount(level, mount) {
 	const slotCount = getMountSlots(mount).length;
 
-	if (mount.weapons.length > slotCount) {
-		const removedWeapon = mount.weapons[1];
+	if (mount.weapons.length > slotCount)
 		mount.weapons.length = 1;
+	else if (mount.weapons.length < slotCount)
+		mount.weapons.push({ id: null });
+}
 
-		const modId = removedWeapon.tags.mod;
-		if (modId)
-			mount.weapons[0].tags.mod = modId;
-	}
-	else if (mount.weapons.length < slotCount) {
-		mount.weapons.push({ id: null, tags: {} });
-	}
+/**
+ * Resize a mount to the correct number of slots
+ * 
+ * @param {number} level
+ * @param {Object} mount
+ */
+function updateMountSlotCount(level, mount) {
+	const slotCount = getMountSlots(mount).length;
+	while (mount.weapons.length > slotCount)
+		const removedWeapon = mount.weapons.pop();
+	while (mount.weapons.length < slotCount)
+		mount.weapons.push({ id: null });
 }
 
 /**
@@ -336,7 +347,7 @@ function resizeFlexMount(level, mount) {
  * @param {number} slotIdx
  * @param {string} id
  */
-export function setWeaponSelection(level, mountIdx, slotIdx, id, data = null) {
+export function setWeaponSelection(level, mountIdx, slotIdx, id) {
 	const mounts = normalizeMounts(level, getEffectiveMounts(level));
 	const mount = mounts[mountIdx];
 	if (!mount)
@@ -345,16 +356,10 @@ export function setWeaponSelection(level, mountIdx, slotIdx, id, data = null) {
 
 	const weapon = mount.weapons[slotIdx];
 
-	if (!id && weapon?.tags?.mod) {
-		// remove any mods on this weapon and return to the unused mod list
-		reconfigureMods(level).push(weapon.tags.mod);
-		delete weapon.tags.mod;
-	}
-
 	// insert new weapon data
 	weapon.id = id ?? null;
-	if (data?.mod)
-		weapon.tags.mod = data.mod;
+	if (!id)
+		delete weapon.attachments;
 
 	// dynamic weapon slots for flex mounts
 	if (mount.type === 'Flex')

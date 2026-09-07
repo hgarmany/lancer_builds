@@ -1,5 +1,11 @@
 // data/roadmap.js
 
+import {
+	ATTACHMENT_ID,
+	getEligibleAttachments,
+	getUnusedAttachments
+} from "../rules/attachments";
+
 const MAX_LICENSE_LEVEL = 12;
 
 export let roadmap = {};
@@ -61,9 +67,6 @@ function createDefaultRoadmapLevel(level) {
 		// null means "inherit the previous level's mounts"
 		mounts: null,
 		systems: [],
-		// null means "inherit the previous level's unused mod list"
-		unusedModIds: null,
-
 		// null means "continue using the previously active frame"
 		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null
 	};
@@ -84,9 +87,9 @@ export function createDefaultRoadmap() {
 	};
 
 	roadmap.ll[0].mounts = [
-		{ type: 'Main', weapons: [{ id: null, tags: {} }], tags: {} },
-		{ type: 'Flex', weapons: [{ id: null, tags: {} }], tags: {} },
-		{ type: 'Heavy', weapons: [{ id: null, tags: {} }], tags: {} }
+		{ type: 'Main', weapons: [{ id: null }] },
+		{ type: 'Flex', weapons: [{ id: null }] },
+		{ type: 'Heavy', weapons: [{ id: null }] }
 	];
 
 	roadmap.ll[0].skillTriggerIds[0] = 'sk_assault';
@@ -141,15 +144,6 @@ function sourceIsAvailable(id, sourceData) {
 		sourceData.frames.has(id) ||
 		sourceData.talents.has(id) ||
 		sourceData.coreBonuses.has(id);
-}
-
-function getPreviousUnusedMods(level) {
-	for (let i = level - 1; i >= 0; i--) {
-		if (roadmap.ll[i].unusedModIds != null)
-			return roadmap.ll[i].unusedModIds;
-	}
-
-	return [];
 }
 
 export async function loadRoadmapFile(file) {
@@ -212,64 +206,49 @@ export function cleanRoadmapAfterLcpRemove(sourceData) {
 		// system and mod lists size adaptively
 		data.systems = data.systems.filter(system =>
 			nullInvalidId(system.id, sourceData.systems));
-		if (data.unusedModIds != null) {
-			data.unusedModIds = data.unusedModIds
-				.filter(id => sourceData.mods.has(id));
-		}
 
 		if (!Array.isArray(data.mounts))
 			continue;
 
-		const detachedMods = [];
 		let retainedMountCount = 0;
 		
-		// weapons from invalid sources must pop off any valid mods
-		for (const mount of data.mounts) {
-			const mountAvailable = sourceIsAvailable(
-				mount.tags?.source, sourceData);
+		const eligibleAttachments = getEligibleAttachments(level);
+		
+		// remove invalid mounts
+		// TODO: properly reconcile mount changes from invalid frame disposal
+		data.mounts.filter(mount =>
+			sourceIsAvailable(mount.source, sourceData));
 
-			for (const weapon of mount.weapons ?? []) {
-				weapon.tags ??= {};
-				weapon.id = nullInvalidId(weapon.id, sourceData.weapons);
-
-				const modId = weapon.tags.mod;
-				if (modId && (!mountAvailable || !weapon.id ||
-					!sourceData.mods.has(modId))) {
-					if ((!mountAvailable || !weapon.id) &&
-						sourceData.mods.has(modId))
-						detachedMods.push(modId);
-
-					delete weapon.tags.mod;
-				}
-			}
-
-			if (mountAvailable)
-				data.mounts[retainedMountCount++] = mount;
-		}
-		data.mounts.length = retainedMountCount;
-
-		// valid mounts may still have invalid attachments
 		const hasSuperheavy = data.mounts.some(mount =>
 			(mount.weapons ?? []).some(weapon =>
 				sourceData.weapons.get(weapon.id)?.mount === 'Superheavy'));
 
 		for (const mount of data.mounts) {
-			if (mount.tags?.attachments) {
-				mount.tags.attachments = mount.tags.attachments.filter(id =>
-					id === 'superheavy_bracing' ? hasSuperheavy :
-						sourceIsAvailable(id, sourceData));
+			// remove invalid weapons and attachments
+			mount.weapons.map(weapon => {
+				if (sourceData.weapons.has(weapon.id)) {
+					weapon.attachments.filter(attachment =>
+						attachment === ATTACHMENT_ID.OVERPOWER_CALIBER ||
+						sourceData.mods.has(attachment)
+					)
+					return weapon;
+				}
+				else {
+					return { id: null };
+				}
+			});
+
+			// remove invalid mount attachments
+			if (mount.attachments) {
+				mount.attachments = mount.attachments.filter(id => {
+					if (id === ATTACHMENT_ID.SUPERHEAVY_BRACING)
+						return hasSuperheavy;
+					else
+						return id === ATTACHMENT_ID.AUTO_STABILIZING || 
+							id === ATTACHMENT_ID.MOUNT_RETROFITTING;
+				});
 			}
 		}
 
-		// detached mods handling: invalid -> discarded, valid -> unused list
-		if (detachedMods.length) {
-			const unusedMods = data.unusedModIds ??
-				[...getPreviousUnusedMods(level)];
-			for (const id of detachedMods) {
-				if (!unusedMods.includes(id))
-					unusedMods.push(id);
-			}
-			data.unusedModIds = unusedMods;
-		}
 	}
 }

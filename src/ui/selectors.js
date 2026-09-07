@@ -71,7 +71,8 @@ import {
 } from '../rules/frames.js';
 
 import {
-	reconfigureMods
+	initializeMods,
+	moveAttachment
 } from '../rules/attachments.js';
 
 import {
@@ -217,8 +218,8 @@ export const SELECT_TEMPLATE = Object.freeze({
 		type: 'weapon',
 		allowClear: true,
 		getSrcItems: () => srcData.weapons,
-		write: ({ level, mountIdx, slotIdx, id, data }) =>
-			setWeaponSelection(level, mountIdx, slotIdx, id, data),
+		write: ({ level, mountIdx, slotIdx, id }) =>
+			setWeaponSelection(level, mountIdx, slotIdx, id),
 		getLabel: ({ id, slot = null }) => {
 			return id ? (srcData.weapons.get(id)?.name ?? '') :
 				slot?.label;
@@ -247,35 +248,26 @@ export const SELECT_TEMPLATE = Object.freeze({
 		},
 		write: ({ level, idx, id, data }) => {
 			const systems = configureSystems(level);
-			const unusedModIds = reconfigureMods(level);
+			let removedId = null;
+
 			if (!id) {
 				id = systems.splice(idx, 1)[0]?.id;
-				// if a mod, remove system from mod list
-				const modIdx = unusedModIds.indexOf(id);
-				if (modIdx >= 0)
-					unusedModIds.splice(modIdx, 1);
-				else {
-					const mounts = reconfigureMounts(level);
-					for (const mount of mounts) {
-						for (const weapon of mount.weapons) {
-							if (weapon?.tags.mod === id) {
-								delete weapon.tags.mod;
-								return;
-							}
-						}
-					}
-				}
+				removedId = id;
 			}
 			else {
-				const oldId = systems[idx]?.id;
-				const oldModIdx = unusedModIds.indexOf(oldId);
-				if (oldModIdx >= 0)
-					unusedModIds.splice(oldModIdx, 1);
+				const removedId = systems[idx]?.id;
 				systems[idx] = { id, data };
-				// if a mod, add system to mod list
-				const modIdx = unusedModIds.indexOf(id);
-				if (srcData.mods.get(id) && modIdx == -1)
-					unusedModIds.push(id);
+			}
+
+			// if a mod, remove its application to a weapon
+			// CHECK: does this use the same mod id or does the system id differ
+			if (removedId && srcData.mods.has(removedId)) {
+				const mounts = reconfigureMounts(level);
+				for (const mount of mounts) {
+					const source = mount.weapons.find(weapon =>
+						weapon.attachments.includes(id));
+					moveAttachment({ id, source });
+				}
 			}
 		},
 		getLabel: ({ id }) => {

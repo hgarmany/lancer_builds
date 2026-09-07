@@ -272,8 +272,7 @@ export function weaponUpdate(selector, level) {
 		level: currentLevel,
 		mountIdx,
 		slotIdx,
-		id: newId,
-		data: selector.dataset
+		id: newId
 	});
 	const mountTagChanges = reconcileMountAttachments(currentLevel);
 	mountTagUpdate(currentLevel, [mountIdx, ...mountTagChanges]);
