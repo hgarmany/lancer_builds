@@ -204,18 +204,12 @@ function buildMountConfiguration(level) {
 	return mountsOut.concat(frameMounts);
 }
 
-function cloneMount(mount, attachments = mount.attachments ?? []) {
-	return {
-		...mount,
-		weapons: (mount.weapons ?? []).map(weapon => ({
-			...weapon,
-			attachments: { ...(weapon.attachments ?? {}) }
-		})),
-		attachments: {
-			...(mount.attachments ?? []),
-			...attachments
-		}
-	};
+function cloneMount(mount, attachments = null) {
+	const newMount = {...mount};
+	if (attachments?.length > 0)
+		newMount.attachments.push(...attachments);
+
+	return newMount;
 }
 
 function mountsHaveSameSource(savedMount, newMount) {

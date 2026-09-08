@@ -12,6 +12,7 @@ import {
 } from '../rules/weapons.js';
 
 import {
+	getAttachmentLabel,
 	getUnusedAttachments,
 	moveAttachment
 } from '../rules/attachments.js';
@@ -82,24 +83,27 @@ function applyWeaponTagManager(
 	});
 }
 
-export function dropMountTag(event, level, mount) {
+export function dropMountTag(event, level, target) {
 	const transfer = getAttachmentTransferData(event);
-	mount.blur();
+	target.blur();
 	if (!transfer || level !== Number(transfer.level))
 		return;
 
 	event.preventDefault();
 	event.stopPropagation();
-	const targetMountIdx = Number(mount.dataset.mountIdx);
-	const sourceMountIdx = transfer.source === 'mount'
-		? Number(transfer.mountIdx)
-		: null;
+	
+	const mounts = getEffectiveMounts(level);
+	const targetIdx = Number(target.dataset.mountIdx);
+	const sourceIdx = Number(transfer.mountIdx);
+	
+	const success = moveAttachment({
+		id: transfer.id,
+		source: sourceIdx !== null ? mounts[sourceIdx] : null,
+		target: targetIdx !== null ? mounts[targetIdx] : null
+	});
 
-	if (assignMountAttachment(
-		level, targetMountIdx, transfer.id, sourceMountIdx)) {
-		mountTagUpdate(level, [sourceMountIdx, targetMountIdx]
-			.filter(index => index != null));
-	}
+	if (success) 
+		mountTagUpdate(level, [targetIdx, sourceIdx].filter(mount => mount));
 }
 
 export function dropWeaponTag(event, level, weaponSelector) {
@@ -118,7 +122,7 @@ export function dropWeaponTag(event, level, weaponSelector) {
 	if (!transfer || level !== Number(transfer.level))
 		return;
 
-	const source = transfer.source === 'weapon' ? {
+	const source = transfer.type === 'weapon' ? {
 		mountIdx: Number(transfer.mountIdx),
 		slotIdx: Number(transfer.slotIdx)
 	} : null;
@@ -237,22 +241,22 @@ function tryLimitedTag(tags, item, level) {
 	tags.append(tag);
 }
 
-export function renderMountTags(level, data, mountIdx) {
+export function renderMountTags(level, data, mount) {
 	const tags = document.createElement('div');
 	tags.className = 'mount-tags';
-
-	for (const id of data.tags?.attachments ?? []) {
+	
+	for (const id of data.attachments ?? []) {
 		const tag = document.createElement('div');
 		tag.className = 'tag mount-tag applied-tag';
 		tag.draggable = true;
 
 		const label = document.createElement('span');
-		label.textContent = getMountAttachmentLabel(id);
+		label.textContent = getAttachmentLabel(id);
 
 		const remove = document.createElement('button');
 		remove.className = 'clear';
 		remove.type = 'button';
-		remove.title = `Remove ${getMountAttachmentLabel(id)}`;
+		remove.title = `Remove ${getAttachmentLabel(id)}`;
 
 		tag.addEventListener('dragstart', event => {
 			if (event.target === remove) {
@@ -260,12 +264,15 @@ export function renderMountTags(level, data, mountIdx) {
 				return;
 			}
 			setAttachmentTransferData(event, level,
-				{ id, source: 'mount', mountIdx });
+				{ level, id, source: mount });
 		});
 
 		remove.addEventListener('click', event => {
 			event.stopPropagation();
-			if (removeMountAttachment(level, mountIdx, id))
+			const mountIdx = Number(mount.dataset.mountIdx) ?? null;
+			const source = getEffectiveMounts(level)?.[mountIdx];
+
+			if (moveAttachment({ id, source }))
 				mountTagUpdate(level, [mountIdx]);
 		});
 

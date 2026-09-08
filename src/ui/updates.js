@@ -231,7 +231,7 @@ export function modUpdate(level, mountIndexes) {
 
 		const freeModList = document.getElementById(`attachments-ll-${i}`);
 		if (freeModList)
-			freeModList.replaceWith(renderWeaponTagsMenu(i));
+			freeModList.replaceWith(renderAttachmentsMenu(i));
 
 		for (const mountIdx of affectedMounts) {
 			const mount =
@@ -243,15 +243,13 @@ export function modUpdate(level, mountIndexes) {
 	}
 }
 
-export function mountTagUpdate(level, mountIndexes) {
-	const affectedMounts = [...new Set(mountIndexes)];
-
+export function mountTagUpdate(level, mountIndices) {
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		if (i > level && roadmap.ll[i].mounts)
 			break;
 
 		refreshAttachmentMenu(i);
-		for (const mountIdx of affectedMounts)
+		for (const mountIdx of mountIndices)
 			redrawMount(i, mountIdx);
 	}
 }
@@ -273,8 +271,8 @@ export function weaponUpdate(selector, level) {
 		slotIdx,
 		id: newId
 	});
-	const mountTagChanges = updateAppliedAttachments(level);
-	mountTagUpdate(currentLevel, [mountIdx, ...mountTagChanges]);
+	const alteredMountIndices = updateAppliedAttachments(level);
+	mountTagUpdate(currentLevel, alteredMountIndices);
 
 	// This level becomes a loadout boundary. Later levels inherit it until
 	// another level explicitly defines its own mounts.

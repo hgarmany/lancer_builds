@@ -343,9 +343,9 @@ export function renderMount(level, idx, data) {
 	const weapons = data.weapons;
 	const slotDefinitions = getMountSlots(data);
 
-	if (!data.tags?.integrated) {
+	if (!data.integrated) {
 		// add mount tags
-		mount.append(renderMountTags(level, data, idx));
+		mount.append(renderMountTags(level, data, mount));
 		applyAttachmentManager(level, mount, dropMountTag);
 	}
 
@@ -354,10 +354,10 @@ export function renderMount(level, idx, data) {
 	slots.className = 'select-group';
 	// add all weapons to the mount
 	for (let i = 0; i < slotDefinitions.length; i++) {
-		if (data.tags?.integrated) {
+		if (data.integrated) {
 			// integrated mount w/ pseudo-selector
 			mount.classList.add('integrated');
-			mount.dataset.integrated = data.tags.integrated;
+			mount.dataset.integrated = data.integrated;
 			const selector = renderIntegratedWeaponLabel(weapons[i]?.id);
 			selector.dataset.mountIdx = idx;
 			selector.dataset.slotIdx = i;

@@ -35,14 +35,35 @@ const CORE_BONUS_ATTACHMENTS = Object.freeze({
 	[ATTACHMENT_ID.OVERPOWER_CALIBER]: 'weapon'
 });
 
+export function getAttachmentLabel(id) {
+	// attachments from core bonuses
+	for (const [id, type] of Object.entries(CORE_BONUS_ATTACHMENTS))
+		return srcData.coreBonuses.get(id)?.name ?? id;
+
+	// superheavy bracing from a mounted superheavy weapon
+	for (const mount of getEffectiveMounts(level)) {
+		const hasBracing =
+			(mount.type === 'Heavy' || mount.type === 'Superheavy') &&
+			srcData.weapons.get(mount.weapons[0]?.id)?.mount === 'Superheavy';
+		if (hasBracing)
+			return 'Superheavy Bracing';
+	}
+
+	// weapon mods from systems
+	return srcData.mods.get(id)?.name ?? system.id;
+}
+
 export function getEligibleAttachments(level) {
 	const tagList = [];
 
 	// attachments from core bonuses
 	for (const [id, type] of Object.entries(CORE_BONUS_ATTACHMENTS)) {
-		const srcCB = coreBonuses[level]?.includes(id);
+		if (!coreBonuses[level]?.includes(id))
+			continue;
+		const srcCB = srcData.coreBonuses.get(id);
 		if (srcCB)
 			tagList.push({
+				level,
 				type,
 				id,
 				label: srcCB.name ?? id
@@ -56,6 +77,7 @@ export function getEligibleAttachments(level) {
 			srcData.weapons.get(mount.weapons[0]?.id)?.mount === 'Superheavy';
 		if (hasBracing)
 			tagList.push({
+				level,
 				type: 'mount',
 				id: ATTACHMENT_ID.SUPERHEAVY_BRACING,
 				label: 'Superheavy Bracing'
@@ -67,6 +89,7 @@ export function getEligibleAttachments(level) {
 		const srcSystem = srcData.mods.get(system.id);
 		if (srcSystem)
 			tagList.push({
+				level,
 				type: 'weapon_mod',
 				id: system.id,
 				label: srcSystem.name ?? system.id
@@ -121,7 +144,7 @@ export function targetCanReceiveAttachment(target, attachmentID) {
 		 * - Mount Retrofitting will only apply to mounts it changes
 		 * - Superheavy Bracing will only apply to empty mounts
 		 */
-		switch (id) {
+		switch (attachmentID) {
 			case ATTACHMENT_ID.MOUNT_RETROFITTING:
 				return getEffectiveMountType(target) !== 'Main/Aux';
 			case ATTACHMENT_ID.SUPERHEAVY_BRACING:
@@ -163,8 +186,11 @@ export function moveAttachment({
 
 	if (target) {
 		// add attachment to a valid target
-		if (targetCanReceiveAttachment(target, id))
+		if (targetCanReceiveAttachment(target, id)) {
+			if (!target.attachments)
+				target.attachments = [];
 			target.attachments.push(id);
+		}
 		else
 			return false;
 	}
@@ -220,7 +246,7 @@ export function updateAppliedAttachments(level) {
 		}
 
 		if (mountChanged) {
-			affectedMounts.push(i);
+			affectedMountIndices.push(i);
 			initializeNewMounts = true;
 		}
 	}
