@@ -125,7 +125,8 @@ export function coreBonusUpdate(selector, level) {
 	for (let i = level; i <= roadmap.maxLevel; i++) {
 		if (i === level || roadmap.ll[i].mounts)
 			reconfigureMounts(i);
-		updateAppliedAttachments(i);
+		const alteredMountIndices = updateAppliedAttachments(i);
+		mountTagUpdate(i, alteredMountIndices);
 		refreshStats(i);
 		redrawMounts(i);
 		refreshAttachmentMenu(i);
@@ -238,7 +239,7 @@ export function modUpdate(level, mountIndexes) {
 				document.getElementById(`mount-${mountIdx}-ll-${i}`);
 			if (mount)
 				refreshTags(i, mount.querySelectorAll(
-					'.weapon-select, .custom-select-mimic'));
+					'.weapon, .custom-select-mimic'));
 		}
 	}
 }

@@ -1,3 +1,5 @@
+// ui/tags.js
+
 import {
 	srcData
 } from '../data/loader.js';
@@ -62,7 +64,7 @@ function applyWeaponTagManager(
 	removeButton,
 	mountIdx,
 	slotIdx,
-	modId
+	id
 ) {
 	tag.draggable = true;
 	tag.addEventListener('dragstart', event => {
@@ -72,14 +74,16 @@ function applyWeaponTagManager(
 		}
 
 		setAttachmentTransferData(event, level,
-			{ modId, source: 'weapon', mountIdx, slotIdx });
+			{ id, source: 'weapon', mountIdx, slotIdx });
 	});
 
-	// remove mod from slot, return to unused list
+	// remove mod from slot
 	removeButton.addEventListener('click', event => {
 		event.stopPropagation();
-		if (removeWeaponMod(level, mountIdx, slotIdx))
-			modUpdate(level, [mountIdx]);
+		const source = getEffectiveMounts(level)?.[mountIdx].weapons[slotIdx];
+
+		if (moveAttachment({ id, source }))
+			mountTagUpdate(level, [mountIdx]);
 	});
 }
 
@@ -102,43 +106,46 @@ export function dropMountTag(event, level, target) {
 		target: targetIdx !== null ? mounts[targetIdx] : null
 	});
 
-	if (success) 
-		mountTagUpdate(level, [targetIdx, sourceIdx].filter(mount => mount));
+	if (success)
+		mountTagUpdate(level, [targetIdx, sourceIdx]
+			.filter(idx => Number.isFinite(idx)));
 }
 
-export function dropWeaponTag(event, level, weaponSelector) {
+export function dropWeaponTag(event, level, target) {
 	if (!event.dataTransfer.types.includes(ATTACHMENT_TRANSFER_TYPE))
 		return;
 	event.preventDefault();
 	event.stopPropagation();
 
-	const mountIdx = Number(weaponSelector.dataset.mountIdx);
-	const slotIdx = Number(weaponSelector.dataset.slotIdx);
+	const mountIdx = Number(target.dataset.mountIdx);
+	const slotIdx = Number(target.dataset.slotIdx) ?? null;
 	const updatedSelector = document.querySelector(
 		`#mount-${mountIdx}-ll-${level} ` +
-		`.weapon-select[data-slot-idx="${slotIdx}"]`);
+		`.weapon[data-slot-idx="${slotIdx}"]`);
 
 	const transfer = getAttachmentTransferData(event);
-	if (!transfer || level !== Number(transfer.level))
+	if (!transfer ||
+		level !== Number(transfer.level) ||
+		transfer.type === 'mount')
 		return;
 
-	const source = transfer.type === 'weapon' ? {
-		mountIdx: Number(transfer.mountIdx),
-		slotIdx: Number(transfer.slotIdx)
-	} : null;
-	const didAssign = assignWeaponMod(
-		level,
-		mountIdx,
-		slotIdx,
-		transfer.modId,
-		source
-	);
+	const mounts = getEffectiveMounts(level);
 
-	if (didAssign) {
-		const affectedMounts = source ?
-			[source.mountIdx, mountIdx] : [mountIdx];
-		modUpdate(level, affectedMounts);
-	}
+	const sourceMountIdx = Number(transfer.mountIdx);
+	const sourceSlotIdx = Number(transfer.slotIdx);
+	const sourceData = sourceMountIdx !== null ?
+		mounts[sourceMountIdx]?.weapons[sourceSlotIdx] : null;
+	const targetData = slotIdx !== null ?
+		mounts[mountIdx]?.weapons[slotIdx] : null
+	const success = moveAttachment({
+		id: transfer.id,
+		source: sourceData,
+		target: targetData
+	});
+
+	if (success)
+		modUpdate(level, [sourceMountIdx, mountIdx]
+			.filter(idx => Number.isFinite(idx)));
 }
 
 /**
@@ -154,11 +161,14 @@ export function applyAttachmentManager(
 	dropFunction
 ) {
 	target.addEventListener('dragover', event => {
+		event.preventDefault();
 		if (!event.dataTransfer.types.includes(ATTACHMENT_TRANSFER_TYPE))
 			return;
 
-		event.preventDefault();
-		event.stopPropagation();
+		const transfer = getAttachmentTransferData(event);
+		if (!target.classList.contains(transfer.type))
+			return;
+
 		event.dataTransfer.dropEffect = 'move';
 		target.classList.add('drag-focus');
 	});
@@ -263,8 +273,15 @@ export function renderMountTags(level, data, mount) {
 				event.preventDefault();
 				return;
 			}
+
 			setAttachmentTransferData(event, level,
-				{ level, id, source: mount });
+				{
+					level,
+					type: 'mount',
+					id,
+					mountIdx: Number(mount.dataset.mountIdx)
+				}
+			);
 		});
 
 		remove.addEventListener('click', event => {
@@ -342,7 +359,7 @@ export function refreshTags(level, selectors) {
 		const currentTags = selector.querySelector('.tags');
 		let updatedTags = null;
 
-		if (selector.classList.contains('weapon-select') ||
+		if (selector.classList.contains('weapon') ||
 			selector.classList.contains('custom-select-mimic')) {
 			const mountIdx = Number(selector.dataset.mountIdx);
 			const slotIdx = Number(selector.dataset.slotIdx);
@@ -352,7 +369,7 @@ export function refreshTags(level, selectors) {
 			updatedTags = renderWeaponTags(
 				level, weapon, mountIdx, slotIdx);
 		}
-		else if (selector.classList.contains('system-select')) {
+		else if (selector.classList.contains('system')) {
 			updatedTags = renderSystemTags(level, selector.value);
 		}
 

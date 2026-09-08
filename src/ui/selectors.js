@@ -263,7 +263,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 				const mounts = reconfigureMounts(level);
 				for (const mount of mounts) {
 					const source = mount.weapons.find(weapon =>
-						weapon.attachments.includes(id));
+						weapon.attachments?.includes(id));
 					moveAttachment({ id, source });
 				}
 			}
@@ -395,7 +395,7 @@ export function renderSelector(
 	const context = { ...extraContext, level, id: selectedId, selectedId };
 
 	const selector = document.createElement('div');
-	selector.className = `custom-select ${template.type}-select`;
+	selector.className = `custom-select ${template.type}`;
 	selector.dataset.ll = level;
 	selector.value = selectedId;
 

@@ -228,7 +228,7 @@ function getSystemModifiers({ catalog, level }) {
 				value: -sysSrc.sp
 			});
 
-			if (sysSrc?.tags?.has(tag => tag.id === 'tg_ai')) {
+			if (sysSrc?.tags?.find(tag => tag.id === 'tg_ai')) {
 				// mark off AI from budget
 				modifiers.push({
 					stat: 'ai_budget',

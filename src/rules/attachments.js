@@ -17,7 +17,9 @@ import {
 	getEffectiveMounts,
 	getEffectiveMountType,
 	normalizeMounts,
-	getMountSlots
+	getMountSlots,
+    reconfigureMounts,
+    cloneMount
 } from './weapons.js';
 
 const coreBonuses = cumulativeCatalog.coreBonuses;
@@ -90,7 +92,7 @@ export function getEligibleAttachments(level) {
 		if (srcSystem)
 			tagList.push({
 				level,
-				type: 'weapon_mod',
+				type: 'weapon',
 				id: system.id,
 				label: srcSystem.name ?? system.id
 			});
@@ -105,13 +107,13 @@ export function getUnusedAttachments(level) {
 
 	// consolidate all mount and weapon attachments at this level
 	const attachments = mounts.flatMap(mount => [
-		...mount.attachments ?? [],
-		...(mount.weapons ?? []).flatMap(weapon => weapon.attachments)
+		...(mount.attachments ?? []),
+		...(mount.weapons ?? []).flatMap(weapon => weapon.attachments ?? [])
 	]);
 
-	// remove each attachment from the list
+	// remove each expended attachment from the list
 	for (const attachment of attachments) {
-		const index = tagList.indexOf(attachment);
+		const index = tagList.findIndex(tag => tag.id === attachment);
 		if (index >= 0)
 			tagList.splice(index, 1);
 	}
@@ -126,7 +128,7 @@ export function getUnusedAttachments(level) {
  * @param {string} attachmentID 
  * @returns {boolean}
  */
-export function targetCanReceiveAttachment(target, attachmentID) {
+function targetCanReceiveAttachment(target, attachmentID) {
 	/**
 	 * common target requirements:
 	 * - not null
@@ -159,7 +161,7 @@ export function targetCanReceiveAttachment(target, attachmentID) {
 		 * - mods cannot be placed on a weapon that already has a mod
 		 */
 		if (srcData.mods.has(attachmentID))
-			return !target.attachments.some(attachment =>
+			return !target.attachments?.some(attachment =>
 				srcData.mods.has(attachment));
 		return true;
 	}
@@ -198,11 +200,16 @@ export function moveAttachment({
 	if (source) {
 		// remove attachment from a valid source
 		const i = source.attachments.indexOf(id);
-		if (i >= 0)
+		if (i >= 0) {
 			source.attachments.splice(i, 1);
-		else
+			if (!source.attachments.length)
+				delete source.attachments;
+			return true;
+		}
+		else {
 			target?.pop();
-		return i >= 0;
+			return false
+		}
 	}
 
 	return true;
@@ -217,26 +224,26 @@ export function moveAttachment({
  * @returns {Array<number>}
  */
 export function updateAppliedAttachments(level) {
-	const tagList = getEligibleAttachments(level);
-	const mounts = [...getEffectiveMounts(level)];
+	const eligibleIds = getEligibleAttachments(level).map(tag => tag.id);
+	const oldMounts = roadmap.ll[level].mounts;
+	const mounts = reconfigureMounts(level);
 	const affectedMountIndices = [];
 	let initializeNewMounts = false;
 
 	for (let i = 0; i < mounts.length; i++) {
 		let mountChanged = false;
-
-		mounts[i].attachments?.filter(attachment => {
-			if (tagList.includes(attachment))
+		mounts[i].attachments = mounts[i].attachments?.filter(attachment => {
+			if (eligibleIds.includes(attachment))
 				return true;
 			mountChanged = true;
 			return false;
 		});
 		if (mounts[i].attachments?.length === 0)
-			delete mount.attachments;
+			delete mounts[i].attachments;
 
 		for (const weapon of mounts[i].weapons) {
 			weapon.attachments?.filter(attachment => {
-				if (tagList.includes(attachment))
+				if (eligibleIds.includes(attachment))
 					return true;
 				mountChanged = true;
 				return false;
@@ -251,8 +258,8 @@ export function updateAppliedAttachments(level) {
 		}
 	}
 
-	if (initializeNewMounts)
-		roadmap.ll[level].mounts = mounts;
+	if (!initializeNewMounts)
+		roadmap.ll[level].mounts = oldMounts;
 
 	return affectedMountIndices;
 }

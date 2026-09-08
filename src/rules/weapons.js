@@ -204,8 +204,10 @@ function buildMountConfiguration(level) {
 	return mountsOut.concat(frameMounts);
 }
 
-function cloneMount(mount, attachments = null) {
-	const newMount = {...mount};
+export function cloneMount(mount, attachments = null) {
+	const newMount = { ...mount };
+	for (let weapon of newMount.weapons)
+		weapon = { ...weapon };
 	if (attachments?.length > 0)
 		newMount.attachments.push(...attachments);
 

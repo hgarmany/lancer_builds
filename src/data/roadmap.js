@@ -247,6 +247,8 @@ export function cleanRoadmapAfterLcpRemove(sourceData) {
 						return id === ATTACHMENT_ID.AUTO_STABILIZING || 
 							id === ATTACHMENT_ID.MOUNT_RETROFITTING;
 				});
+				if (!mount.attachments.length)
+					delete mount.attachments;
 			}
 		}
 

@@ -158,7 +158,7 @@ export function refreshWeaponSelectors(
 	for (let i = level; i <= maxLevel; i++) {
 		const mounts = getEffectiveMounts(i);
 		const selectors = document.querySelectorAll(
-			`#row-ll-${i} .mounts-list .weapon-select`);
+			`#row-ll-${i} .mounts-list .weapon`);
 
 		for (const selector of selectors) {
 			const mountIdx = Number(selector.dataset.mountIdx);
