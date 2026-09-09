@@ -136,12 +136,8 @@ export function getMountSlots(mount) {
 	return doTwoSlots ? [MAIN_SLOT, AUXILIARY_SLOT] : [MAIN_SLOT];
 }
 
-function createEmptyMount(type, attachments) {
-	const weapons = MOUNT_SLOTS[type].map(() => ({ id: null }));
-	const newMount = { type, weapons };
-	if (attachments)
-		newMount.attachments = attachments;
-	return newMount;
+function createEmptyMount(type) {
+	return { type, weapons: MOUNT_SLOTS[type].map(() => ({ id: null })) };
 }
 
 /**
@@ -153,7 +149,7 @@ function createEmptyMount(type, attachments) {
 function buildMountConfiguration(level) {
 	const frame = srcData.frames.get(activeFrame[level]);
 	const frameMounts = frame?.mounts
-		?.map(mount => createEmptyMount(mount, {})) ?? [];
+		?.map(mount => createEmptyMount(mount)) ?? [];
 	let numMounts = frameMounts.length;
 	let mountsOut = [];
 
@@ -195,7 +191,7 @@ function buildMountConfiguration(level) {
 				const mountName = bonus.val.charAt(0).toUpperCase() +
 					bonus.val.slice(1);
 				mountsOut.push(
-					createEmptyMount(mountName, { source: coreBonus }));
+					createEmptyMount(mountName));
 				numMounts++;
 			}
 		}

@@ -162,8 +162,8 @@ function targetCanReceiveAttachment(target, attachmentID) {
  */
 export function moveAttachment({
 	id,
-	source,
-	target
+	target,
+	source
 }) {
 	if (!id)
 		return false;

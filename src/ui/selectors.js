@@ -41,7 +41,6 @@ import {
 	coreBonusUpdate,
 	frameUpdate,
 	weaponUpdate,
-	modUpdate,
 	systemUpdate
 } from './updates.js';
 

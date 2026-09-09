@@ -65,10 +65,15 @@ function createDefaultRoadmapLevel(level) {
 		licenseId: null,
 		coreBonusId: null,
 		// null means "inherit the previous level's mounts"
-		mounts: null,
+		mounts: level !== 0 ? null :
+			[
+				{ type: 'Main', weapons: [{ id: null }] },
+				{ type: 'Flex', weapons: [{ id: null }] },
+				{ type: 'Heavy', weapons: [{ id: null }] }
+			],
 		systems: [],
 		// null means "continue using the previously active frame"
-		frameId: level == 0 ? 'mf_standard_pattern_i_everest' : null
+		frameId: level !== 0 ? null : 'mf_standard_pattern_i_everest'
 	};
 }
 
@@ -86,25 +91,6 @@ export function createDefaultRoadmap() {
 		)
 	};
 
-	roadmap.ll[0].mounts = [
-		{ type: 'Main', weapons: [{ id: null }] },
-		{ type: 'Flex', weapons: [{ id: null }] },
-		{ type: 'Heavy', weapons: [{ id: null }] }
-	];
-
-	roadmap.ll[0].skillTriggerIds[0] = 'sk_assault';
-	roadmap.ll[0].skillTriggerIds[1] = 'sk_spot';
-	roadmap.ll[1].skillTriggerIds[0] = 'sk_spot';
-	roadmap.ll[1].licenseId = 'mf_hydra';
-	roadmap.ll[2].licenseId = 'mf_hydra';
-	roadmap.ll[3].licenseId = 'mf_hydra';
-	roadmap.ll[4].licenseId = 'mf_balor';
-	roadmap.ll[3].coreBonusId = 'cb_the_lesson_of_the_held_image';
-	roadmap.ll[0].talentIds[1] = 't_ace';
-	roadmap.ll[1].talentIds[0] = 't_ace';
-	roadmap.ll[0].haseIds[0] = 'hull';
-	roadmap.ll[0].haseIds[1] = 'hull';
-	roadmap.ll[1].haseIds[0] = 'agility';
 	console.log(roadmap);
 }
 

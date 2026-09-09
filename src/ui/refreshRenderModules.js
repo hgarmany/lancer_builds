@@ -309,18 +309,29 @@ export function refreshElectiveSystemList(level) {
 		return;
 
 	const systems = getEffectiveSystems(level);
-	const selectors = Array.from(selectGroup.children);
 
-	for (let idx = 0; idx < selectors.length; idx++) {
-		// remove empty selectors
-		if (idx >= systems.length)
-			selectors[idx].remove();
-		// set selector vals
-		else
-			selectors[idx].value = systems[idx].id;
+	// remove obsolete selectors
+	while (selectGroup.children.length > systems.length)
+		selectGroup.lastElementChild.remove();
+
+	// reconcile selectors with the effective system list
+	for (let idx = 0; idx < systems.length; idx++) {
+		const selectedId = systems[idx].id;
+		let selector = selectGroup.children[idx];
+
+		if (!selector) {
+			// add new selector to empty/insufficiently long selector list
+			selector = renderSelector(
+				level, selectedId, SELECT_TEMPLATE.SYSTEM);
+			selector.append(renderSystemTags(level, selectedId));
+			selectGroup.append(selector);
+		}
+
+		selector.dataset.idx = idx;
+		refreshSelector(selector, level, selectedId, SELECT_TEMPLATE.SYSTEM);
 	}
 
-	refreshTags(level, selectors);
+	refreshTags(level, Array.from(selectGroup.children));
 
 	if (hasEligibleSystem(level)) {
 		// generate prototype selector

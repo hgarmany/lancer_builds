@@ -223,7 +223,7 @@ export function frameUpdate(selector, level) {
 	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
-export function modUpdate(level, mountIndexes) {
+export function weaponTagUpdate(level, mountIndexes) {
 	const affectedMounts = [...new Set(mountIndexes)];
 
 	for (let i = level; i <= roadmap.maxLevel; i++) {
@@ -281,9 +281,10 @@ export function weaponUpdate(selector, level) {
 		if (i > currentLevel && roadmap.ll[i].mounts)
 			break;
 
-		modUpdate(i, [mountIdx]);
+		weaponTagUpdate(i, [mountIdx]);
 		refreshStats(i);
 		refreshBudgetPill(i);
+		redrawMount(i, mountIdx);
 
 		// update all attached selectors at this level
 		refreshWeaponSelectors(i, i);
@@ -302,7 +303,7 @@ export function systemUpdate(selector, level) {
 
 	// update stats and budget pill
 	for (let i = level; i <= roadmap.maxLevel; i++) {
-		modUpdate(i, []);
+		weaponTagUpdate(i, []);
 
 		refreshStats(i);
 		refreshBudgetPill(i);

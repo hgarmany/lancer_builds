@@ -5,8 +5,8 @@ import {
 } from '../data/loader.js';
 
 import {
-	modUpdate,
-	mountTagUpdate
+	mountTagUpdate,
+	weaponTagUpdate
 } from './updates.js';
 
 import {
@@ -87,9 +87,6 @@ function applyWeaponTagManager(
 }
 
 function dropTag(event, level, targetElement) {
-	event.preventDefault();
-	event.stopPropagation();
-	
 	const isMount = targetElement.classList.contains('mount');
 	const transfer = getAttachmentTransferData(event);
 	
@@ -98,32 +95,37 @@ function dropTag(event, level, targetElement) {
 		level !== Number(transfer.level) ||
 		(transfer.type === 'mount') != isMount)
 		return;
+
+	event.preventDefault();
+	event.stopPropagation();
 	
 	const mounts = getEffectiveMounts(level);
 	const tgtMountIdx = Number(targetElement.dataset.mountIdx);
 	const srcMountIdx = Number(transfer.mountIdx);
-	
-	let source = null;
+
 	let target = null;
-	
+	let source = null;
+
 	// acquire source and target roadmap data
 	if (isMount) {
-		source = srcMountIdx !== null ? mounts[srcMountIdx] : null;
 		target = tgtMountIdx !== null ? mounts[tgtMountIdx] : null;
+		source = srcMountIdx !== null ? mounts[srcMountIdx] : null;
 	}
 	else {
-		const srcSlotIdx = Number(transfer.slotIdx) ?? null;
-		const source = srcSlotIdx !== null ?
-			mounts[srcMountIdx]?.weapons[srcSlotIdx] : null;
-		
 		const tgtSlotIdx = Number(targetElement.dataset.slotIdx) ?? null;
-		const target = tgtSlotIdx !== null ?
-			mounts[mountIdx]?.weapons[tgtSlotIdx] : null;
+		target = tgtSlotIdx !== null ?
+			mounts[tgtMountIdx]?.weapons[tgtSlotIdx] : null;
+		if (!target.id)
+			return;
+
+		const srcSlotIdx = Number(transfer.slotIdx) ?? null;
+		source = srcSlotIdx !== null ?
+			mounts[srcMountIdx]?.weapons[srcSlotIdx] : null;
 	}
 	
 	// attempt move and, if successful, trigger visual refresh
-	if (moveAttachment({ id: transfer.id, source, target })) {
-		const update = isMount ? mountTagUpdate : modUpdate;
+	if (moveAttachment({ id: transfer.id, target, source })) {
+		const update = isMount ? mountTagUpdate : weaponTagUpdate;
 		const mountIdxs = [srcMountIdx, tgtMountIdx].filter(Number.isFinite);
 		update(level, mountIdxs);
 	}
@@ -143,7 +145,8 @@ export function applyAttachmentManager(level, target) {
 			return;
 
 		const transfer = getAttachmentTransferData(event);
-		if (!target.classList.contains(transfer.type))
+		if (!target.value && !target.classList.contains('mount') ||
+			!target.classList.contains(transfer.type))
 			return;
 
 		event.dataTransfer.dropEffect = 'move';
@@ -287,7 +290,7 @@ export function renderWeaponTags(level, weapon, mountIdx, slotIdx) {
 	for (const attachment of weapon?.attachments ?? []) {
 		// mod tag
 		const dataElement = srcData.mods.get(attachment) ??
-			srcData.coreBonus.get(attachment);
+			srcData.coreBonuses.get(attachment);
 
 		if (dataElement) {
 			const tag = document.createElement('div');
