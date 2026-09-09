@@ -14,7 +14,6 @@ import {
 } from '../rules/weapons.js';
 
 import {
-	getAttachmentLabel,
 	getUnusedAttachments,
 	moveAttachment
 } from '../rules/attachments.js';
@@ -74,7 +73,7 @@ function applyWeaponTagManager(
 		}
 
 		setAttachmentTransferData(event, level,
-			{ id, source: 'weapon', mountIdx, slotIdx });
+			{ level, type: 'weapon', id, mountIdx, slotIdx });
 	});
 
 	// remove mod from slot
@@ -87,65 +86,47 @@ function applyWeaponTagManager(
 	});
 }
 
-export function dropMountTag(event, level, target) {
-	const transfer = getAttachmentTransferData(event);
-	target.blur();
-	if (!transfer || level !== Number(transfer.level))
-		return;
-
+function dropTag(event, level, targetElement) {
 	event.preventDefault();
 	event.stopPropagation();
 	
-	const mounts = getEffectiveMounts(level);
-	const targetIdx = Number(target.dataset.mountIdx);
-	const sourceIdx = Number(transfer.mountIdx);
-	
-	const success = moveAttachment({
-		id: transfer.id,
-		source: sourceIdx !== null ? mounts[sourceIdx] : null,
-		target: targetIdx !== null ? mounts[targetIdx] : null
-	});
-
-	if (success)
-		mountTagUpdate(level, [targetIdx, sourceIdx]
-			.filter(idx => Number.isFinite(idx)));
-}
-
-export function dropWeaponTag(event, level, target) {
-	if (!event.dataTransfer.types.includes(ATTACHMENT_TRANSFER_TYPE))
-		return;
-	event.preventDefault();
-	event.stopPropagation();
-
-	const mountIdx = Number(target.dataset.mountIdx);
-	const slotIdx = Number(target.dataset.slotIdx) ?? null;
-	const updatedSelector = document.querySelector(
-		`#mount-${mountIdx}-ll-${level} ` +
-		`.weapon[data-slot-idx="${slotIdx}"]`);
-
+	const isMount = targetElement.classList.contains('mount');
 	const transfer = getAttachmentTransferData(event);
+	
+	// reject drops into different levels or the wrong target type
 	if (!transfer ||
 		level !== Number(transfer.level) ||
-		transfer.type === 'mount')
+		(transfer.type === 'mount') != isMount)
 		return;
-
+	
 	const mounts = getEffectiveMounts(level);
-
-	const sourceMountIdx = Number(transfer.mountIdx);
-	const sourceSlotIdx = Number(transfer.slotIdx);
-	const sourceData = sourceMountIdx !== null ?
-		mounts[sourceMountIdx]?.weapons[sourceSlotIdx] : null;
-	const targetData = slotIdx !== null ?
-		mounts[mountIdx]?.weapons[slotIdx] : null
-	const success = moveAttachment({
-		id: transfer.id,
-		source: sourceData,
-		target: targetData
-	});
-
-	if (success)
-		modUpdate(level, [sourceMountIdx, mountIdx]
-			.filter(idx => Number.isFinite(idx)));
+	const tgtMountIdx = Number(targetElement.dataset.mountIdx);
+	const srcMountIdx = Number(transfer.mountIdx);
+	
+	let source = null;
+	let target = null;
+	
+	// acquire source and target roadmap data
+	if (isMount) {
+		source = srcMountIdx !== null ? mounts[srcMountIdx] : null;
+		target = tgtMountIdx !== null ? mounts[tgtMountIdx] : null;
+	}
+	else {
+		const srcSlotIdx = Number(transfer.slotIdx) ?? null;
+		const source = srcSlotIdx !== null ?
+			mounts[srcMountIdx]?.weapons[srcSlotIdx] : null;
+		
+		const tgtSlotIdx = Number(targetElement.dataset.slotIdx) ?? null;
+		const target = tgtSlotIdx !== null ?
+			mounts[mountIdx]?.weapons[tgtSlotIdx] : null;
+	}
+	
+	// attempt move and, if successful, trigger visual refresh
+	if (moveAttachment({ id: transfer.id, source, target })) {
+		const update = isMount ? mountTagUpdate : modUpdate;
+		const mountIdxs = [srcMountIdx, tgtMountIdx].filter(Number.isFinite);
+		update(level, mountIdxs);
+	}
 }
 
 /**
@@ -155,11 +136,7 @@ export function dropWeaponTag(event, level, target) {
  * @param {number} level
  * @param {HTMLDivElement} target
  */
-export function applyAttachmentManager(
-	level,
-	target,
-	dropFunction
-) {
+export function applyAttachmentManager(level, target) {
 	target.addEventListener('dragover', event => {
 		event.preventDefault();
 		if (!event.dataTransfer.types.includes(ATTACHMENT_TRANSFER_TYPE))
@@ -183,7 +160,7 @@ export function applyAttachmentManager(
 			return;
 
 		target.classList.remove('drag-focus');
-		dropFunction(event, level, target);
+		dropTag(event, level, target);
 	});
 }
 
@@ -251,22 +228,22 @@ function tryLimitedTag(tags, item, level) {
 	tags.append(tag);
 }
 
-export function renderMountTags(level, data, mount) {
+export function renderMountTags(level, attachments, mount) {
 	const tags = document.createElement('div');
 	tags.className = 'mount-tags';
 	
-	for (const id of data.attachments ?? []) {
+	for (const attachment of attachments ?? []) {
 		const tag = document.createElement('div');
 		tag.className = 'tag mount-tag applied-tag';
 		tag.draggable = true;
 
 		const label = document.createElement('span');
-		label.textContent = getAttachmentLabel(id);
+		label.textContent = attachment.label;
 
 		const remove = document.createElement('button');
 		remove.className = 'clear';
 		remove.type = 'button';
-		remove.title = `Remove ${getAttachmentLabel(id)}`;
+		remove.title = `Remove ${attachment.label}`;
 
 		tag.addEventListener('dragstart', event => {
 			if (event.target === remove) {
@@ -278,7 +255,7 @@ export function renderMountTags(level, data, mount) {
 				{
 					level,
 					type: 'mount',
-					id,
+					id: attachment.id,
 					mountIdx: Number(mount.dataset.mountIdx)
 				}
 			);
@@ -289,7 +266,7 @@ export function renderMountTags(level, data, mount) {
 			const mountIdx = Number(mount.dataset.mountIdx) ?? null;
 			const source = getEffectiveMounts(level)?.[mountIdx];
 
-			if (moveAttachment({ id, source }))
+			if (moveAttachment({ id: attachment.id, source }))
 				mountTagUpdate(level, [mountIdx]);
 		});
 

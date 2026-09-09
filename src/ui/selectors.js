@@ -30,7 +30,6 @@ import {
 } from './refreshRenderModules.js';
 
 import {
-	dropWeaponTag,
 	applyAttachmentManager,
 	renderWeaponTags
 } from './tags.js';
@@ -529,7 +528,7 @@ export function renderWeaponSelector(
 	selector.dataset.mountIdx = mountIdx;
 	selector.dataset.slotIdx = slotIdx;
 
-	applyAttachmentManager(level, selector, dropWeaponTag);
+	applyAttachmentManager(level, selector);
 	selector.append(renderWeaponTags(
 		level, weapon, mountIdx, slotIdx));
 

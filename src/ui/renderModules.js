@@ -31,7 +31,6 @@ import {
 } from './selectors.js';
 
 import {
-	dropMountTag,
 	applyAttachmentManager,
 	renderMountTags,
 	renderWeaponTags,
@@ -51,6 +50,10 @@ import {
 import {
 	didStatWorsen
 } from '../rules/stats.js';
+
+import {
+	getEligibleAttachments
+} from '../rules/attachments.js';
 
 import {
 	getMountSlots,
@@ -344,9 +347,11 @@ export function renderMount(level, idx, data) {
 	const slotDefinitions = getMountSlots(data);
 
 	if (!data.integrated) {
-		// add mount tags
-		mount.append(renderMountTags(level, data, mount));
-		applyAttachmentManager(level, mount, dropMountTag);
+		// add mount attachments
+		const attachments = getEligibleAttachments(level)
+			.filter(attachment => data.attachments?.includes(attachment.id));
+		mount.append(renderMountTags(level, attachments, mount));
+		applyAttachmentManager(level, mount);
 	}
 
 	const slots = document.createElement('div');

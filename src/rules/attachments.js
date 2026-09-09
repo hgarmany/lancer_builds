@@ -37,24 +37,6 @@ const CORE_BONUS_ATTACHMENTS = Object.freeze({
 	[ATTACHMENT_ID.OVERPOWER_CALIBER]: 'weapon'
 });
 
-export function getAttachmentLabel(id) {
-	// attachments from core bonuses
-	for (const [id, type] of Object.entries(CORE_BONUS_ATTACHMENTS))
-		return srcData.coreBonuses.get(id)?.name ?? id;
-
-	// superheavy bracing from a mounted superheavy weapon
-	for (const mount of getEffectiveMounts(level)) {
-		const hasBracing =
-			(mount.type === 'Heavy' || mount.type === 'Superheavy') &&
-			srcData.weapons.get(mount.weapons[0]?.id)?.mount === 'Superheavy';
-		if (hasBracing)
-			return 'Superheavy Bracing';
-	}
-
-	// weapon mods from systems
-	return srcData.mods.get(id)?.name ?? system.id;
-}
-
 export function getEligibleAttachments(level) {
 	const tagList = [];
 
