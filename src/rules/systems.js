@@ -112,7 +112,7 @@ export function isSystemEligible(level, id, selectedId = null) {
 		return candidate.talent_rank == talents[level].get(candidate.talent_id);
 
 	// gms systems are always eligible
-	if (!candidate.license_id)
+	if (!candidate.license_id || candidate.license_id === 'GMS')
 		return true;
 
 	// allow systems at or below the level's license rank

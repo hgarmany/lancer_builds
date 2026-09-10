@@ -404,19 +404,20 @@ export function isWeaponEligible(
 
 	const candidate = srcData.weapons.get(id);
 	const mounts = getEffectiveMounts(level);
+	const isExotic = doesWeaponHaveTag(id, TAGS.EXOTIC);
 
-	// reject invalid weapons, unpermitted exotics, integrated weapons
+	// simple rejection conditions
 	if (!candidate ||
-		!roadmap.allowExotics && doesWeaponHaveTag(id, TAGS.EXOTIC) ||
-		isFrameIntegratedItem(id))
-		return false;
-
-	// reject weapons that cannot fit on the target slot
-	if (!slotDefinition?.allowedWeaponMounts.includes(candidate.mount))
-		return false;
-
-	// superheavy weapons require two mounts
-	if (candidate.mount === 'Superheavy' && mounts.length < 2)
+		// unpermitted exotics
+		!roadmap.allowExotics && isExotic ||
+		// frame-integrated weapons
+		isFrameIntegratedItem(id) ||
+		// talent-integrated weapons
+		candidate.talent_item ||
+		// weapons too large for the target slot
+		!slotDefinition?.allowedWeaponMounts.includes(candidate.mount) ||
+		// superheavy weapons with no spare mount to brace on
+		candidate.mount === 'Superheavy' && mounts.length < 2)
 		return false;
 
 	// determine whether adding/swapping weapons is within the level's budget
@@ -437,12 +438,12 @@ export function isWeaponEligible(
 			.some(weapon => weapon.id === id))
 		return false;
 
-	// talent-issued weapons cannot be attached via selector
-	if (candidate.talent_item)
-		return false;
+	// exotics need no license
+	if (isExotic)
+		return true;
 
-	// gms weapons are always eligible
-	if (!candidate.license_id)
+	// all other weapons must satisfy or lack a license requirement
+	if (!candidate.license_id || candidate.license_id === 'GMS')
 		return true;
 
 	// allow weapons at or below the level's license rank

@@ -70,6 +70,24 @@ function normalizeById(dataset) {
 		.map(({ id, ...item }) => [id, item]));
 }
 
+/**
+ * Some LCPs use non-standard license tagging
+ * Normalize to the acceptable license id
+ * 
+ * @param {Map<string, Object>} dataset
+ */
+function cleanLicenseIds(dataset) {
+	for (const [id, item] of dataset) {
+		item.license_id ??= item.license;
+		if (!item.license_id || !srcData.licenses.has(item.license_id)) {
+			const licenseId = srcData.licenses.values()
+				.find(license => license.name === item.license_id)?.id ?? null;
+			if (licenseId)
+				item.license_id = licenseId;
+		}
+	}
+}
+
 export function getStoredPackages() {
 	try {
 		const stored = JSON.parse(localStorage.getItem(LCP_STORAGE_KEY) ?? '[]');
@@ -211,6 +229,10 @@ export function loadSourceData() {
 		...mergedData.systems,
 		...mergedData.mods
 	]);
+
+	cleanLicenseIds(srcData.weapons);
+	cleanLicenseIds(srcData.systems);
+
 	srcData.mods = normalizeById(mergedData.mods);
 
 	console.log(srcData);

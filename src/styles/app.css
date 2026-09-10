@@ -281,6 +281,51 @@ html[data-theme="gms-dark"] .theme-name::after {
 	content: "GMS Dark";
 }
 
+.exotics-name {
+	width: 5.8rem;
+}
+
+.exotics-slider {
+	position: relative;
+	width: 2rem;
+	height: 1rem;
+	border: 1px solid var(--on-strong);
+	border-radius: 1rem;
+	background-color: var(--surface);
+	transition: border-color 180ms ease, background-color 180ms ease;
+}
+
+.exotics-slider::after {
+	position: absolute;
+	top: 50%;
+	left: 0.15rem;
+	width: 0.7rem;
+	height: 0.7rem;
+	border-radius: 50%;
+	background-color: var(--on-strong);
+	box-shadow: 0 1px 2px color-mix(in srgb, var(--background) 45%, transparent);
+	content: '';
+	transform: translateY(-50%);
+	transition: transform 180ms ease;
+}
+
+.exotics-btn-input:checked + .exotics-slider {
+	border-color: var(--exotic);
+	background-color: color-mix(in srgb, var(--exotic) 50%, var(--surface));
+}
+
+.exotics-btn-input:checked + .exotics-slider::after {
+	transform: translate(1rem, -50%);
+}
+
+.exotics-name::after {
+	content: "Exotics Off";
+}
+
+html[data-exotics=true] .exotics-name::after {
+	content: "Exotics On";
+}
+
 .roadmap-shell {
 	position: relative;
 	display: grid;

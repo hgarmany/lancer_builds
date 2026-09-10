@@ -21,6 +21,7 @@ import {
 	roadmapName,
 	maxLevelInput,
 	themeToggle,
+	exoticsToggle,
 	loadBtn,
 	saveBtn,
 	roadmapFileInput,
@@ -29,6 +30,16 @@ import {
 	roadmapContainer,
 	tableBody
 } from './renderModules.js';
+
+import {
+	refreshSelectors,
+	refreshWeaponSelectors,
+	refreshElectiveSystemList
+} from './refreshRenderModules.js';
+
+import {
+	SELECT_TEMPLATE
+} from './selectors.js';
 
 import {
 	THEME
@@ -82,12 +93,17 @@ function refreshRoadmapHeader() {
 	roadmapName.value = roadmap.name;
 	resizeRoadmapName();
 	maxLevelInput.value = String(roadmap.maxLevel);
+	exoticsToggle.checked = roadmap.allowExotics;
+	document.documentElement.dataset.exotics = roadmap.allowExotics;
 }
 
 /**
  * Connect the roadmap name and max LL fields to table + roadmap data
  */
 export function configureHeader() {
+	const storedExotics = localStorage.getItem('lancer-roadmap-exotics');
+	if (storedExotics !== null)
+		roadmap.allowExotics = storedExotics === 'true';
 	refreshRoadmapHeader();
 
 	roadmapName.addEventListener('change', event => {
@@ -101,6 +117,16 @@ export function configureHeader() {
 		const theme = event.currentTarget.checked ? THEME.DARK : THEME.LIGHT;
 		document.documentElement.dataset.theme = theme;
 		localStorage.setItem('lancer-roadmap-theme', theme);
+	});
+
+	exoticsToggle.addEventListener('change', event => {
+		roadmap.allowExotics = event.currentTarget.checked;
+		document.documentElement.dataset.exotics = roadmap.allowExotics;
+		localStorage.setItem('lancer-roadmap-exotics', roadmap.allowExotics);
+		refreshSelectors(SELECT_TEMPLATE.CORE_BONUS, 0);
+		refreshWeaponSelectors(0);
+		for (let level = 0; level <= roadmap.maxLevel; level++)
+			refreshElectiveSystemList(level);
 	});
 
 	// load/save roadmap file
