@@ -7,7 +7,6 @@ obj
 *.esproj
 *.slnx
 /src/assets
-vite.config.js
 *.lcp
 dist
 *.esproj
