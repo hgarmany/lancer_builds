@@ -18,8 +18,8 @@ import {
 	getEffectiveMountType,
 	normalizeMounts,
 	getMountSlots,
-    reconfigureMounts,
-    cloneMount
+	reconfigureMounts,
+	cloneMount
 } from './weapons.js';
 
 const coreBonuses = cumulativeCatalog.coreBonuses;

@@ -10,7 +10,8 @@ import {
 } from './updates.js';
 
 import {
-	getEffectiveMounts
+	getEffectiveMounts,
+	deepCopyMounts
 } from '../rules/weapons.js';
 
 import {
@@ -79,7 +80,7 @@ function applyWeaponTagManager(
 	// remove mod from slot
 	removeButton.addEventListener('click', event => {
 		event.stopPropagation();
-		const source = getEffectiveMounts(level)?.[mountIdx].weapons[slotIdx];
+		const source = deepCopyMounts(level)?.[mountIdx].weapons[slotIdx];
 
 		if (moveAttachment({ id, source }))
 			mountTagUpdate(level, [mountIdx]);
@@ -99,7 +100,7 @@ function dropTag(event, level, targetElement) {
 	event.preventDefault();
 	event.stopPropagation();
 	
-	const mounts = getEffectiveMounts(level);
+	const mounts = deepCopyMounts(level);
 	const tgtMountIdx = Number(targetElement.dataset.mountIdx);
 	const srcMountIdx = Number(transfer.mountIdx);
 
@@ -267,7 +268,7 @@ export function renderMountTags(level, attachments, mount) {
 		remove.addEventListener('click', event => {
 			event.stopPropagation();
 			const mountIdx = Number(mount.dataset.mountIdx) ?? null;
-			const source = getEffectiveMounts(level)?.[mountIdx];
+			const source = deepCopyMounts(level)?.[mountIdx];
 
 			if (moveAttachment({ id: attachment.id, source }))
 				mountTagUpdate(level, [mountIdx]);

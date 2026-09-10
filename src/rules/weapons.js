@@ -295,6 +295,19 @@ function getMountConfigurationKey(mounts) {
 }
 
 /**
+ * Produce a deep copy of this level's effective mounts
+ * and write it to the roadmap
+ *
+ * @param {number} level
+ * @returns {Array<Object>}
+ */
+export function deepCopyMounts(level) {
+	const mounts = getEffectiveMounts(level).map(mount => cloneMount(mount));
+	roadmap.ll[level].mounts = mounts;
+	return mounts;
+}
+
+/**
  * Create this level's own loadout before applying a user weapon selection
  * The derived configuration is cloned so prior levels remain unchanged
  *

@@ -59,7 +59,6 @@ function renderMenu(level, template) {
 	selectGroup.id = `${template.type}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
-		selector.dataset.idx = 0;
 	const isSystemMenu = template === SELECT_TEMPLATE.SYSTEM;
 	const items = roadmapData instanceof Array ? roadmapData :
 		(isSystemMenu && roadmapData == null ? [] : [roadmapData]);
