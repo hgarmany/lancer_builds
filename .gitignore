@@ -6,7 +6,6 @@ obj
 !.vscode/extensions.json
 *.esproj
 *.slnx
-/src/assets
 *.lcp
 dist
 *.esproj
