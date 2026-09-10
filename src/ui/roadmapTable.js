@@ -24,6 +24,10 @@ import {
 	getEffectiveFrameId
 } from '../rules/frames.js';
 
+import {
+	hasEligibleSystem
+} from '../rules/systems.js';
+
 export function renderLevelLabel(level) {
 	const label = document.createElement('div');
 	label.id = `label-ll-${level}`;
@@ -55,25 +59,27 @@ function renderMenu(level, template) {
 	selectGroup.id = `${template.type}-ll-${level}`;
 	selectGroup.className = 'select-group';
 
-	// configure selectors for current user-selected value
-	if (roadmapData instanceof Array) {
-		roadmapData.forEach((item, idx) => {
-			const id = template === SELECT_TEMPLATE.SYSTEM ?
-				item?.id ?? item : item;
-			const selector = renderSelector(level, id, template);
-			selector.dataset.idx = idx;
-			if (template === SELECT_TEMPLATE.SYSTEM)
-				selector.append(renderSystemTags(level, id));
-
-			selectGroup.append(selector);
-		});
-	}
-	else {
-		const selector = renderSelector(level, roadmapData, template);
 		selector.dataset.idx = 0;
-		if (template === SELECT_TEMPLATE.SYSTEM)
-			selector.append(renderSystemTags(level, roadmapData));
+	const isSystemMenu = template === SELECT_TEMPLATE.SYSTEM;
+	const items = roadmapData instanceof Array ? roadmapData :
+		(isSystemMenu && roadmapData == null ? [] : [roadmapData]);
 
+	// configure selectors for current user-selected values
+	items.forEach((item, idx) => {
+		const id = isSystemMenu ? item?.id ?? item : item;
+		const selector = renderSelector(level, id, template);
+		selector.dataset.idx = idx;
+		if (isSystemMenu)
+			selector.append(renderSystemTags(level, id));
+
+		selectGroup.append(selector);
+	});
+
+	// system cell uses dynamic list: check for rendering empty selector
+	if (isSystemMenu && hasEligibleSystem(level)) {
+		const selector = renderSelector(level, null, template);
+		selector.dataset.idx = items.length;
+		selector.append(renderSystemTags(level, null));
 		selectGroup.append(selector);
 	}
 
@@ -169,7 +175,7 @@ function renderFrame(level) {
 	icon.src = getFrameImageSrc(activeFrameId) ?? '';
 
 	const menu = renderMenu(level, SELECT_TEMPLATE.FRAME);
-	
+
 	return [icon, menu];
 }
 

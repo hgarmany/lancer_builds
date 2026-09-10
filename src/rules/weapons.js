@@ -201,11 +201,26 @@ function buildMountConfiguration(level) {
 }
 
 export function cloneMount(mount, attachments = null) {
-	const newMount = { ...mount };
-	for (let weapon of newMount.weapons)
-		weapon = { ...weapon };
-	if (attachments?.length > 0)
+	const newMount = {
+		...mount,
+		weapons: (mount.weapons ?? []).map(weapon => {
+			const newWeapon = { ...weapon };
+			if (weapon.attachments?.length)
+				newWeapon.attachments = [...weapon.attachments];
+			if (!newWeapon.attachments?.length)
+				delete newWeapon.attachments;
+			return newWeapon;
+		})
+	};
+
+	if (mount.attachments?.length)
+		newMount.attachments = [...mount.attachments];
+	if (attachments?.length) {
+		newMount.attachments ??= [];
 		newMount.attachments.push(...attachments);
+	}
+	if (!newMount.attachments?.length)
+		delete newMount.attachments;
 
 	return newMount;
 }
@@ -242,7 +257,6 @@ export function normalizeMounts(level, savedMounts = []) {
 
 		const savedMount = unmatchedMounts.splice(matchingMountIdx, 1)[0];
 
-		// integrated mounts handling
 		if (!newMounts[i].integrated)
 			newMounts[i] = cloneMount(savedMount, newMounts[i].attachments);
 	}

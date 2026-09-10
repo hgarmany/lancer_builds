@@ -1022,6 +1022,21 @@ select {
 	align-items: center;
 }
 
+.systems .custom-select,
+.systems .selector-control-row,
+.systems .selector-control {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	max-width: none;
+}
+
+.systems .selector-value {
+	min-width: 0;
+	max-width: none;
+	overflow-wrap: break-word;
+}
+
 .budget-pill {
 	width: min-content;
 	border: 1px solid var(--border);

@@ -447,6 +447,7 @@ export function renderSelector(
 		selector.value = option.value;
 		value.textContent = option.textContent;
 		template.changeEvent(selector, level);
+		console.log(roadmap);
 		setSelectorOpen(selector, false);
 	});
 

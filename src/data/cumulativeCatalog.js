@@ -209,8 +209,11 @@ export function resizeCatalog(newMaxLevel) {
 	const currentMaxLevel = cumulativeCatalog.stats.length - 1;
 
 	if (newMaxLevel > currentMaxLevel) {
-		for (let level = currentMaxLevel + 1; level <= newMaxLevel; level++)
+		for (let level = currentMaxLevel + 1; level <= newMaxLevel; level++) {
 			initializeCatalogLevel(level);
+			if (cumulativeCatalog.activeFrame[level])
+				calculateMechStats(cumulativeCatalog, level);
+		}
 	}
 	else {
 		const spliceTarget = newMaxLevel + 1;

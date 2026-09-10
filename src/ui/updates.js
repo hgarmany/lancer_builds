@@ -194,8 +194,7 @@ export function activeFrameWaterfall(selectValue, level) {
 		setSelectorClass(selector, 'inherited', i !== level);
 
 		// add or rewrite mounts on the roadmap to meet frame specifications
-		if (i === level || roadmap.ll[i].mounts)
-			reconfigureMounts(i);
+		reconfigureMounts(i);
 	}
 }
 
