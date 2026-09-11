@@ -49,12 +49,20 @@ import {
 } from '../rules/frames.js';
 
 import {
+	didStatWorsen
+} from '../rules/stats.js';
+
+import {
 	reconfigureMounts
 } from '../rules/weapons.js';
 
 import {
 	updateAppliedAttachments
 } from '../rules/attachments.js';
+
+import {
+	STAT_DEFINITIONS
+} from '../constants.js';
 
 function refreshAttachmentMenu(level) {
 	const current = document.getElementById(`attachments-ll-${level}`);
@@ -101,7 +109,6 @@ export function talentUpdate(selector, level) {
 	}
 
 	refreshWeaponSelectors(level);
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
 export function licenseUpdate(selector, level) {
@@ -141,7 +148,7 @@ export function updateHASEWaterfall(level, id, doIncrement) {
 	refreshHASETooltip(level);
 
 	// update each level's hex displays, stat table, and systems menu
-	for (let i = 0; i <= roadmap.maxLevel; i++) {
+	for (let i = level; i <= roadmap.maxLevel; i++) {
 		refreshHexes(i, id);
 		refreshStats(i);
 
@@ -150,7 +157,6 @@ export function updateHASEWaterfall(level, id, doIncrement) {
 	}
 
 	refreshWeaponSelectors(level);
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
 /**
@@ -203,6 +209,8 @@ export function frameUpdate(selector, level) {
 
 	activeFrameWaterfall(selector.value, level);
 
+	let stopLevel = level;
+
 	// update stats and budget pill in waterfall
 	for (
 		let i = level;
@@ -214,32 +222,41 @@ export function frameUpdate(selector, level) {
 		refreshAttachmentMenu(i);
 		refreshBudgetPill(i);
 		refreshElectiveSystemList(i);
+
+		stopLevel++;
+	}
+
+	// narrow stat display change - update stat decrease indicators
+	if (stopLevel <= roadmap.maxLevel) {
+		const stats = cumulativeCatalog.stats[stopLevel];
+		for (const stat of Object.values(STAT_DEFINITIONS)) {
+			const id = stat.frameProperty;
+			const statBubble = document.getElementById(
+				`stat-${id}-ll-${stopLevel}`);
+			if (statBubble) {
+				statBubble.classList.toggle('hazard',
+					didStatWorsen(cumulativeCatalog, stopLevel, id));
+			}
+		}
 	}
 
 	// update all attached selectors at this and later levels
 	refreshSelectors(SELECT_TEMPLATE.FRAME, level);
-	// update integrated systems
-	refreshSelectors(SELECT_TEMPLATE.SYSTEM, level);
 }
 
 export function weaponTagUpdate(level, mountIndexes) {
 	const affectedMounts = [...new Set(mountIndexes)];
 
-	for (let i = level; i <= roadmap.maxLevel; i++) {
-		if (i > level && roadmap.ll[i].mounts)
-			break;
+	const freeModList = document.getElementById(`attachments-ll-${level}`);
+	if (freeModList)
+		freeModList.replaceWith(renderAttachmentsMenu(level));
 
-		const freeModList = document.getElementById(`attachments-ll-${i}`);
-		if (freeModList)
-			freeModList.replaceWith(renderAttachmentsMenu(i));
-
-		for (const mountIdx of affectedMounts) {
-			const mount =
-				document.getElementById(`mount-${mountIdx}-ll-${i}`);
-			if (mount)
-				refreshTags(i, mount.querySelectorAll(
-					'.weapon, .custom-select-mimic'));
-		}
+	for (const mountIdx of affectedMounts) {
+		const mount =
+			document.getElementById(`mount-${mountIdx}-ll-${level}`);
+		if (mount)
+			refreshTags(level, mount.querySelectorAll(
+				'.weapon, .custom-select-mimic'));
 	}
 }
 
@@ -310,6 +327,5 @@ export function systemUpdate(selector, level) {
 
 		// update all attached selectors at this level
 		refreshWeaponSelectors(i, i);
-		refreshSelectors(SELECT_TEMPLATE.SYSTEM, i, i);
 	}
 }

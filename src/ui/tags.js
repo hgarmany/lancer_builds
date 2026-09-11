@@ -24,6 +24,7 @@ import {
 	doesItemHaveTag,
 	getItemNumUses
 } from '../rules/installsCommon.js';
+import { roadmap } from '../data/roadmap.js';
 
 export const ATTACHMENT_TRANSFER_TYPE = 'application/x-lancer-attachment';
 
@@ -128,7 +129,10 @@ function dropTag(event, level, targetElement) {
 	if (moveAttachment({ id: transfer.id, target, source })) {
 		const update = isMount ? mountTagUpdate : weaponTagUpdate;
 		const mountIdxs = [srcMountIdx, tgtMountIdx].filter(Number.isFinite);
-		update(level, mountIdxs);
+		for (let i = level;
+			i == level || i < roadmap.maxLevel && !roadmap.ll[i].mounts;
+			i++)
+			update(i, mountIdxs);
 	}
 }
 

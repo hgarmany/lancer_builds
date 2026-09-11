@@ -323,38 +323,29 @@ export function refreshElectiveSystemList(level) {
 		return;
 
 	const systems = getEffectiveSystems(level);
+	const systemCount = systems.length + Number(hasEligibleSystem(level));
 
 	// remove obsolete selectors
-	while (selectGroup.children.length > systems.length)
+	while (selectGroup.children.length > systemCount)
 		selectGroup.lastElementChild.remove();
 
-	// reconcile selectors with the effective system list
-	for (let idx = 0; idx < systems.length; idx++) {
-		const selectedId = systems[idx].id;
-		let selector = selectGroup.children[idx];
-
-		if (!selector) {
-			// add new selector to empty/insufficiently long selector list
-			selector = renderSelector(
-				level, selectedId, SELECT_TEMPLATE.SYSTEM);
-			selector.append(renderSystemTags(level, selectedId));
-			selectGroup.append(selector);
-		}
-
-		selector.dataset.idx = idx;
-		refreshSelector(selector, level, selectedId, SELECT_TEMPLATE.SYSTEM);
-	}
-
-	refreshTags(level, Array.from(selectGroup.children));
-
-	if (hasEligibleSystem(level)) {
-		// generate prototype selector
+	while (selectGroup.children.length < systemCount) {
+		// generate new selector
 		const selector =
 			renderSelector(level, null, SELECT_TEMPLATE.SYSTEM);
-		selector.dataset.idx = systems.length;
 		selector.append(renderSystemTags(level, null));
 
 		// add empty selector to list
 		selectGroup.append(selector);
 	}
+
+	// reconcile selectors with the effective system list
+	for (let idx = 0; idx < systemCount; idx++) {
+		const selectedId = systems[idx]?.id ?? null;
+		const selector = selectGroup.children[idx];
+		selector.dataset.idx = idx;
+		refreshSelector(selector, level, selectedId, SELECT_TEMPLATE.SYSTEM);
+	}
+
+	refreshTags(level, Array.from(selectGroup.children));
 }
