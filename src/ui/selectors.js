@@ -74,7 +74,8 @@ import {
 import {
 	isWeaponEligible,
 	setWeaponSelection,
-	deepCopyMounts
+	deepCopyMounts,
+	resetEmptyMounts
 } from '../rules/weapons.js';
 
 import {
@@ -199,6 +200,8 @@ export const SELECT_TEMPLATE = Object.freeze({
 			roadmap.ll[level].frameId =
 				(getEffectiveFrameId(level - 1) !== id) ? id : null;
 			cumulativeCatalog.activeFrame[level] = id;
+
+			roadmap.ll[level].mounts = null;
 		},
 		getLabel: ({ id }) => {
 			return id ? srcData.frames.get(id)?.name : null;
@@ -213,6 +216,7 @@ export const SELECT_TEMPLATE = Object.freeze({
 	WEAPON: {
 		type: 'weapon',
 		allowClear: true,
+		redrawLabels: true,
 		getSrcItems: () => srcData.weapons,
 		write: ({ level, mountIdx, slotIdx, id }) =>
 			setWeaponSelection(level, mountIdx, slotIdx, id),

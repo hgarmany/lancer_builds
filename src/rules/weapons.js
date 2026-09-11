@@ -17,6 +17,10 @@ import {
 } from '../constants.js';
 
 import {
+	getEffectiveFrameId
+} from './frames.js';
+
+import {
 	ATTACHMENT_ID
 } from './attachments.js';
 
@@ -26,6 +30,7 @@ import {
 	getItemNumUses,
 	isFrameIntegratedItem
 } from './installsCommon.js';
+import { mountTagUpdate } from '../ui/updates.js';
 
 const talents = cumulativeCatalog.talents;
 const licenses = cumulativeCatalog.licenses;
@@ -356,6 +361,41 @@ function updateMountSlotCount(level, mount) {
 		mount.weapons.push({ id: null });
 }
 
+// reset level to inherited mounts if all weapon slots are empty
+export function resetEmptyMounts(level) {
+	const activeFrame = getEffectiveFrameId(level);
+	const mounts = roadmap.ll[level].mounts;
+	if (mounts && !mounts.some(mount =>
+		mount.weapons.some(weapon => weapon.id))
+	) {
+		// search in descending order for the most recent explicit mount config
+		for (let i = level - 1; i >= 0; i--) {
+			if (roadmap.ll[i].frame && roadmap.ll[i].frame !== activeFrame)
+				return false;
+			
+			// can only reset if there is a lower level w/ the same mounts +
+			// no missing attachments
+			const targetMounts = roadmap.ll[i].mounts;
+			if (targetMounts) {
+				if (mounts.every((mount, mountIdx) =>
+						mount.type === targetMounts[mountIdx].type &&
+						(mount.attachments?.every(attachment =>
+							targetMounts[mountIdx].attachments
+							?.includes(attachment)) ?? true)
+					)
+				) {
+					roadmap.ll[level].mounts = null;
+					return true;
+				}
+				else
+					return false;
+			}
+		}
+	}
+
+	return false;
+}
+
 /**
  * Apply a weapon selection to an existing mount
  * Where a level's loadout is inherited, create a new roadmap entry
@@ -382,6 +422,9 @@ export function setWeaponSelection(level, mountIdx, slotIdx, id) {
 	// dynamic weapon slots for flex mounts
 	if (mount.type === 'Flex')
 		resizeFlexMount(level, mount);
+
+	if(resetEmptyMounts(level))
+		mountTagUpdate(level, [...Array(mounts.length).keys()]);
 }
 
 /**
