@@ -18,7 +18,7 @@ export function getLicenses(gameData) {
 		const id = frame.license_id;
 		if (!licenses.get(id) &&
 			!excludeLicenseNamesIds.includes(frame.source))
-			licenses.set(id, { id, name: frame?.name });
+			licenses.set(id, { id, name: frame?.name, source: frame.source });
 	}
 
 	return licenses;

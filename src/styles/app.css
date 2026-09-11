@@ -662,9 +662,24 @@ select {
 }
 
 .selector-option {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.125rem;
 	min-width: max-content;
 	padding: 0.25rem 1.25rem 0.25rem 0.5rem;
 	cursor: pointer;
+}
+
+.selector-option img {
+	width: 1.2rem;
+	height: 1.2rem;
+	object-fit: contain;
+	object-position: center;
+	flex: none;
+}
+
+.selector-option span {
+	align-content: center;
 }
 
 .selector-option:hover {

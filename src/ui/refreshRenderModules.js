@@ -102,8 +102,10 @@ function refreshSelector(
 		};
 
 		// some selections change their listed name depending on other factors
-		if (template.redrawLabels)
-			option.textContent = template.getLabel?.(context) ?? '';
+		if (template.redrawLabels) {
+			const label = option.querySelector('span');
+			label.textContent = template.getLabel({ level, id, selectedId });
+		}
 
 		// drop-down lists are adjusted by hiding invalid options
 		const disable = !template.getEligibility?.(context);

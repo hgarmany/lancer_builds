@@ -71,6 +71,12 @@ import {
 	moveAttachment
 } from '../rules/attachments.js';
 
+import gmsLogoUrl from '../assets/manufacturer-icons/GMS_logo.svg';
+import haLogoUrl from '../assets/manufacturer-icons/HA_logo.svg';
+import horusLogoUrl from '../assets/manufacturer-icons/HORUS_logo.svg';
+import ipsnLogoUrl from '../assets/manufacturer-icons/IPS-N_logo.svg';
+import sscLogoUrl from '../assets/manufacturer-icons/SSC_logo.svg';
+
 import {
 	isWeaponEligible,
 	setWeaponSelection,
@@ -87,6 +93,14 @@ import {
 const selectorMenus = new WeakMap();
 let activeSelector = null;
 const selectorOverlay = document.getElementById('selector-overlay');
+
+const MANUFACTURER_LOGOS = new Map([
+	['GMS', gmsLogoUrl],
+	['HA', haLogoUrl],
+	['HORUS', horusLogoUrl],
+	['IPS-N', ipsnLogoUrl],
+	['SSC', sscLogoUrl]
+]);
 
 /**
  * Each type of selector requires several specific configurations
@@ -315,6 +329,7 @@ export function setSelectorClass(selector, className, toggle = true) {
 export function setOptionHidden(option, hide = true) {
 	option.disabled = hide;
 	option.hidden = hide;
+	option.style.display = hide ? 'none' : '';
 }
 
 /**
@@ -377,6 +392,33 @@ export function setSelectorOpen(selector, doOpen) {
 	positionSelectorMenu(selector);
 }
 
+export function renderOption(template, source, context) {
+	const option = document.createElement('div');
+	option.className = 'selector-option';
+	option.value = context.id;
+
+	// selections with supported manufacturers get logos
+	const logoUrl = MANUFACTURER_LOGOS.get(source);
+	if (logoUrl) {
+		const icon = document.createElement('img');
+		icon.className = 'selector-source-icon';
+		icon.src = logoUrl;
+		icon.alt = '';
+		option.classList.add('has-source-icon');
+		option.append(icon);
+	}
+
+	const name = document.createElement('span');
+	name.textContent = template.getLabel?.(context) ?? '';
+	option.append(name);
+
+	option.title = template.getDescription?.(context) ?? '';
+	if (!template.getEligibility?.(context) ?? false)
+		setOptionHidden(option, true);
+
+	return option;
+}
+
 /**
  * Creates a selector with default options configured
  * 
@@ -427,19 +469,9 @@ export function renderSelector(
 	menu.addEventListener('mousedown', event => event.preventDefault());
 
 	for (const [id, item] of template.getSrcItems()) {
-		const context = { ...extraContext, level, id, selectedId };
-
 		// prepare an option for each item
-		const option = document.createElement('div');
-		option.className = 'selector-option';
-		option.value = id;
-
-		option.textContent = template.getLabel?.(context) ?? '';
-		option.title = template.getDescription?.(context) ?? '';
-		if (!template.getEligibility?.(context) ?? false)
-			setOptionHidden(option, true);
-
-		menu.append(option);
+		const context = { ...extraContext, level, id, selectedId };
+		menu.append(renderOption(template, item.source, context));
 	}
 
 	// handle user making a new selection
