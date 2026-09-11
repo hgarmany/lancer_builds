@@ -28,6 +28,10 @@ import {
 	hasEligibleSystem
 } from '../rules/systems.js';
 
+import {
+	roadmap
+} from '../data/roadmap.js';
+
 export function renderLevelLabel(level) {
 	const label = document.createElement('div');
 	label.id = `label-ll-${level}`;
@@ -219,6 +223,9 @@ const CELL = {
 function renderCellType(cellType, level) {
 	const cell = document.createElement('td');
 	cell.className = `${cellType.name}-cell`;
+	if ((cellType === CELL.MOUNTS && roadmap.ll[level].mounts == null) ||
+		(cellType === CELL.SYSTEMS && !roadmap.ll[level].systems?.length))
+		cell.classList.add('inherited');
 
 	const cellContent = document.createElement('div');
 	cellContent.className = `cell-content ${cellType.name}`;

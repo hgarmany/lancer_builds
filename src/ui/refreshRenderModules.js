@@ -61,6 +61,15 @@ import {
 	getMountSlots
 } from '../rules/weapons.js';
 
+function refreshInheritedCellState(level, type) {
+	const hasOwnValues = type === 'mounts' ?
+		roadmap.ll[level].mounts != null :
+		roadmap.ll[level].systems?.length > 0;
+
+	document.querySelector(`#row-ll-${level} .${type}-cell`)
+		?.classList.toggle('inherited', !hasOwnValues);
+}
+
 /**
  * Reassess one existing selector without replacing its DOM.
  *
@@ -240,6 +249,7 @@ export function refreshStats(level) {
 }
 
 export function redrawMount(level, mountIdx) {
+	refreshInheritedCellState(level, 'mounts');
 	const mounts = getEffectiveMounts(level);
 	const mount = document.getElementById(`mounts-list-ll-${level}`)
 		.children[mountIdx];
@@ -259,6 +269,7 @@ export function redrawMount(level, mountIdx) {
  * @param {number} level
  */
 export function redrawMounts(level) {
+	refreshInheritedCellState(level, 'mounts');
 	const container = document.getElementById(`mounts-list-ll-${level}`);
 	const mounts = getEffectiveMounts(level);
 
@@ -304,6 +315,7 @@ export function refreshBudgetPill(level) {
 }
 
 export function refreshElectiveSystemList(level) {
+	refreshInheritedCellState(level, 'systems');
 	const selectGroup = document.getElementById(`system-ll-${level}`);
 	if (!selectGroup)
 		return;

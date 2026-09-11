@@ -472,6 +472,16 @@ html[data-exotics=true] .exotics-name::after {
 	padding: 0.65rem;
 }
 
+.roadmap-table tbody td.inherited {
+	background-image: repeating-linear-gradient(
+		-45deg,
+		transparent 0,
+		transparent 0.5rem,
+		color-mix(in srgb, var(--text-muted) 5%, transparent) 0.5rem,
+		color-mix(in srgb, var(--text-muted) 5%, transparent) 1rem
+	);
+}
+
 /* active frame and stats columns are joined */
 .roadmap-table tbody tr > :nth-child(n + 3),
 .roadmap-table thead tr > :nth-child(n + 3) > span {
